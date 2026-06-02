@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files (root level)
+.env
+.env.local
+
+# Editor
+.vscode
+.idea
+
+# Logs
+*.log
+
+# Claude Code
+.agents/
+.config/
+skills-lock.json
+
+# Design reference HTML (not part of the app)
+html/
+
+# Internal docs (not part of the app)
+docs/
+
+# SQL migration / seed scripts — run manually against Supabase, not app code
+*.sql

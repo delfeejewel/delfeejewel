@@ -1,0 +1,612 @@
+export interface OrderEmailData {
+  order_id: string
+  order_number: string | number
+  customer_name: string
+  customer_email: string
+  total: string
+  items: { title: string; quantity: number; price: string }[]
+  shipping_address?: string
+  tracking_number?: string
+  brand_name: string
+}
+
+const BRAND_NAME = process.env.BRAND_NAME || "Aurum"
+
+function baseLayout(content: string): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; color: #1a1a1a; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { padding: 32px; text-align: center; border-bottom: 1px solid #e5e5e5; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: #6b7280; }
+    .content { padding: 32px; }
+    .footer { padding: 24px 32px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #e5e5e5; }
+    .btn { display: inline-block; padding: 12px 32px; background: #6b7280; color: #ffffff; text-decoration: none; border-radius: 24px; font-size: 14px; font-weight: 500; }
+    .item-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .total-row { display: flex; justify-content: space-between; padding: 16px 0; font-weight: 600; font-size: 16px; border-top: 2px solid #e5e5e5; margin-top: 8px; }
+    h2 { font-size: 20px; font-weight: 500; margin: 0 0 8px 0; }
+    p { margin: 0 0 16px 0; line-height: 1.6; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${BRAND_NAME}</h1>
+    </div>
+    <div class="content">
+      ${content}
+    </div>
+    <div class="footer">
+      &copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.<br>
+      This is an automated email. Please do not reply directly.
+    </div>
+  </div>
+</body>
+</html>`
+}
+
+function itemsTable(items: OrderEmailData["items"]): string {
+  return items
+    .map(
+      (item) => `
+    <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f0f0;">
+      <span>${item.title} x ${item.quantity}</span>
+      <span style="font-weight:500;">${item.price}</span>
+    </div>`
+    )
+    .join("")
+}
+
+export const templates = {
+  "order.placed": (data: OrderEmailData) => ({
+    subject: `Order Confirmed — #${data.order_number}`,
+    html: baseLayout(`
+      <h2>Thank you for your order!</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>We've received your order <strong>#${data.order_number}</strong> and it's being processed. You'll receive an update when it ships.</p>
+
+      <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Order Summary</h3>
+      ${itemsTable(data.items)}
+      <div style="display:flex;justify-content:space-between;padding:16px 0;font-weight:600;font-size:16px;border-top:2px solid #e5e5e5;margin-top:8px;">
+        <span>Total</span>
+        <span>${data.total}</span>
+      </div>
+
+      ${data.shipping_address ? `<p style="margin-top:24px;font-size:13px;color:#999;"><strong>Shipping to:</strong> ${data.shipping_address}</p>` : ""}
+
+      <div style="text-align:center;margin-top:32px;">
+        <a href="${process.env.STOREFRONT_URL || 'http://localhost:8000'}/track-order?order=${data.order_number}" class="btn">Track Your Order</a>
+      </div>
+    `),
+  }),
+
+  "order.shipped": (data: OrderEmailData) => ({
+    subject: `Your Order #${data.order_number} Has Been Shipped!`,
+    html: baseLayout(`
+      <h2>Your order is on its way!</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Great news — your order <strong>#${data.order_number}</strong> has been shipped and is on its way to you.</p>
+
+      ${data.tracking_number ? `
+      <div style="background:#f5f5f7;padding:16px;border-radius:8px;margin:24px 0;text-align:center;">
+        <span style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#999;">Tracking Number</span><br>
+        <span style="font-size:18px;font-weight:600;margin-top:8px;display:inline-block;">${data.tracking_number}</span>
+      </div>
+      ` : ""}
+
+      <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Items Shipped</h3>
+      ${itemsTable(data.items)}
+
+      <div style="text-align:center;margin-top:32px;">
+        <a href="${process.env.STOREFRONT_URL || 'http://localhost:8000'}/track-order?order=${data.order_number}" class="btn">Track Your Order</a>
+      </div>
+    `),
+  }),
+
+  "order.delivered": (data: OrderEmailData) => ({
+    subject: `Your Order #${data.order_number} Has Been Delivered`,
+    html: baseLayout(`
+      <h2>Your order has been delivered!</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Your order <strong>#${data.order_number}</strong> has been delivered. We hope you love your new jewellery!</p>
+
+      <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">What You Ordered</h3>
+      ${itemsTable(data.items)}
+
+      <p style="margin-top:24px;">If you have any questions or concerns about your order, please don't hesitate to contact us.</p>
+
+      <div style="text-align:center;margin-top:32px;">
+        <a href="#" class="btn">Leave a Review</a>
+      </div>
+    `),
+  }),
+
+  "order.canceled": (data: OrderEmailData) => ({
+    subject: `Order #${data.order_number} Has Been Cancelled`,
+    html: baseLayout(`
+      <h2>Your order has been cancelled</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Your order <strong>#${data.order_number}</strong> has been cancelled. If a payment was made, a refund will be processed within 5-7 business days.</p>
+
+      <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Cancelled Items</h3>
+      ${itemsTable(data.items)}
+
+      <p style="margin-top:24px;">If you didn't request this cancellation or have questions, please contact our support team.</p>
+    `),
+  }),
+
+  "review.request": (data: OrderEmailData) => ({
+    subject: `How was your ${data.brand_name} experience? Leave a review!`,
+    html: baseLayout(`
+      <h2>We'd love your feedback!</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>It's been a few days since your order <strong>#${data.order_number}</strong> was delivered. We hope you're loving your new jewellery!</p>
+
+      <p>Your opinion matters to us. Would you take a moment to share your experience?</p>
+
+      <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Your Order</h3>
+      ${itemsTable(data.items)}
+
+      <div style="text-align:center;margin-top:32px;">
+        <a href="${process.env.STOREFRONT_URL || 'http://localhost:8000'}/account/reviews" class="btn">Write a Review</a>
+      </div>
+
+      <p style="margin-top:24px;font-size:13px;color:#999;">
+        Your review helps other customers make informed decisions and helps us improve our products and service.
+      </p>
+    `),
+  }),
+}
+
+// ─── Gift card delivery ──────────────────────────────────────
+export interface GiftCardEmailData {
+  recipient_email: string
+  recipient_name?: string | null
+  purchaser_name?: string | null
+  code: string
+  value: string // formatted, e.g. "₹1,000.00"
+  expires_at?: string | null
+  message?: string | null
+  brand_name: string
+}
+
+// ─── RTO (Return-to-Origin) refund processed — customer ─────
+export interface RtoRefundEmailData {
+  customer_email: string
+  customer_name: string
+  order_number: number | string
+  refund_amount: string | null // formatted, e.g. "₹3,499.00"; null if COD
+  is_prepaid: boolean
+  brand_name: string
+}
+
+export function rtoRefundProcessedTemplate(data: RtoRefundEmailData) {
+  return {
+    subject: `Order #${data.order_number} returned — refund update`,
+    html: baseLayout(`
+      <h2>We've received your returned order</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Your order <strong>#${data.order_number}</strong> has arrived back at our warehouse.</p>
+      ${
+        data.is_prepaid && data.refund_amount
+          ? `
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+          <p style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#16a34a;margin:0 0 6px;">Refund initiated</p>
+          <p style="font-size:24px;font-weight:bold;color:#15803d;margin:0;">${data.refund_amount}</p>
+          <p style="font-size:13px;color:#166534;margin:10px 0 0;">Typically reaches your account in 3–5 business days, via your original payment method.</p>
+        </div>
+      `
+          : `
+        <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+          <p style="font-size:13px;color:#854d0e;margin:0;">This was a Cash-on-Delivery order — no payment was collected, so there's nothing to refund.</p>
+        </div>
+      `
+      }
+      <p style="margin-top:24px;font-size:13px;color:#666;">If you have any questions, reply to this email and our team will help. We hope to see you back soon.</p>
+    `),
+  }
+}
+
+// ─── RTO refund processed — admin alert ─────────────────────
+export interface RtoAdminEmailData {
+  to: string
+  order_number: number | string
+  refund_amount: string | null
+  refunded: boolean
+  restocked: boolean
+  items: Array<{ title: string; quantity: number }>
+  brand_name: string
+}
+
+export function rtoProcessedAdminTemplate(data: RtoAdminEmailData) {
+  return {
+    subject: `[RTO] Order #${data.order_number} returned — restocked, please verify`,
+    html: baseLayout(`
+      <h2>Order #${data.order_number} has been returned</h2>
+      <p>The parcel for order <strong>#${data.order_number}</strong> is back at the warehouse. The system has:</p>
+      <ul style="font-size:14px;line-height:1.8;">
+        <li>${data.restocked ? "✅ Restocked the items" : "⚠️ Restock failed — check logs"}</li>
+        <li>${data.refunded ? `✅ Refunded ${data.refund_amount} via the original payment` : data.refund_amount === null ? "ℹ️ COD order — no refund needed" : "⚠️ Refund pending or failed — check logs"}</li>
+      </ul>
+      <h3 style="margin:24px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#999;">Items to verify</h3>
+      <ul style="font-size:14px;line-height:1.8;">
+        ${data.items.map((it) => `<li>${it.quantity} × ${it.title}</li>`).join("")}
+      </ul>
+      <p style="margin-top:24px;font-size:13px;color:#666;">Please inspect the items for condition before they go back on sale. If anything is damaged, mark the inventory accordingly in the admin dashboard.</p>
+    `),
+  }
+}
+
+// ─── Low-stock digest (admin) ────────────────────────────────
+export interface LowStockEmailData {
+  to: string
+  threshold: number
+  items: Array<{
+    product_title: string
+    variant_title: string
+    sku: string | null
+    available: number
+    location: string
+  }>
+  brand_name: string
+}
+
+export function lowStockDigestTemplate(data: LowStockEmailData) {
+  return {
+    subject: `[Inventory] ${data.items.length} variant${data.items.length === 1 ? "" : "s"} low on stock`,
+    html: baseLayout(`
+      <h2>Low-stock alert</h2>
+      <p>The following variants are at or below the threshold of <strong>${data.threshold}</strong> units available:</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <thead>
+          <tr style="border-bottom:2px solid #e5e5e5;text-align:left;">
+            <th style="padding:8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Product</th>
+            <th style="padding:8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Variant</th>
+            <th style="padding:8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">SKU</th>
+            <th style="padding:8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;text-align:right;">Available</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items
+            .map(
+              (it) => `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+              <td style="padding:10px 6px;font-size:13.5px;color:#5D2E46;">${it.product_title}</td>
+              <td style="padding:10px 6px;font-size:13px;color:#666;">${it.variant_title}</td>
+              <td style="padding:10px 6px;font-size:12px;color:#999;font-family:monospace;">${it.sku || "—"}</td>
+              <td style="padding:10px 6px;font-size:14px;font-weight:bold;color:${
+                it.available <= 0 ? "#dc2626" : "#d97706"
+              };text-align:right;">${it.available}</td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:#666;margin-top:20px;">Restock these items in the admin dashboard to keep the storefront in stock.</p>
+    `),
+  }
+}
+
+// ─── Return-request lifecycle ────────────────────────────────
+export interface ReturnEmailData {
+  customer_email: string
+  customer_name: string
+  order_number: number | string
+  request_id: string
+  reason?: string | null
+  rejected_reason?: string | null
+  brand_name: string
+}
+
+export interface ReturnCompletedEmailData {
+  customer_email: string
+  customer_name: string
+  order_number: number | string
+  refund_amount: string | null
+  is_prepaid: boolean
+  brand_name: string
+}
+
+export interface ReturnAdminEmailData {
+  to: string
+  customer_email: string
+  order_number: number | string
+  request_id: string
+  reason: string
+  items: Array<{ title: string; quantity: number }>
+  brand_name: string
+}
+
+export function returnSubmittedTemplate(data: ReturnEmailData) {
+  return {
+    subject: `Return request received — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>We've received your return request</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>We've got your request to return items from order <strong>#${data.order_number}</strong>. Our team will review it shortly and email you next steps.</p>
+      <p style="font-size:13px;color:#666;margin-top:24px;">Reference: <code>${data.request_id.slice(-8).toUpperCase()}</code></p>
+    `),
+  }
+}
+
+export function returnApprovedTemplate(data: ReturnEmailData) {
+  const supportEmail = process.env.SUPPORT_EMAIL || "support@delfee.com"
+  return {
+    subject: `Return approved — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>Your return has been approved</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Your return request for order <strong>#${data.order_number}</strong> is approved.</p>
+      <div style="background:#faf8f3;border:1px solid #ecdfd0;border-radius:12px;padding:20px;margin:20px 0;">
+        <p style="font-weight:600;color:#5D2E46;margin:0 0 8px;">Send the items back to us:</p>
+        <p style="font-size:13.5px;line-height:1.7;color:#5D2E46;margin:0;">
+          Pack the items securely in the original box if possible.<br/>
+          Email <a href="mailto:${supportEmail}">${supportEmail}</a> and we'll share the return address and pickup options.<br/>
+          Mention <code>${data.request_id.slice(-8).toUpperCase()}</code> on the package.
+        </p>
+      </div>
+      <p style="font-size:13px;color:#666;">Once we receive and inspect the items, your refund will be processed within 3 business days.</p>
+    `),
+  }
+}
+
+export function returnRejectedTemplate(data: ReturnEmailData) {
+  return {
+    subject: `Update on your return request — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>About your return request</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Unfortunately we weren't able to approve your return for order <strong>#${data.order_number}</strong>.</p>
+      ${
+        data.rejected_reason
+          ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin:16px 0;"><p style="color:#991b1b;margin:0;"><strong>Reason:</strong> ${data.rejected_reason}</p></div>`
+          : ""
+      }
+      <p style="font-size:13px;color:#666;margin-top:20px;">If you have questions, just reply to this email and our team will help.</p>
+    `),
+  }
+}
+
+export function returnCompletedTemplate(data: ReturnCompletedEmailData) {
+  return {
+    subject: `Return complete — refund update for order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>We've received your return</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Your returned items for order <strong>#${data.order_number}</strong> are back with us. Thank you!</p>
+      ${
+        data.is_prepaid && data.refund_amount
+          ? `
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+          <p style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#16a34a;margin:0 0 6px;">Refund initiated</p>
+          <p style="font-size:24px;font-weight:bold;color:#15803d;margin:0;">${data.refund_amount}</p>
+          <p style="font-size:13px;color:#166534;margin:10px 0 0;">Typically reaches your account in 3–5 business days, via your original payment method.</p>
+        </div>
+      `
+          : `
+        <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+          <p style="font-size:13px;color:#854d0e;margin:0;">This was a Cash-on-Delivery order — no payment was collected, so there's nothing to refund.</p>
+        </div>
+      `
+      }
+    `),
+  }
+}
+
+// ─── Exchange lifecycle ──────────────────────────────────────
+export interface ExchangeEmailData {
+  customer_email: string
+  customer_name: string
+  order_number: number | string
+  request_id: string
+  items: Array<{ title: string; from_variant: string; to_variant: string; quantity: number }>
+  brand_name: string
+}
+
+export interface ReplacementShippedEmailData {
+  customer_email: string
+  customer_name: string
+  order_number: number | string
+  replacement_order_number?: number | string | null
+  tracking_url?: string | null
+  brand_name: string
+}
+
+function exchangeItemsList(
+  items: ExchangeEmailData["items"]
+): string {
+  if (!items?.length) return ""
+  return `
+    <h3 style="margin:24px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#999;">Exchange</h3>
+    <ul style="font-size:14px;line-height:1.8;">
+      ${items
+        .map(
+          (it) =>
+            `<li>${it.quantity} × <strong>${it.title}</strong> — ${it.from_variant} → ${it.to_variant}</li>`
+        )
+        .join("")}
+    </ul>
+  `
+}
+
+export function exchangeSubmittedTemplate(data: ExchangeEmailData) {
+  return {
+    subject: `Exchange request received — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>We've received your exchange request</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>We've got your request to exchange items from order <strong>#${data.order_number}</strong>. Our team will review it shortly and email you next steps.</p>
+      ${exchangeItemsList(data.items)}
+      <p style="font-size:13px;color:#666;margin-top:24px;">Reference: <code>${data.request_id.slice(-8).toUpperCase()}</code></p>
+    `),
+  }
+}
+
+export function exchangeApprovedTemplate(data: ExchangeEmailData) {
+  const supportEmail = process.env.SUPPORT_EMAIL || "support@delfee.com"
+  return {
+    subject: `Exchange approved — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>Your exchange has been approved</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>Your exchange request for order <strong>#${data.order_number}</strong> is approved.</p>
+      ${exchangeItemsList(data.items)}
+      <div style="background:#faf8f3;border:1px solid #ecdfd0;border-radius:12px;padding:20px;margin:20px 0;">
+        <p style="font-weight:600;color:#5D2E46;margin:0 0 8px;">Send the items back to us:</p>
+        <p style="font-size:13.5px;line-height:1.7;color:#5D2E46;margin:0;">
+          Pack the items securely in the original box if possible.<br/>
+          Email <a href="mailto:${supportEmail}">${supportEmail}</a> and we'll share the return address and pickup options.<br/>
+          Mention <code>${data.request_id.slice(-8).toUpperCase()}</code> on the package.
+        </p>
+      </div>
+      <p style="font-size:13px;color:#666;">Once we receive and inspect the items, we'll ship out your replacement.</p>
+    `),
+  }
+}
+
+export function replacementShippedTemplate(data: ReplacementShippedEmailData) {
+  return {
+    subject: `Your replacement is on the way — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>Your replacement is on its way</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>We've shipped your replacement for order <strong>#${data.order_number}</strong>.</p>
+      ${
+        data.replacement_order_number
+          ? `<p>Replacement order: <strong>#${data.replacement_order_number}</strong></p>`
+          : ""
+      }
+      ${
+        data.tracking_url
+          ? `<p style="margin-top:20px;"><a href="${data.tracking_url}" style="background:#5D2E46;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-size:13.5px;">Track your replacement</a></p>`
+          : ""
+      }
+      <p style="font-size:13px;color:#666;margin-top:24px;">Thanks for your patience while we sorted this out.</p>
+    `),
+  }
+}
+
+// ─── Abandoned cart recovery ─────────────────────────────────
+export interface AbandonedCartEmailData {
+  customer_email: string
+  customer_name: string
+  cart_id: string
+  recover_url: string
+  items: Array<{
+    title: string
+    variant_title?: string | null
+    quantity: number
+    unit_price: string
+    thumbnail?: string | null
+  }>
+  cart_total: string
+  brand_name: string
+}
+
+export function abandonedCartRecoveryTemplate(data: AbandonedCartEmailData) {
+  const itemRows = (data.items || [])
+    .map(
+      (it) => `
+      <tr>
+        <td style="padding:10px 8px;border-bottom:1px solid #f0eadf;vertical-align:top;">
+          ${
+            it.thumbnail
+              ? `<img src="${it.thumbnail}" alt="" width="56" height="56" style="display:block;border-radius:8px;object-fit:cover;background:#faf8f3;" />`
+              : `<div style="width:56px;height:56px;border-radius:8px;background:#faf8f3;"></div>`
+          }
+        </td>
+        <td style="padding:10px 8px;border-bottom:1px solid #f0eadf;">
+          <p style="margin:0;font-size:14px;font-weight:600;color:#1a1a1a;">${it.title}</p>
+          ${
+            it.variant_title
+              ? `<p style="margin:2px 0 0;font-size:12px;color:#888;">${it.variant_title}</p>`
+              : ""
+          }
+          <p style="margin:4px 0 0;font-size:12px;color:#666;">Qty: ${it.quantity}</p>
+        </td>
+        <td style="padding:10px 8px;border-bottom:1px solid #f0eadf;text-align:right;font-size:13.5px;font-weight:600;color:#5D2E46;white-space:nowrap;">
+          ${it.unit_price}
+        </td>
+      </tr>`
+    )
+    .join("")
+
+  return {
+    subject: `You left something in your cart — ${data.brand_name}`,
+    html: baseLayout(`
+      <h2>Your cart is waiting</h2>
+      <p>Hi ${data.customer_name},</p>
+      <p>You left these items in your cart. They're still available — come back when you're ready.</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+        ${itemRows}
+        <tr>
+          <td colspan="2" style="padding:14px 8px 0;font-size:13px;color:#666;">Total in cart</td>
+          <td style="padding:14px 8px 0;text-align:right;font-size:16px;font-weight:700;color:#5D2E46;">${data.cart_total}</td>
+        </tr>
+      </table>
+      <p style="text-align:center;margin:24px 0;">
+        <a href="${data.recover_url}" class="btn" style="background:#5D2E46;color:#fff;">Take me back to my cart</a>
+      </p>
+      <p style="font-size:12px;color:#999;margin-top:24px;text-align:center;">
+        If you've already completed your order, please ignore this email.
+      </p>
+    `),
+  }
+}
+
+export function returnAdminAlertTemplate(data: ReturnAdminEmailData) {
+  return {
+    subject: `[Return] New request — order #${data.order_number}`,
+    html: baseLayout(`
+      <h2>New return request</h2>
+      <p>Customer ${data.customer_email} submitted a return for order <strong>#${data.order_number}</strong>.</p>
+      <p><strong>Reason:</strong> ${data.reason}</p>
+      <h3 style="margin:24px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#999;">Items to return</h3>
+      <ul style="font-size:14px;line-height:1.8;">
+        ${data.items.map((it) => `<li>${it.quantity} × ${it.title}</li>`).join("")}
+      </ul>
+      <p style="font-size:13px;color:#666;margin-top:20px;">Reference: <code>${data.request_id.slice(-8).toUpperCase()}</code></p>
+      <p style="font-size:13px;color:#666;">Approve or reject via the admin API: <code>POST /admin/return-requests/${data.request_id}/{approve,reject}</code></p>
+    `),
+  }
+}
+
+export function giftCardPurchasedTemplate(data: GiftCardEmailData) {
+  return {
+    subject: `You've received a ${data.brand_name} gift card`,
+    html: baseLayout(`
+      <h2>You've received a gift!</h2>
+      <p>Hello ${data.recipient_name || "there"},</p>
+      <p>${
+        data.purchaser_name
+          ? `<strong>${data.purchaser_name}</strong> has sent you a ${data.brand_name} gift card.`
+          : `Someone has sent you a ${data.brand_name} gift card.`
+      }</p>
+      ${
+        data.message
+          ? `<p style="margin:16px 0;padding:14px 18px;border-left:3px solid #D4AF37;background:#faf8f3;font-style:italic;color:#5D2E46;">"${data.message}"</p>`
+          : ""
+      }
+      <div style="background:#faf8f3;border:1px solid #ecdfd0;border-radius:12px;padding:28px;text-align:center;margin:24px 0;">
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#999;margin:0 0 12px;">Your gift card code</p>
+        <p style="font-size:26px;font-family:'Courier New',monospace;letter-spacing:3px;font-weight:bold;margin:0;color:#5D2E46;">${data.code}</p>
+        <p style="font-size:15px;margin:18px 0 0;color:#5D2E46;">Value: <strong>${data.value}</strong></p>
+        ${
+          data.expires_at
+            ? `<p style="font-size:12px;color:#999;margin:8px 0 0;">Expires ${data.expires_at}</p>`
+            : ""
+        }
+      </div>
+      <p style="font-size:13px;color:#666;">Apply this code at checkout to redeem your gift card. It can be used across multiple orders until the balance is fully used.</p>
+      <div style="text-align:center;margin-top:32px;">
+        <a href="${process.env.STOREFRONT_URL || "http://localhost:8000"}/" class="btn">Start Shopping</a>
+      </div>
+    `),
+  }
+}

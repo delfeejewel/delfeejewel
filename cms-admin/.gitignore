@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.DS_Store
+
+# Local Supabase migration / seed scripts — run manually, not part of app code
+supabase/*.sql
