@@ -52,7 +52,7 @@ export default async function seedCustomer({ container }: ExecArgs) {
   }
 
   // ── 2. Link existing orders with this email to the customer ──
-  const orders = await orderModule.listOrders({ email: EMAIL })
+  const orders = await orderModule.listOrders({ email: EMAIL } as any)
   let linked = 0
   for (const order of orders) {
     if (order.customer_id !== customerId) {

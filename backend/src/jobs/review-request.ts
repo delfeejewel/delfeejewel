@@ -58,7 +58,7 @@ export default async function reviewRequestJob(container: MedusaContainer) {
 
       await emailService.sendOrderEmail("review.request", {
         order_id: order.id,
-        order_number: order.display_id,
+        order_number: order.display_id ?? order.id,
         customer_name:
           (order.shipping_address as any)?.first_name || "Customer",
         customer_email: order.email,

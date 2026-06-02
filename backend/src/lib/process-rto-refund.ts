@@ -3,7 +3,7 @@ import {
   ContainerRegistrationKeys,
   Modules,
 } from "@medusajs/framework/utils"
-import { refundCapturedPaymentsWorkflow } from "@medusajs/medusa/core-flows"
+import { refundPaymentsWorkflow } from "@medusajs/medusa/core-flows"
 
 import { convertToLocale } from "../utils/money"
 
@@ -155,12 +155,14 @@ export async function processRtoRefund(
 
   if (isPrepaid) {
     try {
-      await refundCapturedPaymentsWorkflow(container).run({
-        input: {
-          order_id: order.id,
-          note: "RTO: parcel returned to origin — auto refund",
-        } as any,
-      })
+      for (const p of refundable) {
+        await refundPaymentsWorkflow(container).run({
+          input: {
+            payment_id: p.id,
+            amount: Number(p.amount || 0),
+          } as any,
+        })
+      }
       refundAmount = refundable.reduce(
         (s, p) => s + Number(p.amount || 0),
         0

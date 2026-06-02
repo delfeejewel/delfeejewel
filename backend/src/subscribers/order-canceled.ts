@@ -32,9 +32,9 @@ export default async function orderCanceledHandler({
 
     await emailService.sendOrderEmail("order.canceled", {
       order_id: order.id,
-      order_number: order.display_id,
+      order_number: order.display_id ?? order.id,
       customer_name: order.shipping_address?.first_name || "Customer",
-      customer_email: order.email,
+      customer_email: order.email ?? "",
       total: convertToLocale(order.total, order.currency_code),
       items: (order.items || []).map((item: any) => ({
         title: item.title,

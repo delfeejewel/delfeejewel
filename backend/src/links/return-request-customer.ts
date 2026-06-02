@@ -4,7 +4,7 @@ import ReturnRequestModule from "../modules/return_request"
 
 export default defineLink(
   {
-    linkable: ReturnRequestModule.linkable.returnRequest,
+    linkable: ReturnRequestModule.linkable.returnRequest as any,
     field: "customer_id",
   },
   CustomerModule.linkable.customer,

@@ -62,7 +62,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       buyer_state: buyerState || "N/A",
       buyer_gstin: address?.metadata?.gstin || undefined,
 
-      order_number: order.display_id,
+      order_number: order.display_id ?? order.id,
       order_date: new Date(order.created_at).toLocaleDateString("en-IN", {
         day: "2-digit", month: "short", year: "numeric",
       }),

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Commerce QA Testing Checklist · Delfee</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1d212a; --line:#2a2f3a;
+    --txt:#e8eaed; --muted:#9aa3b2; --faint:#6b7280;
+    --silver:#c8ccd4; --silver-2:#aab0bd; --accent:#d7dbe2;
+    --ok:#3fbf6a; --warn:#e0a83d; --bad:#e05d5d;
+    --chip:#222733; --shadow:0 1px 3px rgba(0,0,0,.4);
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--silver)}
+  code{
+    background:var(--chip); border:1px solid var(--line); border-radius:5px;
+    padding:1px 5px; font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#cdd3dd; white-space:nowrap;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px 120px}
+
+  /* Header */
+  header.top{
+    position:sticky; top:0; z-index:30; background:rgba(15,17,21,.92);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+  }
+  .top-inner{max-width:1080px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+  .brand{display:flex; flex-direction:column; gap:2px; margin-right:auto}
+  .brand h1{margin:0; font-size:17px; font-weight:650; letter-spacing:.2px}
+  .brand .sub{font-size:12px; color:var(--muted)}
+  .overall{display:flex; align-items:center; gap:12px; min-width:260px}
+  .overall .bar{flex:1}
+  .overall .pct{font-variant-numeric:tabular-nums; font-weight:650; font-size:15px; min-width:46px; text-align:right}
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap}
+  button.btn{
+    background:var(--panel-2); color:var(--txt); border:1px solid var(--line);
+    border-radius:8px; padding:7px 12px; font-size:12.5px; cursor:pointer; font-weight:550;
+  }
+  button.btn:hover{background:#252b36; border-color:#39414f}
+  button.btn.warn:hover{border-color:var(--bad); color:#ffb4b4}
+  .savestate{font-size:11.5px; color:var(--faint); align-self:center}
+
+  /* progress bar component */
+  .bar{height:7px; background:#2a2f3a; border-radius:6px; overflow:hidden}
+  .bar > span{display:block; height:100%; width:0;
+    background:linear-gradient(90deg,var(--silver-2),var(--silver)); transition:width .25s ease}
+  .bar.full > span{background:linear-gradient(90deg,#3fbf6a,#57d083)}
+
+  /* meta record card */
+  .meta{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; margin:22px 0; display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px 18px;
+  }
+  .meta label{display:flex; flex-direction:column; gap:5px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px}
+  .meta input{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:7px;
+    padding:8px 10px; color:var(--txt); font-size:13px; font-family:inherit;
+  }
+  .meta input:focus{outline:none; border-color:var(--silver-2)}
+
+  /* phase nav */
+  .phasenav{display:flex; flex-wrap:wrap; gap:7px; margin:18px 0 6px}
+  .phasenav a{
+    text-decoration:none; display:flex; align-items:center; gap:7px;
+    background:var(--panel); border:1px solid var(--line); border-radius:20px;
+    padding:5px 11px 5px 9px; font-size:12px; color:var(--muted);
+  }
+  .phasenav a:hover{border-color:var(--silver-2); color:var(--txt)}
+  .phasenav a .dot{width:8px; height:8px; border-radius:50%; background:#3a4150; flex:none}
+  .phasenav a.done .dot{background:#3fbf6a}
+  .phasenav a.partial .dot{background:var(--warn)}
+  .phasenav a .mini{font-variant-numeric:tabular-nums; color:var(--faint); font-size:11px}
+
+  /* intro / roadmap */
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin:16px 0}
+  .card h2{margin:0 0 6px; font-size:15px}
+  .card p{margin:6px 0; color:var(--muted)}
+  pre.road{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:14px 16px;
+    overflow:auto; font:12px/1.7 ui-monospace,Menlo,Consolas,monospace; color:#bcc4d0; margin:10px 0 0;
+  }
+  .gate{margin-top:12px; padding:10px 14px; border-left:3px solid var(--warn); background:rgba(224,168,61,.08); border-radius:0 8px 8px 0; color:#e9d7ad; font-size:13px}
+
+  /* phase block */
+  .phase{margin:26px 0; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); overflow:hidden; scroll-margin-top:80px}
+  .phase > .head{
+    display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer;
+    background:linear-gradient(180deg,#1b1f27,#171a21); border-bottom:1px solid var(--line);
+  }
+  .phase > .head .num{
+    font-variant-numeric:tabular-nums; font-weight:700; font-size:13px; color:var(--bg);
+    background:var(--silver); border-radius:6px; padding:3px 8px; flex:none;
+  }
+  .phase.critical > .head .num{background:linear-gradient(135deg,#e0a83d,#d7dbe2)}
+  .phase > .head h3{margin:0; font-size:15px; flex:none}
+  .phase > .head .ph-sub{color:var(--faint); font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .phase > .head .ph-prog{display:flex; align-items:center; gap:10px; min-width:150px}
+  .phase > .head .ph-prog .bar{width:90px}
+  .phase > .head .ph-prog .mini{font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; min-width:38px; text-align:right}
+  .phase > .head .chev{color:var(--faint); transition:transform .2s; flex:none}
+  .phase.collapsed .chev{transform:rotate(-90deg)}
+  .phase.collapsed .body{display:none}
+  .badge-crit{font-size:10px; text-transform:uppercase; letter-spacing:.6px; color:#e0a83d; border:1px solid rgba(224,168,61,.4); border-radius:10px; padding:1px 7px; flex:none}
+
+  .body{padding:6px 18px 14px}
+  .section{margin:14px 0 4px}
+  .section > .s-title{font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--silver-2); font-weight:650; margin:14px 0 8px; display:flex; align-items:center; gap:8px}
+  .section > .s-title code{text-transform:none; letter-spacing:0; font-weight:400}
+
+  /* item row */
+  .item{display:flex; gap:11px; padding:7px 8px; border-radius:8px; align-items:flex-start}
+  .item:hover{background:var(--panel-2)}
+  .item.checked .lbl{color:var(--faint)}
+  .item.checked .lbl strong{color:var(--muted)}
+  .cbx{flex:none; margin-top:1px}
+  .cbx input{position:absolute; opacity:0; width:0; height:0}
+  .cbx .box{
+    width:19px; height:19px; border-radius:5px; border:1.5px solid #3f4756; background:var(--panel-2);
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:.12s;
+  }
+  .cbx input:checked + .box{background:#3fbf6a; border-color:#3fbf6a}
+  .cbx .box svg{opacity:0; transition:.12s}
+  .cbx input:checked + .box svg{opacity:1}
+  .cbx input:focus-visible + .box{box-shadow:0 0 0 3px rgba(200,204,212,.3)}
+  .lbl{flex:1; cursor:pointer; padding-top:.5px}
+  .lbl strong{color:var(--txt); font-weight:600}
+  .item .note-toggle{
+    flex:none; background:none; border:none; color:var(--faint); cursor:pointer; font-size:15px;
+    padding:0 4px; line-height:1; opacity:0; transition:.12s; align-self:center;
+  }
+  .item:hover .note-toggle{opacity:1}
+  .item .note-toggle.has{opacity:1; color:var(--silver-2)}
+  .note-row{flex-basis:100%; margin:4px 0 2px 30px; display:none}
+  .note-row.open{display:block}
+  .note-row textarea{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); border-radius:7px;
+    color:var(--txt); padding:7px 9px; font-family:inherit; font-size:12.5px; resize:vertical; min-height:34px;
+  }
+  .note-row textarea:focus{outline:none; border-color:var(--silver-2)}
+
+  /* sign-off */
+  .signoff table{width:100%; border-collapse:collapse; margin-top:8px}
+  .signoff th,.signoff td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); font-size:13px}
+  .signoff th{color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.5px}
+  .signoff td .pill{font-size:11px; padding:2px 9px; border-radius:20px; font-weight:600}
+  .pill.p-done{background:rgba(63,191,106,.15); color:#7fe0a0; border:1px solid rgba(63,191,106,.4)}
+  .pill.p-part{background:rgba(224,168,61,.15); color:#f0c878; border:1px solid rgba(224,168,61,.4)}
+  .pill.p-todo{background:rgba(122,130,145,.12); color:var(--muted); border:1px solid var(--line)}
+
+  .footnote{color:var(--faint); font-size:11.5px; text-align:center; margin-top:30px}
+
+  @media print{
+    header.top{position:static} .toolbar,.phasenav,.note-toggle{display:none}
+    .phase.collapsed .body{display:block!important} body{background:#fff; color:#000}
+    .phase,.card,.meta{break-inside:avoid}
+  }
+  @media (max-width:640px){
+    .phase > .head .ph-sub{display:none}
+    .overall{min-width:180px}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>QA Testing Checklist</h1>
+      <span class="sub">Delfee storefront (Next.js) + Medusa v2 backend · end-to-end flow</span>
+    </div>
+    <div class="overall">
+      <div class="bar" id="overallBar"><span></span></div>
+      <div class="pct" id="overallPct">0%</div>
+    </div>
+    <div class="toolbar">
+      <span class="savestate" id="saveState">saved</span>
+      <button class="btn" onclick="expandAll(true)">Expand all</button>
+      <button class="btn" onclick="expandAll(false)">Collapse</button>
+      <button class="btn" onclick="exportJSON()">Export</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">Import</button>
+      <button class="btn" onclick="window.print()">Print / PDF</button>
+      <button class="btn warn" onclick="resetAll()">Reset</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importJSON(event)">
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="meta" id="metaCard">
+    <label>Tested by <input data-meta="tester" placeholder="name"></label>
+    <label>Date <input data-meta="date" type="date"></label>
+    <label>Backend commit <input data-meta="becommit" placeholder="sha"></label>
+    <label>Storefront commit <input data-meta="fecommit" placeholder="sha"></label>
+    <label>Environment <input data-meta="env" placeholder="Local / Staging / Production"></label>
+    <label>Build / version <input data-meta="build" placeholder="optional"></label>
+  </div>
+
+  <div class="card">
+    <h2>Roadmap — test in this order</h2>
+    <p>Phases are ordered by dependency. Environment must be green before anything else; the happy-path purchase must work before edge cases are worth chasing. Each check has an action and a pass criterion. Add a note (✎ on hover) to record evidence or a defect.</p>
+    <pre class="road">Phase 0   Environment &amp; smoke ........ services up, DB seeded, regions load
+Phase 1   Browsing &amp; discovery ....... home, listing, PDP, search, categories
+Phase 2   Cart ....................... add/update/remove, gift wrap, discounts
+Phase 3   Checkout happy path ........ address → shipping → payment → review
+Phase 4   Payments ................... Razorpay, COD + upfront, gift-card credit
+Phase 5   Order lifecycle ............ confirmation, emails, ops status, tracking
+Phase 6   Account .................... auth, profile, addresses, wishlist, orders
+Phase 7   Returns &amp; exchanges ........ request, window rules, approve, replacement
+Phase 8   Reviews .................... submit, moderation, public display
+Phase 9   Jewelry-specific ........... QR authenticity, gift cards, invoices
+Phase 10  Background jobs ............ abandoned cart, review request, low stock
+Phase 11  Fulfillment ................ Shiprocket create / track / webhook
+Phase 12  Cross-cutting .............. regions, coming-soon, SEO, mobile, security</pre>
+    <div class="gate"><strong>Launch gate:</strong> Phases 0–5 must all pass. A blocker in 7–11 is important but not a launch blocker the way a broken checkout is.</div>
+  </div>
+
+  <nav class="phasenav" id="phaseNav"></nav>
+
+  <div id="phases"></div>
+
+  <div class="card signoff" id="signoff">
+    <h2>Sign-off</h2>
+    <table><thead><tr><th>Phase</th><th>Status</th><th>Progress</th></tr></thead>
+    <tbody id="signoffBody"></tbody></table>
+  </div>
+
+  <p class="footnote">State auto-saves to this browser (localStorage). Use <strong>Export</strong> to archive a run or share it. Built for the Delfee e-commerce build.</p>
+</div>
+
+<script>
+/* ----------------------------- DATA ----------------------------- */
+/* Each phase: {n,id,title,sub,critical, sections:[{t, code?, items:[ "html..." ]}]} */
+const DATA = [
+{n:"0",id:"p0",title:"Environment & Smoke",sub:"services up, DB seeded, regions load",sections:[
+ {items:[
+  "<strong>Backend boots</strong> — <code>cd backend && npm run dev</code> listens on <code>:9000</code>, no module-registration errors in logs.",
+  "<strong>Storefront boots</strong> — <code>cd backend-storefront && npm run dev</code> serves on <code>:8000</code>.",
+  "<strong>DB migrated</strong> — <code>npx medusa db:migrate</code> clean; custom tables exist: <code>gift_card</code>, <code>product_review</code>, <code>wishlist_item</code>, <code>qr_code</code>, <code>return_request</code>, <code>return_request_item</code>, <code>contact_message</code>.",
+  "<strong>Seed data present</strong> — India region (INR), Mumbai warehouse, sales channel, publishable key, gift-card product, gift-wrap product (<code>GIFT-WRAP-INR-50</code>).",
+  "<strong>Admin reachable</strong> — <code>/app</code> loads (unless <code>DISABLE_ADMIN=true</code>); seeded admin can log in.",
+  "<strong>Publishable key wired</strong> — storefront <code>NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY</code> matches backend; no 401s on product fetch.",
+  "<strong>Region redirect</strong> — visiting <code>/</code> redirects to <code>/in</code>. No redirect loop.",
+  "<strong>CORS</strong> — storefront calls succeed; no CORS errors for <code>STORE_CORS</code> origin.",
+  "<strong>Env secrets set</strong> — Razorpay keys, Shiprocket creds, CMS email sender, <code>JWT_SECRET</code>, <code>COOKIE_SECRET</code> populated for this environment."
+ ]}
+]},
+{n:"1",id:"p1",title:"Browsing & Discovery",sub:"home, listing, PDP, search, categories",critical:true,sections:[
+ {t:"Home", code:"/[cc]/", items:[
+  "Hero carousel renders and auto-advances; arrows/dots work.",
+  "Category grid, promo banners, featured carousel, occasion/gender sections load (CMS content present).",
+  "Testimonials, brand story, Instagram feed, trust signals render without layout breaks.",
+  "Mobile bottom nav appears on small viewport.",
+  "No console errors; all images load."
+ ]},
+ {t:"Product listing", code:"/[cc]/store", items:[
+  "Grid loads with thumbnails + prices in INR.",
+  "<strong>Sort</strong> — price low/high, newest, rating, popularity each reorder correctly.",
+  "<strong>Filter</strong> — category/tag filters narrow results; clearing restores full set.",
+  "Pagination / infinite scroll loads next page; no duplicates.",
+  "Quick add-to-cart from listing works."
+ ]},
+ {t:"Product detail", code:"/[cc]/products/[handle]", items:[
+  "Gallery: main image + thumbnails switch correctly.",
+  "<strong>Variant selection</strong> — size/color updates price + availability; unavailable combos disabled.",
+  "Stock indicator accurate (in stock / low / out of stock).",
+  "Quantity selector clamps to available inventory.",
+  "Add to cart → count increments, drawer/toast confirms.",
+  "Wishlist heart toggles (saves if logged in; prompts login if guest).",
+  "Related products + recently-viewed render.",
+  "Reviews section shows average + breakdown; verified-purchase reviews visible.",
+  "Mobile sticky add-to-cart bar appears on scroll.",
+  "<strong>SEO</strong> — JSON-LD Product + BreadcrumbList in source; OG tags set."
+ ]},
+ {t:"Categories", code:"/[cc]/categories/[...category]", items:[
+  "Parent/child hierarchy navigates; breadcrumb accurate.",
+  "Category-filtered listing + sort + pagination work."
+ ]},
+ {t:"Collections", code:"/[cc]/collections/[handle]", items:[
+  "Collection products + title/description render; sort + pagination work."
+ ]},
+ {t:"Search", code:"/[cc]/search + /api/search", items:[
+  "Autocomplete suggestions appear as you type.",
+  "Results match query; query term highlighted.",
+  "Trending searches show on empty state.",
+  "Mobile search modal opens/closes; zero-results state graceful."
+ ]}
+]},
+{n:"2",id:"p2",title:"Cart",sub:"add/update/remove, gift wrap, discounts",critical:true,sections:[
+ {t:"Cart page", code:"/[cc]/cart", items:[
+  "Items list with thumbnail, variant, unit price, line total.",
+  "Quantity +/- updates line + subtotal; removing last unit removes line.",
+  "Remove item works; empty-cart state shows with CTA.",
+  "Subtotal math correct across multiple items/variants.",
+  "Guest sees sign-in prompt; cart persists across reload (cookie)."
+ ]},
+ {t:"Gift wrap", code:"POST /store/carts/:id/gift-wrap", items:[
+  "Toggle ON adds <code>GIFT-WRAP-INR-50</code> line (+₹50); subtotal updates.",
+  "Toggle OFF removes the line and the ₹50.",
+  "<code>cart.metadata.gift_wrap</code> flag set (verify in admin/DB)."
+ ]},
+ {t:"Discounts & gift cards (cart-level)", items:[
+  "Valid discount code applies; total drops; invalid code shows error.",
+  "Gift card code applies as credit; removing restores the balance.",
+  "Stacked discount + gift card compute in correct order."
+ ]},
+ {t:"Cart recovery", code:"/[cc]/cart/recover/[id]", items:[
+  "Recovery deep link restores the cart; item preview + welcome-back copy show.",
+  "Expired/invalid recovery id handled gracefully (no crash)."
+ ]}
+]},
+{n:"3",id:"p3",title:"Checkout Happy Path",sub:"address → shipping → payment → billing → review",critical:true,sections:[
+ {t:"Step 1 — Shipping address", items:[
+  "Guest can enter full address; country/state/city/postal selectors populate.",
+  "Logged-in user can pick a saved address or add new.",
+  "Validation blocks incomplete/invalid postal codes.",
+  "“Billing same as shipping” carries data forward."
+ ]},
+ {t:"Step 2 — Shipping method", items:[
+  "Available methods + costs + ETA listed (Shiprocket or manual).",
+  "Selecting a method updates order total.",
+  "No-methods-available state handled (unsupported pincode)."
+ ]},
+ {t:"Step 3 — Payment method", items:[
+  "All configured providers appear: Razorpay, COD, (PayPal/manual if enabled).",
+  "Selecting a provider initiates a payment session without error.",
+  "Icons/descriptions render via <code>paymentInfoMap</code>."
+ ]},
+ {t:"Step 4 — Billing address", items:[
+  "Same-as-shipping prefills; distinct billing address accepted."
+ ]},
+ {t:"Step 5 — Review", items:[
+  "Full breakdown: subtotal, shipping, tax, discount, gift card, grand total — all correct.",
+  "Edit links jump to the right step and preserve data.",
+  "Apply discount/gift card from review reflects immediately.",
+  "<strong>Place order</strong> transitions to payment capture then confirmation."
+ ]}
+]},
+{n:"4",id:"p4",title:"Payments",sub:"Razorpay, COD + upfront, gift-card credit",critical:true,sections:[
+ {t:"Razorpay", code:"pp_razorpay_razorpay", items:[
+  "Place order → Razorpay popup opens with correct amount <strong>in paise</strong> (₹X → X×100).",
+  "Successful UPI/card/wallet → signature verified server-side → order placed.",
+  "Cancelled/failed payment → cart preserved, retry works, no phantom order.",
+  "Webhook <code>payment.captured</code> marks captured; <code>payment.failed</code> handled.",
+  "Refund from admin hits Razorpay refund API and reflects in order."
+ ]},
+ {t:"COD + upfront", code:"pp_cod_cod", items:[
+  "<code>GET /store/cod-policy</code> returns percent + min_order + currency.",
+  "Order <strong>below</strong> <code>COD_UPFRONT_MIN_ORDER</code> (₹500): plain COD, no upfront popup.",
+  "Order <strong>at/above</strong> min: <code>POST /store/cod-upfront/create-razorpay-order</code> returns razorpay_order_id + key.",
+  "Upfront amount = min(total × percent, threshold); UPI popup shows correct amount.",
+  "<code>POST /store/cod-upfront/verify</code> validates signature → order placed as COD with upfront paid.",
+  "Failed upfront payment blocks order placement."
+ ]},
+ {t:"Gift card as payment / credit", items:[
+  "Gift card covering <strong>partial</strong> total → remaining due via Razorpay/COD.",
+  "Gift card covering <strong>full</strong> total → zero due, order completes.",
+  "Balance decremented exactly by amount used (check <code>gift_card</code> row)."
+ ]},
+ {t:"Money integrity", items:[
+  "Amounts consistent across cart → review → Razorpay → order → invoice (no ÷100/×100 drift).",
+  "Tax and shipping included in captured amount."
+ ]}
+]},
+{n:"5",id:"p5",title:"Order Lifecycle",sub:"confirmation, emails, ops status, tracking, invoice",critical:true,sections:[
+ {t:"Confirmation", code:"/[cc]/order/[id]/confirmed", items:[
+  "Order number, items recap, payment method, ETA, returns info all show.",
+  "Guest sees onboarding CTA (claim/transfer order)."
+ ]},
+ {t:"Emails (sender from CMS cms_store_info / cms_email_sender)", items:[
+  "<code>order.placed</code> email received with correct items + total.",
+  "If CMS sender <strong>not</strong> configured → email skipped + warning logged (no crash). Then configure sender and re-verify send works.",
+  "Gift-wrap flag visible to ops where applicable."
+ ]},
+ {t:"Ops status (admin)", code:"/admin/orders/:id/ops-status", items:[
+  "Status advances pending → picked → packed → shipped → delivered.",
+  "Backward move rejected unless <code>allow_skip=true</code>.",
+  "Audit history records actor email + timestamp on each change."
+ ]},
+ {t:"Shipment + tracking", items:[
+  "<code>order.shipped</code> event → shipment email with tracking number.",
+  "Tracking link/number present on order details."
+ ]},
+ {t:"Guest lookup & transfer", items:[
+  "<code>/track-order</code> finds order by email/phone (<code>GET /store/orders/lookup</code>).",
+  "Order transfer accept (<code>/transfer/[token]/accept</code>) attaches order to account.",
+  "Transfer decline path works; invalid/expired token handled."
+ ]},
+ {t:"Invoice", items:[
+  "<code>GET /store/orders/:id/invoice</code> downloads a valid PDF.",
+  "<strong>GST invoice</strong> (<code>/admin/orders/:id/invoice</code>): seller info from CMS, intra- vs inter-state tax correct, HSN codes + rates present."
+ ]}
+]},
+{n:"6",id:"p6",title:"Account",sub:"auth, profile, addresses, wishlist, orders",sections:[
+ {t:"Auth", code:"/[cc]/account", items:[
+  "Register creates customer + logs in.",
+  "Login with valid creds works; wrong password shows error.",
+  "Password show/hide toggle works; forgot-password link present.",
+  "Logout clears session; protected pages redirect to login."
+ ]},
+ {t:"Overview", items:[
+  "Welcome name, order stats, recent orders preview accurate.",
+  "Pending-review popup appears when reviews are due."
+ ]},
+ {t:"Profile", code:"/account/profile", items:[
+  "Edit first/last name, email, phone — each saves and persists on reload.",
+  "Change password works; old password invalidated."
+ ]},
+ {t:"Addresses", code:"/account/addresses", items:[
+  "Add address; appears in list.",
+  "Edit address (modal) saves changes.",
+  "Delete address removes it.",
+  "Set default shipping/billing reflected at checkout."
+ ]},
+ {t:"Orders", code:"/account/orders + details", items:[
+  "Order list shows status, date, total; statuses color-coded.",
+  "Order details: addresses, items, breakdown, timeline, tracking, invoice download.",
+  "Reorder button repopulates cart with same items."
+ ]},
+ {t:"Wishlist", code:"/account/wishlist", items:[
+  "Items saved from PDP/listing appear.",
+  "Add-to-cart from wishlist works; remove works; empty state shows.",
+  "Wishlist persists across sessions (<code>/store/customers/me/wishlist</code>)."
+ ]}
+]},
+{n:"7",id:"p7",title:"Returns & Exchanges",sub:"request, 15-day window, approve, zero-charge replacement",sections:[
+ {t:"Eligibility & window", code:"RETURN_WINDOW_DAYS = 15", items:[
+  "Delivered order <strong>within</strong> window → return allowed.",
+  "Order <strong>past</strong> window → blocked with clear message.",
+  "Undelivered order → not eligible.",
+  "Duplicate open request for same order → blocked."
+ ]},
+ {t:"Refund return", items:[
+  "Select items + reason (wrong_size / damaged / quality / changed_mind / etc.) → submits.",
+  "Appears in <code>/account/returns</code> as pending; <code>return.submitted</code> email sent.",
+  "Admin approve → <code>return.approved</code> email.",
+  "Admin reject with reason → <code>return.rejected</code> email.",
+  "Mark-received → refund processed → <code>return.completed</code> email; refund amount correct."
+ ]},
+ {t:"Exchange (same-product variant swap, prices must match exactly)", items:[
+  "Choosing exchange forces a <strong>different</strong> variant of the <strong>same</strong> product.",
+  "Variant with <strong>different price</strong> → rejected (must match exactly).",
+  "Approve → <code>create-replacement</code> makes a <strong>zero-charge</strong> replacement order.",
+  "Original order metadata links <code>replacement_for_order_id</code> + <code>return_request_id</code>.",
+  "<code>exchange.submitted</code> then <code>replacement.shipped</code> emails fire at the right steps."
+ ]},
+ {t:"Policy page", items:[
+  "<code>/returns-and-exchange</code> renders policy, window, steps, FAQ accurately."
+ ]}
+]},
+{n:"8",id:"p8",title:"Reviews",sub:"verified purchase → moderation → public",sections:[
+ {items:[
+  "Review allowed only for products in a delivered order (order_id verification).",
+  "One review per (customer, product) — second attempt blocked/edits existing.",
+  "New review status = pending; <strong>not</strong> shown publicly yet.",
+  "Admin approve → appears on PDP; reject → stays hidden.",
+  "<code>GET /store/reviews?product_id=</code> returns count, average, per-star breakdown matching display.",
+  "Review-request email (Phase 10) deep-links to the review form.",
+  "Account <code>/account/reviews</code>: pending + submitted lists correct; star/photo upload works."
+ ]}
+]},
+{n:"9",id:"p9",title:"Jewelry-Specific Features",sub:"QR authenticity, gift cards, contact",sections:[
+ {t:"QR authenticity", code:"/[cc]/verify/[code] · GET /store/qr-verify/:code", items:[
+  "Active QR → “Verified Genuine” page with correct product/variant.",
+  "Voided/unknown QR → clear “not verified” error, no crash.",
+  "Admin can generate QR codes (<code>POST /admin/qr-codes</code>) and print label sheet (<code>/admin/qr-codes/labels</code>)."
+ ]},
+ {t:"Gift cards (purchase + redeem)", items:[
+  "Gift-card PDP: recipient name/email, sender, denomination chips, custom amount, message, send date.",
+  "Purchase completes → <code>gift_card.purchased</code> event → recipient email with code.",
+  "<code>GET /store/gift-cards/:code</code> returns balance/status.",
+  "Redeem on cart (<code>POST /store/gift-cards/redeem</code>) → credit line added, balance decremented.",
+  "Unapply (<code>DELETE</code>) → credit removed, balance restored.",
+  "Expired gift card rejected."
+ ]},
+ {t:"Contact form", code:"/[cc]/contact → POST /store/contact", items:[
+  "Submission stored as <code>contact_message</code> (status <code>new</code>); WhatsApp/email links work."
+ ]}
+]},
+{n:"10",id:"p10",title:"Background Jobs",sub:"abandoned cart, review request, low stock, keep-alive",sections:[
+ {t:"Abandoned cart recovery (hourly)", items:[
+  "Cart idle 4–72h with items + email + no completed order → recovery email sent.",
+  "Email contains working <code>/cart/recover/[id]</code> URL.",
+  "Not re-sent once <code>recovery_sent_at</code> is set."
+ ]},
+ {t:"Review request (daily 10:00)", items:[
+  "Order delivered 1–7 days ago → review-request email sent once (<code>review_email_sent</code> guard).",
+  "Too-recent (&lt;1d) or too-old (&gt;7d) orders skipped."
+ ]},
+ {t:"Low-stock alert", items:[
+  "Stock below threshold → digest email to admins (<code>/admin/low-stock/check</code>)."
+ ]},
+ {t:"Keep-alive", items:[
+  "Health-check job runs without error (no data impact)."
+ ]}
+]},
+{n:"11",id:"p11",title:"Fulfillment (Shiprocket)",sub:"create, track, webhook, RTO",sections:[
+ {items:[
+  "Checkout shows Shiprocket options (standard/express) with live rates for valid pincode.",
+  "Order → <code>createFulfillment</code> creates Shiprocket shipment; token cached (24h).",
+  "Webhook <code>POST /api/hooks/shiprocket</code> updates metadata on: picked, packed, shipped, delivered, returned (RTO), failed.",
+  "<code>delivered_at</code> + <code>tracking_number</code> set on delivery (drives ops widget + review job).",
+  "<strong>RTO</strong>: returned event → <code>/admin/orders/:id/process-rto</code> refunds + restocks (idempotent — running twice doesn’t double-refund); <code>rto.refund_processed</code> admin email.",
+  "Cancel fulfillment path works."
+ ]}
+]},
+{n:"12",id:"p12",title:"Cross-Cutting",sub:"regions, coming-soon, SEO, responsive, security",sections:[
+ {t:"Regions & localization", items:[
+  "Switching country changes currency, pricing, available payment/shipping.",
+  "Unsupported region handled; default region fallback works.",
+  "<code>x-medusa-locale</code> header sent on requests."
+ ]},
+ {t:"Coming-soon mode", items:[
+  "<code>COMING_SOON_MODE=true</code> → all storefront routes redirect to <code>/coming-soon</code>.",
+  "<code>?qa=&lt;TOKEN&gt;</code> bypasses for QA; wrong token does not.",
+  "Admin routes still reachable.",
+  "Newsletter capture on coming-soon (<code>/api/notify-launch</code>) stores email."
+ ]},
+ {t:"SEO & metadata", items:[
+  "Titles/descriptions/canonical per page; OG + Twitter cards.",
+  "JSON-LD on PDP (Product) and contact (Organization).",
+  "<code>robots.txt</code> + sitemap correct (prod indexable, staging not)."
+ ]},
+ {t:"Responsive & accessibility", items:[
+  "Mobile, tablet, desktop layouts intact on home, PDP, cart, checkout.",
+  "Keyboard navigation through checkout; focus states visible.",
+  "Images have alt text; forms have labels."
+ ]},
+ {t:"Error & resilience", items:[
+  "404 page for bad routes; bad product handle handled.",
+  "Backend-down → storefront degrades gracefully (no white screen).",
+  "Out-of-stock at checkout caught before payment.",
+  "Network failure mid-payment doesn’t create an inconsistent order."
+ ]},
+ {t:"Security (pre-launch)", items:[
+  "Lock down / remove dev <code>GET /store/email-test</code> route.",
+  "Rotate any leaked PATs/secrets.",
+  "Razorpay + Shiprocket webhook signatures verified (reject unsigned/forged).",
+  "Customer-scoped routes (<code>/store/customers/me/*</code>) reject other users’ data.",
+  "Admin routes require admin auth."
+ ]}
+]}
+];
+
+/* ----------------------------- STATE ----------------------------- */
+const LS_KEY = "delfee-qa-checklist-v1";
+let state = load();
+function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {checks:{},notes:{},meta:{},collapsed:{}}; }catch(e){ return {checks:{},notes:{},meta:{},collapsed:{}}; } }
+let saveTimer=null;
+function save(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  const s=document.getElementById('saveState'); s.textContent="saving…";
+  clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ s.textContent="saved ✓"; },350);
+}
+
+/* ----------------------------- RENDER ----------------------------- */
+const CHECK_SVG='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.2l2.6 2.6L10 3.2" stroke="#0f1115" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function itemId(pi,si,ii){ return `${DATA[pi].id}-${si}-${ii}`; }
+
+function render(){
+  const root=document.getElementById('phases'); root.innerHTML="";
+  DATA.forEach((ph,pi)=>{
+    const phase=document.createElement('section');
+    phase.className='phase'+(ph.critical?' critical':'')+(state.collapsed[ph.id]?' collapsed':'');
+    phase.id=ph.id;
+
+    const head=document.createElement('div'); head.className='head';
+    head.innerHTML=`<span class="num">${ph.n}</span><h3>${ph.title}</h3>`+
+      (ph.critical?`<span class="badge-crit">launch gate</span>`:"")+
+      `<span class="ph-sub">${ph.sub}</span>`+
+      `<span class="ph-prog"><span class="bar" data-bar="${ph.id}"><span></span></span><span class="mini" data-mini="${ph.id}">0/0</span></span>`+
+      `<span class="chev">▾</span>`;
+    head.addEventListener('click',(e)=>{ if(e.target.closest('a'))return; toggleCollapse(ph.id,phase); });
+    phase.appendChild(head);
+
+    const body=document.createElement('div'); body.className='body';
+    ph.sections.forEach((sec,si)=>{
+      const sd=document.createElement('div'); sd.className='section';
+      if(sec.t){ sd.innerHTML=`<div class="s-title">${sec.t}${sec.code?` <code>${sec.code}</code>`:""}</div>`; }
+      sec.items.forEach((html,ii)=>{
+        const id=itemId(pi,si,ii);
+        const checked=!!state.checks[id];
+        const note=state.notes[id]||"";
+        const row=document.createElement('div'); row.className='item'+(checked?' checked':''); row.dataset.id=id;
+        row.innerHTML=
+          `<label class="cbx"><input type="checkbox" ${checked?'checked':''}><span class="box">${CHECK_SVG}</span></label>`+
+          `<span class="lbl">${html}</span>`+
+          `<button class="note-toggle ${note?'has':''}" title="Add note">✎</button>`+
+          `<div class="note-row ${note?'open':''}"><textarea placeholder="Evidence, defect, or notes…">${note.replace(/</g,'&lt;')}</textarea></div>`;
+        const cb=row.querySelector('input');
+        cb.addEventListener('change',()=>{ state.checks[id]=cb.checked; row.classList.toggle('checked',cb.checked); save(); refreshProgress(); });
+        row.querySelector('.lbl').addEventListener('click',()=>{ cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); });
+        const nt=row.querySelector('.note-toggle'), nr=row.querySelector('.note-row'), ta=row.querySelector('textarea');
+        nt.addEventListener('click',()=>{ nr.classList.toggle('open'); if(nr.classList.contains('open'))ta.focus(); });
+        ta.addEventListener('input',()=>{ state.notes[id]=ta.value; nt.classList.toggle('has',!!ta.value.trim()); save(); });
+        sd.appendChild(row);
+      });
+      body.appendChild(sd);
+    });
+    phase.appendChild(body);
+    root.appendChild(phase);
+  });
+  buildNav(); restoreMeta(); refreshProgress();
+}
+
+function toggleCollapse(id,phaseEl){
+  const c=!phaseEl.classList.contains('collapsed');
+  phaseEl.classList.toggle('collapsed',c); state.collapsed[id]=c; save();
+}
+function expandAll(open){
+  DATA.forEach(ph=>{ state.collapsed[ph.id]=!open; });
+  document.querySelectorAll('.phase').forEach(p=>p.classList.toggle('collapsed',!open));
+  save();
+}
+
+function counts(ph,pi){
+  let total=0,done=0;
+  ph.sections.forEach((sec,si)=>sec.items.forEach((_,ii)=>{ total++; if(state.checks[itemId(pi,si,ii)])done++; }));
+  return {total,done};
+}
+
+function refreshProgress(){
+  let gTotal=0,gDone=0;
+  DATA.forEach((ph,pi)=>{
+    const {total,done}=counts(ph,pi); gTotal+=total; gDone+=done;
+    const bar=document.querySelector(`[data-bar="${ph.id}"]`);
+    const mini=document.querySelector(`[data-mini="${ph.id}"]`);
+    if(bar){ bar.querySelector('span').style.width=(total?done/total*100:0)+'%'; bar.classList.toggle('full',done===total&&total>0); }
+    if(mini) mini.textContent=`${done}/${total}`;
+    const nav=document.querySelector(`[data-nav="${ph.id}"]`);
+    if(nav){ nav.classList.toggle('done',done===total&&total>0); nav.classList.toggle('partial',done>0&&done<total);
+      nav.querySelector('.mini').textContent=`${done}/${total}`; }
+  });
+  const pct=gTotal?Math.round(gDone/gTotal*100):0;
+  document.getElementById('overallPct').textContent=pct+'%';
+  const ob=document.getElementById('overallBar'); ob.querySelector('span').style.width=pct+'%'; ob.classList.toggle('full',pct===100);
+  buildSignoff();
+}
+
+function buildNav(){
+  const nav=document.getElementById('phaseNav'); nav.innerHTML="";
+  DATA.forEach(ph=>{
+    const a=document.createElement('a'); a.href='#'+ph.id; a.dataset.nav=ph.id;
+    a.innerHTML=`<span class="dot"></span>P${ph.n} <span class="mini">0/0</span>`;
+    nav.appendChild(a);
+  });
+}
+
+function buildSignoff(){
+  const tb=document.getElementById('signoffBody'); tb.innerHTML="";
+  DATA.forEach((ph,pi)=>{
+    const {total,done}=counts(ph,pi);
+    let cls='p-todo',label='Not started';
+    if(done===total&&total>0){cls='p-done';label='Pass';}
+    else if(done>0){cls='p-part';label='In progress';}
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><a href="#${ph.id}">Phase ${ph.n} · ${ph.title}</a>${ph.critical?' <span class="badge-crit">gate</span>':''}</td>`+
+      `<td><span class="pill ${cls}">${label}</span></td>`+
+      `<td style="color:var(--muted);font-variant-numeric:tabular-nums">${done}/${total}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* meta fields */
+function restoreMeta(){
+  document.querySelectorAll('[data-meta]').forEach(inp=>{
+    const k=inp.dataset.meta;
+    if(state.meta[k]!=null) inp.value=state.meta[k];
+    inp.addEventListener('input',()=>{ state.meta[k]=inp.value; save(); });
+  });
+}
+
+/* export / import / reset */
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({...state,_exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  const who=(state.meta.tester||'qa').replace(/\s+/g,'-').toLowerCase();
+  a.download=`delfee-qa-${who}-${(state.meta.date||'run')}.json`; a.click();
+}
+function importJSON(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result);
+    state={checks:d.checks||{},notes:d.notes||{},meta:d.meta||{},collapsed:d.collapsed||{}}; save(); render();
+  }catch(e){ alert('Invalid file'); } };
+  r.readAsText(f); ev.target.value="";
+}
+function resetAll(){
+  if(!confirm('Reset all checks, notes, and metadata for this run? Export first if you want a record.'))return;
+  state={checks:{},notes:{},meta:{},collapsed:{}}; save(); render();
+}
+
+render();
+</script>
+</body>
+</html>

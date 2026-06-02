@@ -41,7 +41,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
     // Parse multipart data manually
     const boundaryBuffer = Buffer.from(`--${boundary}`)
-    const parts = []
+    const parts: Buffer[] = []
     let start = body.indexOf(boundaryBuffer) + boundaryBuffer.length + 2 // skip \r\n
 
     while (true) {

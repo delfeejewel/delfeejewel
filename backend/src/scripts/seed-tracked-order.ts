@@ -108,7 +108,7 @@ export default async function seedTrackedOrder({ container }: ExecArgs) {
           label_url: "",
         },
       ],
-    },
+    } as any,
   })
   logger.info("Order marked as shipped.")
 
