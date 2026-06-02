@@ -144,7 +144,8 @@ export async function middleware(request: NextRequest) {
   // backend is offline.
   if (
     request.nextUrl.pathname === "/coming-soon" ||
-    request.nextUrl.pathname.startsWith("/api/notify-launch")
+    request.nextUrl.pathname.startsWith("/api/notify-launch") ||
+    request.nextUrl.pathname.startsWith("/api/qa-access")
   ) {
     return NextResponse.next()
   }

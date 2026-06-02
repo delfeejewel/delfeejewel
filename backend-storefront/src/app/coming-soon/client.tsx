@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import Image from "next/image"
 
 const PROMISES = ["925 Silver", "BIS Hallmarked", "Anti-Tarnish", "Made in India"]
@@ -156,12 +156,43 @@ function FloatingIcons() {
 export default function ComingSoonClient({ brandName }: { brandName: string }) {
   const [slideIdx, setSlideIdx] = useState(0)
 
+  // ─── Team / QA access (preview the real site while coming-soon is on) ───
+  const [accessOpen, setAccessOpen] = useState(false)
+  const [token, setToken] = useState("")
+  const [accessStatus, setAccessStatus] = useState<"idle" | "loading" | "error">("idle")
+  const [accessError, setAccessError] = useState("")
+
   useEffect(() => {
     const id = setInterval(() => {
       setSlideIdx((i) => (i + 1) % SLIDES.length)
     }, 5500)
     return () => clearInterval(id)
   }, [])
+
+  async function submitAccess(e: FormEvent) {
+    e.preventDefault()
+    if (!token.trim() || accessStatus === "loading") return
+    setAccessStatus("loading")
+    setAccessError("")
+    try {
+      const res = await fetch("/api/qa-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token.trim() }),
+      })
+      if (res.ok) {
+        // Cookie is set — reload into the live site.
+        window.location.assign("/")
+        return
+      }
+      const data = await res.json().catch(() => ({}))
+      setAccessStatus("error")
+      setAccessError(data?.message || "That access code isn't right.")
+    } catch {
+      setAccessStatus("error")
+      setAccessError("Something went wrong. Please try again.")
+    }
+  }
 
   return (
     <div className="relative min-h-screen font-outfit bg-[var(--color-bg-primary)] flex flex-col overflow-hidden">
@@ -357,6 +388,55 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
             © {new Date().getFullYear()} {brandName} · Handcrafted in India
           </p>
           <span className="h-px w-6 bg-[var(--color-gold)]/35" />
+        </div>
+
+        {/* Team / QA access — discreet preview entry while coming-soon is on */}
+        <div className="mt-4 flex flex-col items-center">
+          {!accessOpen ? (
+            <button
+              type="button"
+              onClick={() => setAccessOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)]/70 hover:text-[var(--color-gold)] transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              Team access
+            </button>
+          ) : (
+            <form
+              onSubmit={submitAccess}
+              className="flex flex-col items-center gap-2 animate-[caption-fade_400ms_ease-out_both]"
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="password"
+                  value={token}
+                  onChange={(e) => {
+                    setToken(e.target.value)
+                    if (accessStatus === "error") setAccessStatus("idle")
+                  }}
+                  placeholder="Access code"
+                  autoFocus
+                  aria-label="Team access code"
+                  className="h-9 w-44 xsmall:w-52 rounded-full border border-[var(--color-gold)]/30 bg-white/80 px-4 text-[12px] text-[var(--color-plum)] placeholder:text-[var(--color-text-muted)]/60 outline-none focus:border-[var(--color-gold)]/70 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={accessStatus === "loading"}
+                  className="h-9 px-4 rounded-full bg-[var(--color-plum)] text-white text-[11px] font-semibold uppercase tracking-[0.16em] hover:opacity-90 disabled:opacity-60 transition"
+                >
+                  {accessStatus === "loading" ? "…" : "Enter"}
+                </button>
+              </div>
+              {accessStatus === "error" && (
+                <p className="text-[11px] normal-case tracking-normal text-[#b3261e]">
+                  {accessError}
+                </p>
+              )}
+            </form>
+          )}
         </div>
       </footer>
     </div>
