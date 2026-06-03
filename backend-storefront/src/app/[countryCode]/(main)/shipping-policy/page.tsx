@@ -134,7 +134,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         If you have a question about your shipment, email{" "}
-        <a href="mailto:support@delfee.com">support@delfee.com</a> with your
+        <a href="mailto:enquire@delfee.in">enquire@delfee.in</a> with your
         order number and we'll look into it right away.
       </p>
     ),

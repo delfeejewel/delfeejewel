@@ -28,7 +28,7 @@ export default async function Nav() {
 
   const topLevelCategories = categories?.filter((c) => !c.parent_category) || []
 
-  const email = storeInfo?.email || "support@delfee.com"
+  const email = storeInfo?.email || "enquire@delfee.in"
   const phone = storeInfo?.phone || "+91 98765 43210"
 
   const showContact = headerSettings?.show_topbar_contact ?? true

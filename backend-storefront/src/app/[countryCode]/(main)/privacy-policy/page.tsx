@@ -140,7 +140,7 @@ const SECTIONS: LegalSection[] = [
           You have the right to access, correct or delete your personal data,
           and to opt out of marketing communications at any time. To exercise
           these rights, contact us at{" "}
-          <a href="mailto:support@delfee.com">support@delfee.com</a>.
+          <a href="mailto:enquire@delfee.in">enquire@delfee.in</a>.
         </p>
       </>
     ),
@@ -174,7 +174,7 @@ const SECTIONS: LegalSection[] = [
       <p>
         If you have questions about this Privacy Policy or how we handle your
         data, email us at{" "}
-        <a href="mailto:support@delfee.com">support@delfee.com</a>.
+        <a href="mailto:enquire@delfee.in">enquire@delfee.in</a>.
       </p>
     ),
   },

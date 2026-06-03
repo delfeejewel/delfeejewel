@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useOptimistic, useState, useTransition } from "react"
 import { Minus, Plus, Trash2 } from "lucide-react"
 
 import { updateLineItem, deleteLineItem } from "@lib/data/cart"
@@ -21,32 +21,43 @@ type ItemProps = {
 const MAX_QTY = 10
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
-  const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  // Optimistic state: the quantity number and the "removed" flag flip
+  // instantly in the browser, then reconcile to the server's truth once the
+  // cart revalidation lands. Line totals still come from the server.
+  const [optimisticQty, setOptimisticQty] = useOptimistic(item.quantity)
+  const [optimisticRemoved, setOptimisticRemoved] = useOptimistic(false)
 
-  const setQuantity = async (next: number) => {
-    if (next < 1 || next > MAX_QTY || next === item.quantity) return
+  const setQuantity = (next: number) => {
+    if (next < 1 || next > MAX_QTY || next === optimisticQty) return
     setError(null)
-    setUpdating(true)
-    try {
-      await updateLineItem({ lineId: item.id, quantity: next })
-    } catch (e: any) {
-      setError(e?.message || "Could not update quantity")
-    } finally {
-      setUpdating(false)
-    }
+    startTransition(async () => {
+      setOptimisticQty(next)
+      try {
+        await updateLineItem({ lineId: item.id, quantity: next })
+      } catch (e: any) {
+        setError(e?.message || "Could not update quantity")
+      }
+    })
   }
 
-  const remove = async () => {
+  const remove = () => {
     setError(null)
-    setUpdating(true)
-    try {
-      await deleteLineItem(item.id)
-    } catch (e: any) {
-      setError(e?.message || "Could not remove item")
-    } finally {
-      setUpdating(false)
-    }
+    startTransition(async () => {
+      setOptimisticRemoved(true)
+      try {
+        await deleteLineItem(item.id)
+      } catch (e: any) {
+        setError(e?.message || "Could not remove item")
+      }
+    })
+  }
+
+  // Vanish instantly on remove; if the server call fails the optimistic flag
+  // rolls back and the row reappears with the error.
+  if (optimisticRemoved) {
+    return null
   }
 
   // Compact preview row (used by mini-cart / cart dropdown)
@@ -75,7 +86,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           </LocalizedClientLink>
           <LineItemOptions variant={item.variant} data-testid="product-variant" />
           <div className="text-[11.5px] text-[var(--color-text-muted)] mt-0.5 flex items-center gap-1 flex-wrap">
-            <span>{item.quantity} ×</span>
+            <span>{optimisticQty} ×</span>
             <span className="text-[var(--color-text-primary)]">
               <LineItemUnitPrice
                 item={item}
@@ -155,8 +166,8 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           <div className="inline-flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setQuantity(item.quantity - 1)}
-              disabled={updating || item.quantity <= 1}
+              onClick={() => setQuantity(optimisticQty - 1)}
+              disabled={isPending || optimisticQty <= 1}
               className="w-8 h-8 rounded-md bg-white border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-plum)] disabled:opacity-40 disabled:hover:border-[var(--color-border)] transition-colors"
               aria-label="Decrease quantity"
               data-testid="product-decrease-button"
@@ -164,19 +175,19 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
               <Minus size={12} />
             </button>
             <span className="min-w-[28px] text-center text-[13.5px] font-semibold tabular-nums">
-              {item.quantity}
+              {optimisticQty}
             </span>
             <button
               type="button"
-              onClick={() => setQuantity(item.quantity + 1)}
-              disabled={updating || item.quantity >= MAX_QTY}
+              onClick={() => setQuantity(optimisticQty + 1)}
+              disabled={isPending || optimisticQty >= MAX_QTY}
               className="w-8 h-8 rounded-md bg-white border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-plum)] disabled:opacity-40 disabled:hover:border-[var(--color-border)] transition-colors"
               aria-label="Increase quantity"
               data-testid="product-increase-button"
             >
               <Plus size={12} />
             </button>
-            {updating && (
+            {isPending && (
               <span className="w-3.5 h-3.5 border-2 border-[var(--color-plum)] border-t-transparent rounded-full animate-spin ml-1" />
             )}
           </div>
@@ -184,7 +195,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           <button
             type="button"
             onClick={remove}
-            disabled={updating}
+            disabled={isPending}
             className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[var(--color-text-muted)] hover:text-red-600 transition-colors py-1 px-2 -mx-2 rounded-md disabled:opacity-50"
             aria-label="Remove item"
             data-testid="product-delete-button"

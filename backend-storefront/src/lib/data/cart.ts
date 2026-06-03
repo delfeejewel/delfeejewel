@@ -23,8 +23,16 @@ import { getLocale } from "@lib/data/locale-actions"
  */
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
+  // NOTE: we intentionally do NOT request `*items.product` — the cart/checkout
+  // UI never reads `item.product.*` directly (it uses the denormalized
+  // `item.product_handle` / `item.product_title` columns and `item.variant`).
+  // `*items.product` hydrates the FULL product (every variant, image, option,
+  // tag…) per line item, which is the single most expensive part of this
+  // fetch. We pull only the two nested variant.product fields the UI actually
+  // uses (handle for links/gift-wrap detection, images for the thumbnail
+  // fallback).
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, *credit_lines, +credit_line_subtotal, +shipping_methods.name"
+    "*items, *region, *items.variant, items.variant.product.handle, items.variant.product.images, *items.thumbnail, *items.metadata, +items.total, *promotions, *credit_lines, +credit_line_subtotal, +shipping_methods.name"
 
   if (!id) {
     return null

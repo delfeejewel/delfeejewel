@@ -200,7 +200,7 @@ export default async function Footer() {
       ? cmsColumns
       : Object.entries(footerLinks).map(([title, links]) => ({ title, links }))
 
-  const email = storeInfo?.email || "support@delfee.com"
+  const email = storeInfo?.email || "enquire@delfee.in"
   const phone = storeInfo?.phone || ""
   const whatsapp = storeInfo?.whatsapp || ""
   const telHref = phone ? `tel:${phone.replace(/\s/g, "")}` : undefined

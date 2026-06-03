@@ -19,7 +19,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 
 type Props = { params: Promise<{ countryCode: string }> }
 
-const SUPPORT_EMAIL = "support@delfee.com"
+const SUPPORT_EMAIL = "enquire@delfee.in"
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { countryCode } = await params

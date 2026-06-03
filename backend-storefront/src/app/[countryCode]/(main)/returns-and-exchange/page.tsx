@@ -81,7 +81,7 @@ const SECTIONS: LegalSection[] = [
         <ul>
           <li>
             Email us at{" "}
-            <a href="mailto:support@delfee.com">support@delfee.com</a> with your
+            <a href="mailto:enquire@delfee.in">enquire@delfee.in</a> with your
             order number and reason, or contact us via our{" "}
             <a href="/contact">Contact page</a>.
           </li>
@@ -145,7 +145,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         For anything related to returns or exchanges, email{" "}
-        <a href="mailto:support@delfee.com">support@delfee.com</a> and our team
+        <a href="mailto:enquire@delfee.in">enquire@delfee.in</a> and our team
         will be glad to assist.
       </p>
     ),

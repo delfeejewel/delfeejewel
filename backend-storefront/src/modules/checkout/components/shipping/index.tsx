@@ -83,22 +83,28 @@ const Shipping: React.FC<ShippingProps> = ({
   useEffect(() => {
     setIsLoadingPrices(true)
 
-    if (_shippingMethods?.length) {
-      const promises = _shippingMethods
-        .filter((sm) => sm.price_type === "calculated")
-        .map((sm) => calculatePriceForShippingOption(sm.id, cart.id))
+    const calculatedMethods = _shippingMethods?.filter(
+      (sm) => sm.price_type === "calculated"
+    )
 
-      if (promises.length) {
-        Promise.allSettled(promises).then((res) => {
-          const pricesMap: Record<string, number> = {}
-          res
-            .filter((r) => r.status === "fulfilled")
-            .forEach((p) => (pricesMap[p.value?.id || ""] = p.value?.amount!))
+    if (calculatedMethods?.length) {
+      const promises = calculatedMethods.map((sm) =>
+        calculatePriceForShippingOption(sm.id, cart.id)
+      )
 
-          setCalculatedPricesMap(pricesMap)
-          setIsLoadingPrices(false)
-        })
-      }
+      Promise.allSettled(promises).then((res) => {
+        const pricesMap: Record<string, number> = {}
+        res
+          .filter((r) => r.status === "fulfilled")
+          .forEach((p) => (pricesMap[p.value?.id || ""] = p.value?.amount!))
+
+        setCalculatedPricesMap(pricesMap)
+        setIsLoadingPrices(false)
+      })
+    } else {
+      // No calculated options (e.g. all flat-rate) — nothing to fetch, so
+      // don't leave the price column stuck in a perpetual loading state.
+      setIsLoadingPrices(false)
     }
 
     if (_pickupMethods?.find((m) => m.id === shippingMethodId)) {

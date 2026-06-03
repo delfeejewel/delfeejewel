@@ -89,33 +89,51 @@ class RazorpayProviderService extends AbstractPaymentProvider<RazorpayOptions> {
       const razorpayOrderId = data?.razorpay_order_id
       const razorpaySignature = data?.razorpay_signature
 
-      if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+      // Happy path: the storefront passed back the Razorpay callback →
+      // verify the signature locally.
+      if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+        const crypto = require("crypto")
+        const generatedSignature = crypto
+          .createHmac("sha256", this.options_.key_secret)
+          .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+          .digest("hex")
+
+        if (generatedSignature !== razorpaySignature) {
+          return {
+            data: { ...data, error: "Invalid payment signature" },
+            status: PaymentSessionStatus.ERROR,
+          }
+        }
+
         return {
-          data: { ...data },
-          status: PaymentSessionStatus.PENDING,
+          data: { ...data, razorpay_payment_id: razorpayPaymentId },
+          status: PaymentSessionStatus.AUTHORIZED,
         }
       }
 
-      // Verify signature
-      const crypto = require("crypto")
-      const generatedSignature = crypto
-        .createHmac("sha256", this.options_.key_secret)
-        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-        .digest("hex")
-
-      if (generatedSignature !== razorpaySignature) {
-        return {
-          data: { ...data, error: "Invalid payment signature" },
-          status: PaymentSessionStatus.ERROR,
+      // Fallback: the storefront completed the cart without passing the
+      // callback. We still hold razorpay_order_id from initiatePayment, so
+      // ask Razorpay directly (authenticated, server-to-server) whether this
+      // order has a captured/authorized payment.
+      if (razorpayOrderId) {
+        const { items } = await this.razorpay_.orders.fetchPayments(
+          razorpayOrderId
+        )
+        const paid = (items || []).find(
+          (p: any) => p.status === "captured" || p.status === "authorized"
+        )
+        if (paid) {
+          return {
+            data: { ...data, razorpay_payment_id: paid.id },
+            status: PaymentSessionStatus.AUTHORIZED,
+          }
         }
       }
 
+      // No payment id and the order isn't paid yet → leave it pending.
       return {
-        data: {
-          ...data,
-          razorpay_payment_id: razorpayPaymentId,
-        },
-        status: PaymentSessionStatus.AUTHORIZED,
+        data: { ...data },
+        status: PaymentSessionStatus.PENDING,
       }
     } catch (error: any) {
       this.logger_.error(`Razorpay authorizePayment error: ${error.message}`)

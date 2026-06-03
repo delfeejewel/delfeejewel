@@ -172,7 +172,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         For any questions about these Terms &amp; Conditions, contact us at{" "}
-        <a href="mailto:support@delfee.com">support@delfee.com</a>.
+        <a href="mailto:enquire@delfee.in">enquire@delfee.in</a>.
       </p>
     ),
   },

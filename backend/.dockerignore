@@ -1,0 +1,16 @@
+# Don't copy these into the build context / image
+node_modules
+.medusa
+dist
+.git
+.gitignore
+
+# Secrets stay OUT of the image — injected by the host at runtime
+.env
+.env.*
+
+# Misc
+*.log
+npm-debug.log*
+.DS_Store
+README.md

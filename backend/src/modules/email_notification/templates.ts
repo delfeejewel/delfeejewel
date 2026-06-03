@@ -336,7 +336,7 @@ export function returnSubmittedTemplate(data: ReturnEmailData) {
 }
 
 export function returnApprovedTemplate(data: ReturnEmailData) {
-  const supportEmail = process.env.SUPPORT_EMAIL || "support@delfee.com"
+  const supportEmail = process.env.SUPPORT_EMAIL || "enquire@delfee.in"
   return {
     subject: `Return approved — order #${data.order_number}`,
     html: baseLayout(`
@@ -449,7 +449,7 @@ export function exchangeSubmittedTemplate(data: ExchangeEmailData) {
 }
 
 export function exchangeApprovedTemplate(data: ExchangeEmailData) {
-  const supportEmail = process.env.SUPPORT_EMAIL || "support@delfee.com"
+  const supportEmail = process.env.SUPPORT_EMAIL || "enquire@delfee.in"
   return {
     subject: `Exchange approved — order #${data.order_number}`,
     html: baseLayout(`

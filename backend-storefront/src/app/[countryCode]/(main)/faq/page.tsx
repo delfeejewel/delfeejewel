@@ -78,7 +78,7 @@ const CATEGORIES: { name: string; items: FaqItem[] }[] = [
       {
         question: "How do I start a return?",
         answer:
-          "Email support@delfee.com with your order number and reason, or use our Contact page. Our team will confirm eligibility and arrange a pickup.",
+          "Email enquire@delfee.in with your order number and reason, or use our Contact page. Our team will confirm eligibility and arrange a pickup.",
       },
       {
         question: "When will I receive my refund?",

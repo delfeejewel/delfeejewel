@@ -2,6 +2,31 @@ import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
+// Redis-backed infrastructure modules. Without REDIS_URL (e.g. local dev) we
+// fall back to Medusa's in-memory cache / event bus / workflow engine. In
+// production a shared Redis is strongly recommended: the in-memory workflow
+// engine keeps all workflow state in a single Node process (lost on restart,
+// not shared across instances) and the local event bus runs subscribers
+// inline. Provision a Redis instance in the SAME region as the backend.
+const REDIS_URL = process.env.REDIS_URL
+
+const redisModules = REDIS_URL
+  ? [
+      {
+        resolve: "@medusajs/medusa/cache-redis",
+        options: { redisUrl: REDIS_URL },
+      },
+      {
+        resolve: "@medusajs/medusa/event-bus-redis",
+        options: { redisUrl: REDIS_URL },
+      },
+      {
+        resolve: "@medusajs/medusa/workflow-engine-redis",
+        options: { redis: { url: REDIS_URL } },
+      },
+    ]
+  : []
+
 module.exports = defineConfig({
   admin: {
     disable: process.env.DISABLE_ADMIN === "true",
@@ -17,6 +42,7 @@ module.exports = defineConfig({
     }
   },
   modules: [
+    ...redisModules,
     {
       resolve: "./src/modules/email_notification",
     },
