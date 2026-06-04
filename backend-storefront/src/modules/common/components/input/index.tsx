@@ -46,14 +46,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             name={name}
             placeholder=" "
             required={required}
-            className="peer w-full h-12 pt-4 pb-1 px-3.5 text-[14px] bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl appearance-none transition-colors duration-150 outline-none hover:border-[var(--color-border-hover)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15"
+            className="peer w-full h-12 pt-4 pb-1 px-4 text-[14px] bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl appearance-none transition-colors duration-150 outline-none hover:border-[var(--color-border-hover)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15"
             {...props}
             ref={inputRef}
           />
           <label
             htmlFor={name}
             onClick={() => inputRef.current?.focus()}
-            className="absolute left-3.5 top-3.5 text-[14px] text-[var(--color-text-muted)] origin-[0_0] transition-all duration-150 pointer-events-none peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-2 peer-focus:scale-75 peer-focus:text-[var(--color-plum)] peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:scale-75"
+            className="absolute left-4 top-3.5 text-[14px] text-[var(--color-text-muted)] origin-[0_0] transition-all duration-150 pointer-events-none peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-2 peer-focus:scale-75 peer-focus:text-[var(--color-plum)] peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:scale-75"
           >
             {label}
             {required && <span className="text-rose-500 ml-0.5">*</span>}

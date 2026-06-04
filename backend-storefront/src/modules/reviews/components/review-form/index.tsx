@@ -130,7 +130,7 @@ export default function ReviewForm({
           rows={3}
           maxLength={2000}
           placeholder="What did you love about it? How's the quality, finish and fit?"
-          className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
+          className="w-full px-4 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
         />
 
         {error && (

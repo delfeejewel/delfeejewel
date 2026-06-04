@@ -15,7 +15,7 @@ const SUBJECTS = [
 ]
 
 const inputCls =
-  "w-full h-11 px-3.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+  "w-full h-11 px-4 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
 
 const labelCls =
   "text-[12px] font-semibold text-[var(--color-text-secondary)] mb-1.5 block"

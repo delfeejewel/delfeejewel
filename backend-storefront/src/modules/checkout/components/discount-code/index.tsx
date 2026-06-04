@@ -122,7 +122,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
               name="code"
               type="text"
               placeholder="ENTER CODE"
-              className="flex-1 px-3.5 py-2.5 rounded-lg text-[13px] uppercase tracking-wider outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+              className="flex-1 px-4 py-2.5 rounded-lg text-[13px] uppercase tracking-wider outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
               data-testid="discount-input"
               onChange={() => setError("")}
             />

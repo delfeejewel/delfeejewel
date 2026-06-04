@@ -1,12 +1,16 @@
 import { getLocaleHeader } from "@lib/util/get-locale-header"
 import Medusa, { FetchArgs, FetchInput } from "@medusajs/js-sdk"
 
-// Defaults to standard port for Medusa server
-let MEDUSA_BACKEND_URL = "http://localhost:9000"
-
-if (process.env.MEDUSA_BACKEND_URL) {
-  MEDUSA_BACKEND_URL = process.env.MEDUSA_BACKEND_URL
-}
+// Resolve the backend URL. On the SERVER (lib/data, server actions) we use the
+// internal/private MEDUSA_BACKEND_URL (e.g. http://backend:9000) — fastest, no
+// extra hop. In CLIENT bundles Next.js strips every non-NEXT_PUBLIC_ env var, so
+// MEDUSA_BACKEND_URL is undefined there; we fall back to the PUBLIC
+// NEXT_PUBLIC_MEDUSA_BACKEND_URL (e.g. https://api.delfee.in) the browser can
+// actually reach. Without that fallback the client SDK hits localhost:9000.
+const MEDUSA_BACKEND_URL =
+  process.env.MEDUSA_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ||
+  "http://localhost:9000"
 
 export const sdk = new Medusa({
   baseUrl: MEDUSA_BACKEND_URL,

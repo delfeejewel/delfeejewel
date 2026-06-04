@@ -1,0 +1,14 @@
+# Caddy auto-provisions and renews free Let's Encrypt TLS for each domain,
+# once that domain's DNS points at this droplet. Until DNS is cut over, cert
+# issuance for these names will simply retry — the containers still run and
+# can be tested on the droplet via localhost.
+
+delfee.in, www.delfee.in {
+	encode zstd gzip
+	reverse_proxy storefront:8000
+}
+
+api.delfee.in {
+	encode zstd gzip
+	reverse_proxy backend:9000
+}

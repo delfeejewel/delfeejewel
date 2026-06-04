@@ -14,6 +14,18 @@ import { Button } from "@medusajs/ui"
 import React, { useEffect, useState } from "react"
 import ErrorMessage from "../error-message"
 
+// placeOrder() finishes by calling redirect() (to the confirmation page), which
+// Next.js signals by throwing an error whose digest starts with "NEXT_REDIRECT".
+// It must NOT be swallowed as a user-facing error — re-throw it so Next performs
+// the navigation (otherwise "NEXT_REDIRECT" flashes on screen before the redirect).
+const isRedirectError = (err: any): boolean => {
+  const digest = err?.digest
+  return (
+    (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) ||
+    err?.message === "NEXT_REDIRECT"
+  )
+}
+
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
   "data-testid": string
@@ -147,6 +159,7 @@ const RazorpayPaymentButton = ({
             await placeOrder()
             setHasFailed(false)
           } catch (err: any) {
+            if (isRedirectError(err)) throw err
             setErrorMessage(err.message)
           }
           setSubmitting(false)
@@ -237,6 +250,7 @@ const CodPaymentButton = ({
       try {
         await placeOrder()
       } catch (err: any) {
+        if (isRedirectError(err)) throw err
         setErrorMessage(err?.message || "Could not place order")
       } finally {
         setSubmitting(false)
@@ -287,6 +301,7 @@ const CodPaymentButton = ({
             await placeOrder()
             setHasFailed(false)
           } catch (err: any) {
+            if (isRedirectError(err)) throw err
             setErrorMessage(
               err?.message || "Could not complete the order after payment"
             )
@@ -308,6 +323,7 @@ const CodPaymentButton = ({
       })
       rzp.open()
     } catch (err: any) {
+      if (isRedirectError(err)) throw err
       setErrorMessage(err?.message || "Could not start the payment")
       setSubmitting(false)
     }
@@ -370,6 +386,7 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
   const onPaymentCompleted = async () => {
     await placeOrder()
       .catch((err) => {
+        if (isRedirectError(err)) throw err
         setErrorMessage(err.message)
       })
       .finally(() => {

@@ -8,6 +8,11 @@ import { StoreRegion } from "@medusajs/types"
 import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
+// Read per-user cookies (customer/wishlist/cart) -> must render at request time.
+// generateStaticParams returns [] when the backend is unreachable at build
+// (Docker image build); without this, Next throws DYNAMIC_SERVER_USAGE.
+export const dynamic = "force-dynamic"
+
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
   searchParams: Promise<{

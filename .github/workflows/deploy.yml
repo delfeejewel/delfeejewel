@@ -1,0 +1,154 @@
+name: Deploy to droplet
+
+# Push to main -> build both app images on the runner (plenty of RAM, no droplet
+# OOM) -> push to GHCR -> SSH into the Bangalore droplet and `docker compose pull
+# && up -d`. A post-deploy health check on /app fails the run if admin regresses.
+#
+# Lives in the client repo (delfeejewel/delfeejewel) so GITHUB_TOKEN already has
+# write access to the ghcr.io/delfeejewel package namespace — no cross-org PAT.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "backend-storefront/**"
+      - "deploy/docker-compose.yml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: {} # manual "Run workflow" button
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never interrupt an in-flight production deploy
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/delfeejewel/delfee-backend
+  STOREFRONT_IMAGE: ghcr.io/delfeejewel/delfee-storefront
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push backend (admin included)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+  build-storefront:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push storefront (NEXT_PUBLIC_* baked at build time)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend-storefront
+          file: ./backend-storefront/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.STOREFRONT_IMAGE }}:latest
+            ${{ env.STOREFRONT_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=storefront
+          cache-to: type=gha,mode=max,scope=storefront
+          build-args: |
+            NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
+            NEXT_PUBLIC_DEFAULT_REGION=${{ secrets.NEXT_PUBLIC_DEFAULT_REGION }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_MEDUSA_BACKEND_URL=${{ secrets.NEXT_PUBLIC_MEDUSA_BACKEND_URL }}
+
+  deploy:
+    needs: [build-backend, build-storefront]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Keep the droplet's compose file in sync with the repo.
+      - name: Copy docker-compose.yml to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          source: deploy/docker-compose.yml
+          target: /opt/delfee
+          strip_components: 1 # drop the leading deploy/ path component
+
+      - name: Pull images & restart stack
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+            cd /opt/delfee
+
+            # Authenticate to GHCR (works whether the package is public or private).
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+            # Retire the old from-source build override now that the GHCR image
+            # carries admin — keep it as .disabled for a manual fallback.
+            if [ -f docker-compose.override.yml ]; then
+              mv docker-compose.override.yml docker-compose.override.yml.disabled
+            fi
+
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+
+      - name: Health check (storefront, API, admin)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            check() {
+              local url="$1"
+              for i in $(seq 1 30); do
+                code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 10 "$url" || echo 000)
+                if [ "$code" = "200" ]; then echo "OK  $url"; return 0; fi
+                echo "...waiting ($code) $url [$i/30]"; sleep 5
+              done
+              echo "FAIL $url never returned 200"; return 1
+            }
+            check https://api.delfee.in/health
+            check https://api.delfee.in/app        # admin must be live
+            check https://delfee.in/in

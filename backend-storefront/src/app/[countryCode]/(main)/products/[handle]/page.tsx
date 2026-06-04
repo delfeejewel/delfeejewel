@@ -11,6 +11,11 @@ import { HttpTypes } from "@medusajs/types"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { getBaseURL } from "@lib/util/env"
 
+// Read per-user cookies (customer/wishlist/cart) -> must render at request time.
+// generateStaticParams returns [] when the backend is unreachable at build
+// (Docker image build); without this, Next throws DYNAMIC_SERVER_USAGE.
+export const dynamic = "force-dynamic"
+
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
   searchParams: Promise<{ v_id?: string }>

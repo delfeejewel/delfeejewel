@@ -1,0 +1,51 @@
+# Single-host deployment: Medusa backend + Next.js storefront + Caddy (auto-HTTPS).
+# Runs on the DigitalOcean Bangalore droplet, next to the Supabase Mumbai DB.
+#
+# Both app images are built in GitHub Actions and pushed to GHCR (the runner has
+# the RAM the 2GB droplet lacks). The droplet only PULLS — no source builds here.
+#
+# Layout on the droplet (/opt/delfee):
+#   docker-compose.yml   (this file — kept in sync by the deploy workflow)
+#   Caddyfile            (reverse-proxy + TLS routing — managed manually)
+#   backend.env          (Medusa runtime secrets — from backend/.env; NO DISABLE_ADMIN)
+#   .env                 (storefront RUNTIME vars, e.g. MEDUSA_BACKEND_URL, COMING_SOON_*)
+#
+# NEXT_PUBLIC_* are baked into the storefront image at BUILD time in CI, so they
+# are NOT needed on the droplet. Server-only runtime vars still come from .env.
+
+services:
+  backend:
+    image: ghcr.io/delfeejewel/delfee-backend:latest
+    restart: unless-stopped
+    env_file: backend.env
+    environment:
+      PORT: "9000"
+    expose:
+      - "9000"
+
+  storefront:
+    image: ghcr.io/delfeejewel/delfee-storefront:latest
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "8000"
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - storefront
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:
