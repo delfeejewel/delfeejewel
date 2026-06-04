@@ -29,6 +29,7 @@ env:
 jobs:
   build-backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # fail fast instead of GitHub's 6h default
     permissions:
       contents: read
       packages: write
@@ -140,14 +141,19 @@ jobs:
           command_timeout: 5m
           script: |
             set -euo pipefail
+            # Persist cookies across redirects (-c/-b + a jar): the storefront's
+            # /in 307-sets _medusa_cache_id then redirects to itself; without the
+            # cookie a bare curl loops forever (it's NOT a real redirect loop).
             check() {
               local url="$1"
+              local cj; cj=$(mktemp)
               for i in $(seq 1 30); do
-                code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 10 "$url" || echo 000)
-                if [ "$code" = "200" ]; then echo "OK  $url"; return 0; fi
+                code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-redirs 5 \
+                  -c "$cj" -b "$cj" --max-time 15 "$url" || echo 000)
+                if [ "$code" = "200" ]; then echo "OK  $url"; rm -f "$cj"; return 0; fi
                 echo "...waiting ($code) $url [$i/30]"; sleep 5
               done
-              echo "FAIL $url never returned 200"; return 1
+              echo "FAIL $url never returned 200"; rm -f "$cj"; return 1
             }
             check https://api.delfee.in/health
             check https://api.delfee.in/app        # admin must be live

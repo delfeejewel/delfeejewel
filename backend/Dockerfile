@@ -31,7 +31,11 @@ EXPOSE 9000
 # index.html in the admin build directory" once admin is enabled. So install
 # prod deps there and start from there.
 WORKDIR /app/.medusa/server
-RUN npm install --omit=dev
+# --prefer-offline reuses the npm cache the earlier `npm ci` already populated
+# (shared ~/.npm) so this second install is near-offline — much faster and
+# immune to the registry-fetch/postinstall stall that can hang a bare install.
+RUN npm install --omit=dev --no-audit --no-fund --prefer-offline \
+    --fetch-retries=5 --fetch-timeout=300000
 
 # Run migrations then start. Env comes from the host at run time.
 CMD ["sh", "-c", "npx medusa db:migrate && npx medusa start"]
