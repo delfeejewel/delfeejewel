@@ -15,13 +15,12 @@ type SummaryProps = {
 }
 
 function getCheckoutStep(cart: HttpTypes.StoreCart) {
+  // Delivery is auto-selected when the address is saved, so the only manual
+  // entry points are the address step (if incomplete) or payment.
   if (!cart?.shipping_address?.address_1 || !cart.email) {
     return "address"
-  } else if (cart?.shipping_methods?.length === 0) {
-    return "delivery"
-  } else {
-    return "payment"
   }
+  return "payment"
 }
 
 const Summary = ({ cart }: SummaryProps) => {

@@ -59,55 +59,74 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   return updateRes
 }
 
+/**
+ * Request an email-OTP code for post-checkout account creation.
+ * Called before the user can submit the create-account form.
+ */
+export async function requestSignupOtp(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!email) {
+    return { success: false, error: "Email is required." }
+  }
+  try {
+    await sdk.client.fetch(`/store/otp/request`, {
+      method: "POST",
+      body: { email },
+    })
+    return { success: true }
+  } catch (error: any) {
+    return {
+      success: false,
+      error:
+        error?.message || "We couldn't send the code. Please try again shortly.",
+    }
+  }
+}
+
+/**
+ * Create a customer account after checkout, gated by the email-OTP code. The
+ * backend verifies the code, creates the account, links the guest order(s) to
+ * it, and returns a session token. Used by the post-order onboarding prompt.
+ */
 export async function signupFromOrder(
   _currentState: unknown,
   formData: FormData
 ) {
-  const password = formData.get("password") as string
-  const customerForm = {
+  const payload = {
     email: formData.get("email") as string,
+    password: formData.get("password") as string,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
     phone: formData.get("phone") as string,
+    code: formData.get("code") as string,
+    order_id: formData.get("order_id") as string,
+  }
+
+  if (!payload.code) {
+    return "Please enter the verification code we emailed you."
   }
 
   try {
-    const token = await sdk.auth.register("customer", "emailpass", {
-      email: customerForm.email,
-      password: password,
-    })
+    const { token } = await sdk.client.fetch<{ token: string }>(
+      `/store/account/create-verified`,
+      {
+        method: "POST",
+        body: payload,
+      }
+    )
 
-    await setAuthToken(token as string)
-
-    const headers = {
-      ...(await getAuthHeaders()),
-    }
-
-    await sdk.store.customer.create(customerForm, {}, headers)
-
-    const loginToken = await sdk.auth.login("customer", "emailpass", {
-      email: customerForm.email,
-      password,
-    })
-
-    await setAuthToken(loginToken as string)
-
-    await transferCart()
+    await setAuthToken(token)
 
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
 
     return "success"
   } catch (error: any) {
-    const message = error.toString()
-    if (
-      message.includes("already exists") ||
-      message.includes("identity with") ||
-      message.includes("duplicate")
-    ) {
-      return "An account with this email already exists. Please log in."
-    }
-    return message
+    return (
+      error?.message ||
+      "We couldn't create your account. Please check the code and try again."
+    )
   }
 }
 

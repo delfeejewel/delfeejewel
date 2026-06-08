@@ -7,7 +7,38 @@ export interface OrderEmailData {
   items: { title: string; quantity: number; price: string }[]
   shipping_address?: string
   tracking_number?: string
+  /** Signed token for the "Track your order" link — opens the order without re-entering email. */
+  track_token?: string
   brand_name: string
+}
+
+/** Build the storefront "Track your order" URL, including the signed token when available. */
+function trackOrderUrl(data: OrderEmailData): string {
+  const base = process.env.STOREFRONT_URL || "http://localhost:8000"
+  const token = data.track_token ? `&t=${encodeURIComponent(data.track_token)}` : ""
+  return `${base}/track-order?order=${data.order_number}${token}`
+}
+
+export interface OtpEmailData {
+  email: string
+  code: string
+  customer_name?: string
+}
+
+/** One-time code email used to confirm an email at post-checkout account creation. */
+export function otpVerifyTemplate(data: OtpEmailData) {
+  return {
+    subject: "Your verification code",
+    html: baseLayout(`
+      <h2>Confirm your email</h2>
+      <p>Hi ${data.customer_name || "there"},</p>
+      <p>Use this code to confirm your email and create your account:</p>
+      <div style="background:#f5f5f7;padding:20px;border-radius:8px;text-align:center;margin:24px 0;">
+        <span style="font-size:34px;font-weight:700;letter-spacing:10px;font-family:monospace;color:#1a1a1a;">${data.code}</span>
+      </div>
+      <p style="color:#999;font-size:13px;">This code expires in 10 minutes. If you didn't request it, you can safely ignore this email.</p>
+    `),
+  }
 }
 
 const BRAND_NAME = process.env.BRAND_NAME || "Aurum"
@@ -80,7 +111,7 @@ export const templates = {
       ${data.shipping_address ? `<p style="margin-top:24px;font-size:13px;color:#999;"><strong>Shipping to:</strong> ${data.shipping_address}</p>` : ""}
 
       <div style="text-align:center;margin-top:32px;">
-        <a href="${process.env.STOREFRONT_URL || 'http://localhost:8000'}/track-order?order=${data.order_number}" class="btn">Track Your Order</a>
+        <a href="${trackOrderUrl(data)}" class="btn">Track Your Order</a>
       </div>
     `),
   }),
@@ -103,7 +134,7 @@ export const templates = {
       ${itemsTable(data.items)}
 
       <div style="text-align:center;margin-top:32px;">
-        <a href="${process.env.STOREFRONT_URL || 'http://localhost:8000'}/track-order?order=${data.order_number}" class="btn">Track Your Order</a>
+        <a href="${trackOrderUrl(data)}" class="btn">Track Your Order</a>
       </div>
     `),
   }),

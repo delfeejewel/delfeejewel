@@ -205,7 +205,7 @@ export default function OrderDetailsTemplate({ order }: Props) {
         {/* Progress tracker — history-driven */}
         <div className="pt-3 pb-1">
           <OrderTimeline
-            createdAt={order.created_at}
+            createdAt={order.created_at as string}
             history={
               ((order.metadata as any)?.shiprocket_history as any[]) || []
             }

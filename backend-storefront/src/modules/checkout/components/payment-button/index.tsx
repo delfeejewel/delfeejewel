@@ -10,9 +10,27 @@ import {
 } from "@lib/data/cod"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import { Button } from "@medusajs/ui"
 import React, { useEffect, useState } from "react"
 import ErrorMessage from "../error-message"
+
+/**
+ * Place-order CTA styled to match the site's gold theme buttons (rounded-full,
+ * gold bg, plum text), with a built-in spinner while submitting.
+ */
+const ThemedPlaceOrderButton: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { isLoading?: boolean }
+> = ({ isLoading, disabled, children, ...props }) => (
+  <button
+    {...props}
+    disabled={disabled || isLoading}
+    className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+  >
+    {isLoading && (
+      <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+    )}
+    {children}
+  </button>
+)
 
 // placeOrder() finishes by calling redirect() (to the confirmation page), which
 // Next.js signals by throwing an error whose digest starts with "NEXT_REDIRECT".
@@ -66,7 +84,11 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
       )
     default:
-      return <Button disabled>Select a payment method</Button>
+      return (
+        <ThemedPlaceOrderButton disabled>
+          Select a payment method
+        </ThemedPlaceOrderButton>
+      )
   }
 }
 
@@ -153,7 +175,7 @@ const RazorpayPaymentButton = ({
           email: cart.email || "",
           contact: cart.billing_address?.phone || "",
         },
-        theme: { color: "#6b7280" },
+        theme: { color: "#5D2E46" },
         handler: async function () {
           try {
             await placeOrder()
@@ -190,10 +212,9 @@ const RazorpayPaymentButton = ({
 
   return (
     <>
-      <Button
+      <ThemedPlaceOrderButton
         disabled={notReady}
         onClick={() => handlePayment(hasFailed)}
-        size="large"
         isLoading={submitting}
         data-testid={dataTestId}
       >
@@ -202,7 +223,7 @@ const RazorpayPaymentButton = ({
             ? `Retry payment (attempt ${retryCount + 1})`
             : "Retry payment"
           : "Pay with Razorpay"}
-      </Button>
+      </ThemedPlaceOrderButton>
       <ErrorMessage
         error={errorMessage}
         data-testid="razorpay-payment-error-message"
@@ -356,11 +377,10 @@ const CodPaymentButton = ({
           </div>
         </div>
       )}
-      <Button
+      <ThemedPlaceOrderButton
         disabled={notReady}
         isLoading={submitting}
         onClick={handlePayment}
-        size="large"
         data-testid={dataTestId}
       >
         {hasFailed && upfrontRequired
@@ -370,7 +390,7 @@ const CodPaymentButton = ({
           : upfrontRequired
           ? `Pay ${fmt(upfrontAmount)} & Place Order`
           : "Place Order (Cash on Delivery)"}
-      </Button>
+      </ThemedPlaceOrderButton>
       <ErrorMessage
         error={errorMessage}
         data-testid="cod-payment-error-message"
@@ -401,15 +421,14 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
 
   return (
     <>
-      <Button
+      <ThemedPlaceOrderButton
         disabled={notReady}
         isLoading={submitting}
         onClick={handlePayment}
-        size="large"
         data-testid="submit-order-button"
       >
         Place order
-      </Button>
+      </ThemedPlaceOrderButton>
       <ErrorMessage
         error={errorMessage}
         data-testid="manual-payment-error-message"

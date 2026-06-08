@@ -109,18 +109,24 @@ jobs:
 
       - name: Pull images & restart stack
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
           command_timeout: 15m
+          # Forward these as REMOTE env vars instead of inlining the token into
+          # the script text — keeps the secret out of the droplet's process list.
+          envs: GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -euo pipefail
             cd /opt/delfee
 
             # Authenticate to GHCR (works whether the package is public or private).
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
-              -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io \
+              -u "$GHCR_USERNAME" --password-stdin
 
             # Retire the old from-source build override now that the GHCR image
             # carries admin — keep it as .disabled for a manual fallback.

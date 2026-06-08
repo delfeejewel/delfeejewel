@@ -133,6 +133,35 @@ export const lookupOrder = async (
   }
 }
 
+/**
+ * Public order lookup via the signed token from the order-confirmation email's
+ * "Track your order" link. No auth or email re-entry required.
+ */
+export const lookupOrderByToken = async (
+  token: string
+): Promise<{ order: any | null; error: string | null }> => {
+  if (!token) {
+    return { order: null, error: "Missing tracking token." }
+  }
+  try {
+    const data = await sdk.client.fetch<{ order: any }>(
+      `/store/orders/track-by-token`,
+      {
+        method: "POST",
+        body: { token },
+      }
+    )
+    return { order: data?.order || null, error: null }
+  } catch (e: any) {
+    return {
+      order: null,
+      error:
+        e?.message ||
+        "This tracking link is invalid or has expired. Enter your order number and email instead.",
+    }
+  }
+}
+
 export const declineTransferRequest = async (id: string, token: string) => {
   const headers = await getAuthHeaders()
 

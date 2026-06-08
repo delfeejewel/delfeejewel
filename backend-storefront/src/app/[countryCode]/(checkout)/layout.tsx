@@ -2,7 +2,6 @@ import Image from "next/image"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
-import MedusaCTA from "@modules/layout/components/medusa-cta"
 import { BRAND } from "@lib/constants.brand"
 
 export default function CheckoutLayout({
@@ -66,9 +65,6 @@ export default function CheckoutLayout({
       </header>
       <div className="relative" data-testid="checkout-container">
         {children}
-      </div>
-      <div className="py-4 w-full flex items-center justify-center">
-        <MedusaCTA />
       </div>
     </div>
   )

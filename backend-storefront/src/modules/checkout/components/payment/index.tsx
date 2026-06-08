@@ -98,7 +98,7 @@ const Payment = ({
       <div className="flex flex-row items-center justify-between mb-5">
         <div className="flex flex-col">
           <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
-            Step 3
+            Step 2
           </span>
           <h2 className="font-wittgenstein text-[22px] small:text-[24px] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
             Payment

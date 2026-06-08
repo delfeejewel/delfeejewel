@@ -9,14 +9,18 @@ export function SubmitButton({
   children,
   variant = "primary",
   className = "",
+  isLoading = false,
   "data-testid": dataTestId,
 }: {
   children: React.ReactNode
   variant?: Variant | null
   className?: string
+  /** Force the loading state (e.g. from useActionState's isPending). */
+  isLoading?: boolean
   "data-testid"?: string
 }) {
-  const { pending } = useFormStatus()
+  const { pending: formPending } = useFormStatus()
+  const pending = formPending || isLoading
   const v: Variant = variant === "secondary" ? "secondary" : "primary"
 
   const base =

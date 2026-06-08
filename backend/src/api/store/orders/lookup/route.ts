@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { fetchTrimmedOrder, normalizeEmail } from "../../../../utils/order-lookup"
 
 /**
  * POST /store/orders/lookup
@@ -21,40 +21,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     })
   }
 
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const order = await fetchTrimmedOrder(req.scope, { display_id: displayIdNum })
 
-  const { data: orders } = await query.graph({
-    entity: "order",
-    filters: { display_id: displayIdNum as any },
-    fields: [
-      "id",
-      "display_id",
-      "email",
-      "created_at",
-      "currency_code",
-      "status",
-      "fulfillment_status",
-      "payment_status",
-      "total",
-      "subtotal",
-      "shipping_total",
-      "discount_total",
-      "metadata",
-      "items.title",
-      "items.quantity",
-      "items.unit_price",
-      "items.thumbnail",
-      "items.product_handle",
-      "shipping_address.city",
-      "shipping_address.province",
-      "shipping_address.postal_code",
-      "shipping_address.country_code",
-    ],
-  })
-
-  const order = orders?.[0] as any
-  const norm = (s: string) => s.toLowerCase().trim()
-  if (!order || !order.email || norm(order.email) !== norm(email)) {
+  if (!order || !order.email || normalizeEmail(order.email) !== normalizeEmail(email)) {
     // Don't leak existence — same response either way
     return res
       .status(404)

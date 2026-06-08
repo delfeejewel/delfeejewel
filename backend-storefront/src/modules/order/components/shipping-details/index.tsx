@@ -1,71 +1,61 @@
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Text } from "@medusajs/ui"
-
-import Divider from "@modules/common/components/divider"
 
 type ShippingDetailsProps = {
   order: HttpTypes.StoreOrder
 }
 
+const Label = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+    {children}
+  </p>
+)
+
 const ShippingDetails = ({ order }: ShippingDetailsProps) => {
+  const a = order.shipping_address
+
   return (
     <div>
-      <Heading level="h2" className="flex flex-row text-3xl-regular my-6">
+      <h2 className="font-wittgenstein text-[18px] small:text-[20px] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
         Delivery
-      </Heading>
-      <div className="flex items-start gap-x-8">
-        <div
-          className="flex flex-col w-1/3"
-          data-testid="shipping-address-summary"
-        >
-          <Text className="txt-medium-plus text-ui-fg-base mb-1">
-            Shipping Address
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.first_name}{" "}
-            {order.shipping_address?.last_name}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.address_1}{" "}
-            {order.shipping_address?.address_2}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.postal_code},{" "}
-            {order.shipping_address?.city}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.country_code?.toUpperCase()}
-          </Text>
+      </h2>
+      <div className="grid grid-cols-1 small:grid-cols-3 gap-5 text-[13px]">
+        <div data-testid="shipping-address-summary">
+          <Label>Ship to</Label>
+          <p className="text-[var(--color-text-primary)] leading-relaxed">
+            {a?.first_name} {a?.last_name}
+            <br />
+            {a?.address_1}
+            {a?.address_2 ? `, ${a.address_2}` : ""}
+            <br />
+            {a?.postal_code}, {a?.city}
+            <br />
+            {a?.country_code?.toUpperCase()}
+          </p>
         </div>
 
-        <div
-          className="flex flex-col w-1/3 "
-          data-testid="shipping-contact-summary"
-        >
-          <Text className="txt-medium-plus text-ui-fg-base mb-1">Contact</Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.phone}
-          </Text>
-          <Text className="txt-medium text-ui-fg-subtle">{order.email}</Text>
+        <div data-testid="shipping-contact-summary">
+          <Label>Contact</Label>
+          <p className="text-[var(--color-text-primary)] leading-relaxed break-words">
+            {a?.phone}
+            <br />
+            {order.email}
+          </p>
         </div>
 
-        <div
-          className="flex flex-col w-1/3"
-          data-testid="shipping-method-summary"
-        >
-          <Text className="txt-medium-plus text-ui-fg-base mb-1">Method</Text>
-          <Text className="txt-medium text-ui-fg-subtle">
-            {(order as any).shipping_methods[0]?.name} (
-            {convertToLocale({
-              amount: order.shipping_methods?.[0].total ?? 0,
-              currency_code: order.currency_code,
-            })}
-            )
-          </Text>
+        <div data-testid="shipping-method-summary">
+          <Label>Method</Label>
+          <p className="text-[var(--color-text-primary)] leading-relaxed">
+            {(order as any).shipping_methods?.[0]?.name}{" "}
+            <span className="text-[var(--color-plum)] tabular-nums">
+              {convertToLocale({
+                amount: order.shipping_methods?.[0]?.total ?? 0,
+                currency_code: order.currency_code,
+              })}
+            </span>
+          </p>
         </div>
       </div>
-      <Divider className="mt-8" />
     </div>
   )
 }

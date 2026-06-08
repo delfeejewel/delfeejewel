@@ -63,10 +63,21 @@ function fmtDateTime(d?: string | null) {
   if (!d) return null
   try {
     const date = new Date(d)
+    // Pin the timezone so the server (UTC) and the client (local) render the
+    // SAME string — otherwise the date/time differs and hydration mismatches.
+    const tz = "Asia/Kolkata"
     return (
-      date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) +
+      date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        timeZone: tz,
+      }) +
       " • " +
-      date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+      date.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: tz,
+      })
     )
   } catch {
     return null
@@ -181,8 +192,10 @@ export default function OrderTimeline({
     <div className="w-full">
       {/* Desktop horizontal */}
       <div className="hidden small:flex items-start justify-between relative">
+        {/* Track spans from the first node's center to the last node's center
+            (nodes sit at the center of each equal 1/4 segment → 12.5% inset). */}
         <div
-          className="absolute top-5 left-0 right-0 h-[2px] mx-10"
+          className="absolute top-5 left-[12.5%] right-[12.5%] h-[2px]"
           style={{ background: "var(--color-border)" }}
         >
           <div

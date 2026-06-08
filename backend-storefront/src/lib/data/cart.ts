@@ -15,6 +15,7 @@ import {
 } from "./cookies"
 import { getRegion } from "./regions"
 import { getLocale } from "@lib/data/locale-actions"
+import { listCartShippingMethods } from "./fulfillment"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -465,13 +466,41 @@ export async function submitPromotionForm(
   }
 }
 
+// Normalise a 10-digit local number to E.164 with India's fixed +91 ISD code.
+const toE164India = (v: FormDataEntryValue | null) => {
+  const digits = String(v || "").replace(/\D/g, "").slice(-10)
+  return digits ? `+91${digits}` : ""
+}
+
+/**
+ * Auto-selects a default ("standard") shipping method so the checkout can skip
+ * the manual delivery step. Prefers a flat-rate, non-pickup option named
+ * "standard", else the cheapest flat-rate option. Throws if none can be set.
+ */
+async function autoSelectShippingMethod(cartId: string) {
+  const methods = await listCartShippingMethods(cartId)
+  const shippable = (methods || []).filter(
+    (m) => m.service_zone?.fulfillment_set?.type !== "pickup"
+  )
+  const flat = shippable.filter((m) => m.price_type === "flat")
+  const pool = flat.length ? flat : shippable
+  if (!pool.length) {
+    throw new Error("No shipping method is available for this address.")
+  }
+  const standard =
+    pool.find((m) => /standard/i.test(m.name || "")) ||
+    [...pool].sort((a, b) => (a.amount ?? 0) - (b.amount ?? 0))[0]
+
+  await setShippingMethod({ cartId, shippingMethodId: standard.id })
+}
+
 // TODO: Pass a POJO instead of a form entity here
 export async function setAddresses(currentState: unknown, formData: FormData) {
   try {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
     }
-    const cartId = getCartId()
+    const cartId = await getCartId()
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
@@ -481,13 +510,12 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         first_name: formData.get("shipping_address.first_name"),
         last_name: formData.get("shipping_address.last_name"),
         address_1: formData.get("shipping_address.address_1"),
-        address_2: "",
-        company: formData.get("shipping_address.company"),
+        address_2: formData.get("shipping_address.address_2") || "",
         postal_code: formData.get("shipping_address.postal_code"),
         city: formData.get("shipping_address.city"),
         country_code: formData.get("shipping_address.country_code"),
         province: formData.get("shipping_address.province"),
-        phone: formData.get("shipping_address.phone"),
+        phone: toE164India(formData.get("shipping_address.phone")),
       },
       email: formData.get("email"),
     } as any
@@ -500,21 +528,23 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         first_name: formData.get("billing_address.first_name"),
         last_name: formData.get("billing_address.last_name"),
         address_1: formData.get("billing_address.address_1"),
-        address_2: "",
-        company: formData.get("billing_address.company"),
+        address_2: formData.get("billing_address.address_2") || "",
         postal_code: formData.get("billing_address.postal_code"),
         city: formData.get("billing_address.city"),
         country_code: formData.get("billing_address.country_code"),
         province: formData.get("billing_address.province"),
-        phone: formData.get("billing_address.phone"),
+        phone: toE164India(formData.get("billing_address.phone")),
       }
     await updateCart(data)
+
+    // Skip the manual delivery step — pick a default shipping method now.
+    await autoSelectShippingMethod(cartId)
   } catch (e: any) {
     return e.message
   }
 
   redirect(
-    `/${formData.get("shipping_address.country_code")}/checkout?step=delivery`
+    `/${formData.get("shipping_address.country_code")}/checkout?step=payment`
   )
 }
 

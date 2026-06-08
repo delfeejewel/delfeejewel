@@ -1,6 +1,7 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { convertToLocale } from "../utils/money"
+import { signTrackToken } from "../utils/track-token"
 import EmailNotificationService from "../modules/email_notification/service"
 
 export default async function orderPlacedHandler({
@@ -68,6 +69,9 @@ export default async function orderPlacedHandler({
         price: convertToLocale(item.unit_price * item.quantity, order.currency_code),
       })),
       shipping_address: shippingStr,
+      track_token: order.email
+        ? signTrackToken({ order_id: order.id, email: order.email })
+        : undefined,
       brand_name: process.env.BRAND_NAME || "Aurum",
     })
   } catch (error: any) {

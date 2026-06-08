@@ -65,6 +65,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/qr_code",
     },
     {
+      resolve: "./src/modules/otp_verification",
+    },
+    {
       resolve: "@medusajs/medusa/fulfillment",
       options: {
         providers: [

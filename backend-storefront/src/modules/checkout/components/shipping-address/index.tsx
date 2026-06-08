@@ -5,7 +5,12 @@ import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import CountrySelect from "../country-select"
+import { lookupIndianPincode } from "@lib/data/pincode"
+
+// Strip any stored country code / formatting down to the local 10-digit number
+// for display (the +91 prefix is shown as a static adornment, added back on submit).
+const toLocalPhone = (v?: string | null) =>
+  String(v || "").replace(/\D/g, "").slice(-10)
 
 const ShippingAddress = ({
   customer,
@@ -22,12 +27,15 @@ const ShippingAddress = ({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
     "shipping_address.address_1": cart?.shipping_address?.address_1 || "",
-    "shipping_address.company": cart?.shipping_address?.company || "",
+    "shipping_address.address_2": cart?.shipping_address?.address_2 || "",
     "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
     "shipping_address.city": cart?.shipping_address?.city || "",
-    "shipping_address.country_code": cart?.shipping_address?.country_code || "",
+    "shipping_address.country_code":
+      cart?.shipping_address?.country_code ||
+      cart?.region?.countries?.[0]?.iso_2 ||
+      "in",
     "shipping_address.province": cart?.shipping_address?.province || "",
-    "shipping_address.phone": cart?.shipping_address?.phone || "",
+    "shipping_address.phone": toLocalPhone(cart?.shipping_address?.phone),
     email: cart?.email || "",
   })
 
@@ -55,12 +63,15 @@ const ShippingAddress = ({
         "shipping_address.first_name": address?.first_name || "",
         "shipping_address.last_name": address?.last_name || "",
         "shipping_address.address_1": address?.address_1 || "",
-        "shipping_address.company": address?.company || "",
+        "shipping_address.address_2": address?.address_2 || "",
         "shipping_address.postal_code": address?.postal_code || "",
         "shipping_address.city": address?.city || "",
-        "shipping_address.country_code": address?.country_code || "",
+        "shipping_address.country_code":
+          address?.country_code ||
+          prevState["shipping_address.country_code"] ||
+          "in",
         "shipping_address.province": address?.province || "",
-        "shipping_address.phone": address?.phone || "",
+        "shipping_address.phone": toLocalPhone(address?.phone),
       }))
 
     email &&
@@ -81,14 +92,39 @@ const ShippingAddress = ({
     }
   }, [cart]) // Add cart as a dependency
 
+  // Auto-fill City + State from an Indian PIN code (server action → India Post).
+  const lookupPincode = async (pin: string) => {
+    const result = await lookupIndianPincode(pin)
+    if (!result) return
+    setFormData((prev: Record<string, any>) => ({
+      ...prev,
+      "shipping_address.city": result.city || prev["shipping_address.city"],
+      "shipping_address.province":
+        result.state || prev["shipping_address.province"],
+    }))
+  }
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLInputElement | HTMLSelectElement
     >
   ) => {
+    const { name } = e.target
+    let value = e.target.value
+
+    // Phone: digits only, max 10 (ISD +91 is fixed and added on submit)
+    if (name === "shipping_address.phone") {
+      value = value.replace(/\D/g, "").slice(0, 10)
+    }
+    // Postal code: digits only, max 6 (Indian PIN) — then auto-fill city/state
+    if (name === "shipping_address.postal_code") {
+      value = value.replace(/\D/g, "").slice(0, 6)
+      if (value.length === 6) lookupPincode(value)
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     })
   }
 
@@ -130,26 +166,32 @@ const ShippingAddress = ({
           data-testid="shipping-last-name-input"
         />
         <Input
-          label="Address"
+          label="Address line 1"
           name="shipping_address.address_1"
           autoComplete="address-line1"
           value={formData["shipping_address.address_1"]}
           onChange={handleChange}
           required
+          className="col-span-2"
           data-testid="shipping-address-input"
         />
         <Input
-          label="Company"
-          name="shipping_address.company"
-          value={formData["shipping_address.company"]}
+          label="Address line 2 (optional)"
+          name="shipping_address.address_2"
+          autoComplete="address-line2"
+          value={formData["shipping_address.address_2"]}
           onChange={handleChange}
-          autoComplete="organization"
-          data-testid="shipping-company-input"
+          className="col-span-2"
+          data-testid="shipping-address-2-input"
         />
         <Input
           label="Postal code"
           name="shipping_address.postal_code"
           autoComplete="postal-code"
+          inputMode="numeric"
+          pattern="\d{6}"
+          maxLength={6}
+          title="Enter a valid 6-digit PIN code."
           value={formData["shipping_address.postal_code"]}
           onChange={handleChange}
           required
@@ -164,22 +206,21 @@ const ShippingAddress = ({
           required
           data-testid="shipping-city-input"
         />
-        <CountrySelect
-          name="shipping_address.country_code"
-          autoComplete="country"
-          region={cart?.region}
-          value={formData["shipping_address.country_code"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-country-select"
-        />
         <Input
-          label="State / Province"
+          label="State"
           name="shipping_address.province"
           autoComplete="address-level1"
           value={formData["shipping_address.province"]}
           onChange={handleChange}
+          required
+          className="col-span-2"
           data-testid="shipping-province-input"
+        />
+        {/* Country is fixed to India — submitted as a hidden field. */}
+        <input
+          type="hidden"
+          name="shipping_address.country_code"
+          value={formData["shipping_address.country_code"]}
         />
       </div>
       <div className="my-8">
@@ -206,9 +247,16 @@ const ShippingAddress = ({
         <Input
           label="Phone"
           name="shipping_address.phone"
-          autoComplete="tel"
+          type="tel"
+          prefix="+91"
+          autoComplete="tel-national"
+          inputMode="numeric"
+          pattern="\d{10}"
+          maxLength={10}
+          title="Enter a valid 10-digit mobile number."
           value={formData["shipping_address.phone"]}
           onChange={handleChange}
+          required
           data-testid="shipping-phone-input"
         />
       </div>

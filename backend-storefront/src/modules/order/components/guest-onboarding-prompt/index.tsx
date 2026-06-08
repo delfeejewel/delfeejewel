@@ -1,9 +1,9 @@
 "use client"
 
-import { useActionState, useState } from "react"
-import { signupFromOrder } from "@lib/data/customer"
+import { useActionState, useState, useTransition } from "react"
+import { signupFromOrder, requestSignupOtp } from "@lib/data/customer"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, Loader2, CheckCircle, Mail } from "lucide-react"
 
 type GuestOnboardingPromptProps = {
   order: any
@@ -15,6 +15,14 @@ export default function GuestOnboardingPrompt({
   const [result, formAction, isPending] = useActionState(signupFromOrder, null)
   const [dismissed, setDismissed] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  // Two-step flow: collect a password, then confirm the email with a code.
+  const [step, setStep] = useState<"details" | "code">("details")
+  const [password, setPassword] = useState("")
+  const [code, setCode] = useState("")
+  const [otpError, setOtpError] = useState("")
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpPending, startOtp] = useTransition()
 
   const email = order.email || ""
   const firstName = order.shipping_address?.first_name || ""
@@ -35,7 +43,8 @@ export default function GuestOnboardingPrompt({
             Account Created!
           </h3>
           <p className="text-[13px] text-[var(--color-text-muted)]">
-            You can now track your orders and enjoy faster checkout.
+            This order has been added to your account. You can now track your
+            orders and enjoy faster checkout.
           </p>
           <LocalizedClientLink
             href="/account"
@@ -48,6 +57,23 @@ export default function GuestOnboardingPrompt({
     )
   }
 
+  const sendCode = () => {
+    setOtpError("")
+    if (password.length < 8) {
+      setOtpError("Please set a password of at least 8 characters first.")
+      return
+    }
+    startOtp(async () => {
+      const res = await requestSignupOtp(email)
+      if (res.success) {
+        setOtpSent(true)
+        setStep("code")
+      } else {
+        setOtpError(res.error || "We couldn't send the code. Please try again.")
+      }
+    })
+  }
+
   const hasError = result && result !== "success"
 
   return (
@@ -58,7 +84,9 @@ export default function GuestOnboardingPrompt({
           Create Your Account
         </h3>
         <p className="text-[13px] text-[var(--color-text-muted)] mb-6">
-          Set a password to track orders and enjoy faster checkout.
+          {step === "details"
+            ? "Set a password — we'll email you a code to confirm your address."
+            : `Enter the 6-digit code we sent to ${email}.`}
         </p>
 
         {hasError && (
@@ -66,101 +94,189 @@ export default function GuestOnboardingPrompt({
             {result}
           </div>
         )}
-
-        <form action={formAction}>
-          {/* Hidden fields */}
-          <input type="hidden" name="email" value={email} />
-          <input type="hidden" name="first_name" value={firstName} />
-          <input type="hidden" name="last_name" value={lastName} />
-          <input type="hidden" name="phone" value={phone} />
-
-          {/* Pre-filled info display */}
-          <div className="grid grid-cols-1 small:grid-cols-2 gap-4 mb-6">
-            <div>
-              <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
-                Name
-              </span>
-              <span className="text-sm text-[var(--color-text-primary)]">
-                {firstName} {lastName}
-              </span>
-            </div>
-            <div>
-              <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
-                Email
-              </span>
-              <span className="text-sm text-[var(--color-text-primary)]">
-                {email}
-              </span>
-            </div>
-            {phone && (
-              <div>
-                <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
-                  Phone
-                </span>
-                <span className="text-sm text-[var(--color-text-primary)]">
-                  {phone}
-                </span>
-              </div>
+        {otpError && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            {otpError}
+            {otpError.toLowerCase().includes("already exists") && (
+              <LocalizedClientLink
+                href="/account"
+                className="ml-1 font-semibold underline underline-offset-2"
+              >
+                Log in
+              </LocalizedClientLink>
             )}
           </div>
+        )}
 
-          {/* Password input */}
-          <div className="mb-6">
-            <label
-              htmlFor="password"
-              className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5"
-            >
-              Set a Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                required
-                minLength={8}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--color-lavender)] bg-white text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-plum)]/20 focus:border-[var(--color-plum)] transition-colors font-outfit"
-                placeholder="Minimum 8 characters"
-              />
+        {/* Pre-filled info display (shown in both steps) */}
+        <div className="grid grid-cols-1 small:grid-cols-2 gap-4 mb-6">
+          <div>
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+              Name
+            </span>
+            <span className="text-sm text-[var(--color-text-primary)]">
+              {firstName} {lastName}
+            </span>
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+              Email
+            </span>
+            <span className="text-sm text-[var(--color-text-primary)]">
+              {email}
+            </span>
+          </div>
+          {phone && (
+            <div>
+              <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+                Phone
+              </span>
+              <span className="text-sm text-[var(--color-text-primary)]">
+                {phone}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {step === "details" ? (
+          <>
+            {/* Password input */}
+            <div className="mb-6">
+              <label
+                htmlFor="password"
+                className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5"
+              >
+                Set a Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setOtpError("")
+                  }}
+                  minLength={8}
+                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--color-lavender)] bg-white text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-plum)]/20 focus:border-[var(--color-plum)] transition-colors font-outfit"
+                  placeholder="Minimum 8 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                onClick={sendCode}
+                disabled={otpPending}
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg text-white text-sm font-medium [background:linear-gradient(135deg,var(--color-plum),var(--color-plum-deep))] hover:opacity-90 transition-opacity disabled:opacity-60"
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
+                {otpPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
                 ) : (
-                  <Eye className="w-4 h-4" />
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send verification code
+                  </>
                 )}
               </button>
+              <button
+                type="button"
+                onClick={() => setDismissed(true)}
+                className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              >
+                Skip for now
+              </button>
             </div>
-          </div>
+          </>
+        ) : (
+          <form action={formAction}>
+            {/* Hidden fields carried into the create-verified call */}
+            <input type="hidden" name="email" value={email} />
+            <input type="hidden" name="first_name" value={firstName} />
+            <input type="hidden" name="last_name" value={lastName} />
+            <input type="hidden" name="phone" value={phone} />
+            <input type="hidden" name="password" value={password} />
+            <input type="hidden" name="order_id" value={order.id} />
 
-          {/* Actions */}
-          <div className="flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg text-white text-sm font-medium [background:linear-gradient(135deg,var(--color-plum),var(--color-plum-deep))] hover:opacity-90 transition-opacity disabled:opacity-60"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create Account"
+            <div className="mb-6">
+              <label
+                htmlFor="code"
+                className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5"
+              >
+                Verification Code
+              </label>
+              <input
+                id="code"
+                name="code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                value={code}
+                onChange={(e) =>
+                  setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                className="w-full px-4 py-2.5 rounded-lg border border-[var(--color-lavender)] bg-white text-lg tracking-[8px] text-center text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[var(--color-plum)]/20 focus:border-[var(--color-plum)] transition-colors font-mono"
+                placeholder="000000"
+              />
+              {otpSent && (
+                <p className="mt-2 text-[12px] text-[var(--color-text-muted)]">
+                  Didn&apos;t get it?{" "}
+                  <button
+                    type="button"
+                    onClick={sendCode}
+                    disabled={otpPending}
+                    className="text-[var(--color-plum)] hover:underline disabled:opacity-60"
+                  >
+                    Resend code
+                  </button>
+                </p>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDismissed(true)}
-              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-            >
-              Skip for now
-            </button>
-          </div>
-        </form>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                type="submit"
+                disabled={isPending || code.length < 6}
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg text-white text-sm font-medium [background:linear-gradient(135deg,var(--color-plum),var(--color-plum-deep))] hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("details")
+                  setOtpError("")
+                }}
+                className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+              >
+                Back
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )

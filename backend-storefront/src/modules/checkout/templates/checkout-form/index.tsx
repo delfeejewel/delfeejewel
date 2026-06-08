@@ -1,10 +1,8 @@
-import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { listCartPaymentMethods } from "@lib/data/payment"
 import { HttpTypes } from "@medusajs/types"
 import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
-import Shipping from "@modules/checkout/components/shipping"
 
 export default async function CheckoutForm({
   cart,
@@ -17,20 +15,17 @@ export default async function CheckoutForm({
     return null
   }
 
-  const [shippingMethods, paymentMethods] = await Promise.all([
-    listCartShippingMethods(cart.id),
-    listCartPaymentMethods(cart.region?.id ?? ""),
-  ])
+  const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
 
-  if (!shippingMethods || !paymentMethods) {
+  if (!paymentMethods) {
     return null
   }
 
+  // Delivery is no longer a manual step — a default "standard" shipping method
+  // is auto-selected when the address is saved (see setAddresses).
   return (
     <div className="w-full grid grid-cols-1 gap-y-4 small:gap-y-5">
       <Addresses cart={cart} customer={customer} />
-
-      <Shipping cart={cart} availableShippingMethods={shippingMethods} />
 
       <Payment cart={cart} availablePaymentMethods={paymentMethods} />
 

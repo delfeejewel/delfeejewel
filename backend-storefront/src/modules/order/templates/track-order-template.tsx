@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { Package, Mail, Hash, Search, Truck, ExternalLink } from "lucide-react"
 
-import { lookupOrder } from "@lib/data/orders"
+import { lookupOrder, lookupOrderByToken } from "@lib/data/orders"
 import { convertToLocale } from "@lib/util/money"
 import OrderTimeline from "@modules/order/components/order-timeline"
 
@@ -42,15 +42,34 @@ export default function TrackOrderTemplate() {
   const params = useSearchParams()
   const [orderNum, setOrderNum] = useState("")
   const [email, setEmail] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [tokenLoading, setTokenLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [order, setOrder] = useState<FoundOrder | null>(null)
 
-  // Prefill order number from ?order= (used by the order-confirmation email)
+  // Prefill order number from ?order= (used by the order-confirmation email).
+  // When the email link also carries a signed ?t= token, open the order
+  // directly — no need to re-enter the email.
   useEffect(() => {
     const fromUrl = params.get("order")
     if (fromUrl) setOrderNum(fromUrl)
+
+    const token = params.get("t")
+    if (!token) return
+
+    let active = true
+    setTokenLoading(true)
+    setError("")
+    lookupOrderByToken(token).then((res) => {
+      if (!active) return
+      setTokenLoading(false)
+      if (res.order) setOrder(res.order)
+      else setError(res.error || "This tracking link is invalid or has expired.")
+    })
+    return () => {
+      active = false
+    }
   }, [params])
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState("")
-  const [order, setOrder] = useState<FoundOrder | null>(null)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,12 +109,26 @@ export default function TrackOrderTemplate() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 medium:grid-cols-[380px_1fr] gap-8 medium:gap-12 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 medium:grid-cols-[380px_1fr] gap-8 max-w-5xl mx-auto items-stretch">
           {/* ── Lookup form ──────────────────────── */}
           <form
             onSubmit={submit}
-            className="bg-white rounded-2xl border border-[var(--color-lavender)] p-6 small:p-7 flex flex-col gap-4 h-fit"
+            className="bg-white rounded-2xl border border-[var(--color-lavender)] p-6 small:p-7 flex flex-col gap-4"
           >
+            <div className="flex items-center gap-3 pb-1">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-lavender)]/60 text-[var(--color-plum)]">
+                <Search size={18} />
+              </span>
+              <div>
+                <h2 className="font-wittgenstein text-[18px] font-bold text-[var(--color-plum)] leading-tight">
+                  Find your order
+                </h2>
+                <p className="text-[12px] text-[var(--color-text-muted)]">
+                  Takes just a few seconds
+                </p>
+              </div>
+            </div>
+
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                 <Hash size={11} /> Order number
@@ -109,7 +142,7 @@ export default function TrackOrderTemplate() {
                   setError("")
                 }}
                 placeholder="1234"
-                className="w-full px-3.5 py-2.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15 transition-all"
               />
             </div>
             <div>
@@ -124,7 +157,7 @@ export default function TrackOrderTemplate() {
                   setError("")
                 }}
                 placeholder="you@example.com"
-                className="w-full px-3.5 py-2.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15 transition-all"
               />
             </div>
             {error && <p className="text-[12.5px] text-red-500">{error}</p>}
@@ -137,10 +170,22 @@ export default function TrackOrderTemplate() {
               {submitting ? "Searching..." : "Track Order"}
             </button>
 
-            <p className="text-[11.5px] text-[var(--color-text-muted)] mt-1">
+            <p className="text-[11.5px] text-[var(--color-text-muted)]">
               Tip: your order number is in the confirmation email — it looks
               like #1234.
             </p>
+
+            <div className="mt-auto pt-4 border-t border-[var(--color-border)]">
+              <p className="text-[12px] text-[var(--color-text-muted)]">
+                Can&apos;t find your order?{" "}
+                <a
+                  href="/contact"
+                  className="font-semibold text-[var(--color-plum)] hover:underline"
+                >
+                  Contact us
+                </a>
+              </p>
+            </div>
           </form>
 
           {/* ── Result panel ─────────────────────── */}
@@ -155,11 +200,14 @@ export default function TrackOrderTemplate() {
                   />
                 </div>
                 <p className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)]">
-                  Your tracking will appear here
+                  {tokenLoading
+                    ? "Fetching your order…"
+                    : "Your tracking will appear here"}
                 </p>
                 <p className="text-[13.5px] text-[var(--color-text-muted)] max-w-sm mt-1">
-                  Enter your order details on the left and we&apos;ll fetch the
-                  live status from our courier partner.
+                  {tokenLoading
+                    ? "Opening the order from your email link."
+                    : "Enter your order details on the left and we'll fetch the live status from our courier partner."}
                 </p>
               </div>
             ) : (

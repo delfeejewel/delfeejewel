@@ -28,6 +28,8 @@ import {
   ExchangeEmailData,
   ReplacementShippedEmailData,
   AbandonedCartEmailData,
+  otpVerifyTemplate,
+  OtpEmailData,
 } from "./templates"
 import { Logger } from "@medusajs/framework/types"
 
@@ -218,6 +220,11 @@ export default class EmailNotificationService extends MedusaService({}) {
   async sendReturnAdminAlertEmail(data: ReturnAdminEmailData) {
     const { subject, html } = returnAdminAlertTemplate(data)
     await this._send("return.admin-alert", data.to, subject, html)
+  }
+
+  async sendOtpEmail(data: OtpEmailData) {
+    const { subject, html } = otpVerifyTemplate(data)
+    await this._send("otp.verify", data.email, subject, html)
   }
 
   async sendGiftCardEmail(data: GiftCardEmailData) {

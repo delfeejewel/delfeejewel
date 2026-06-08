@@ -1,3 +1,4 @@
+import { clx } from "@medusajs/ui"
 import React, { useEffect, useImperativeHandle, useState } from "react"
 
 import Eye from "@modules/common/icons/eye"
@@ -12,6 +13,8 @@ type InputProps = Omit<
   touched?: Record<string, unknown>
   name: string
   topLabel?: string
+  /** Static, non-editable adornment shown at the start of the field (e.g. "+91"). */
+  prefix?: string
 }
 
 /**
@@ -20,7 +23,10 @@ type InputProps = Omit<
  * matches the site's CTA + card design language.
  */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ type, name, label, required, topLabel, className = "", ...props }, ref) => {
+  (
+    { type, name, label, required, topLabel, prefix, className = "", ...props },
+    ref
+  ) => {
     const inputRef = React.useRef<HTMLInputElement>(null)
     const [showPassword, setShowPassword] = useState(false)
     const [inputType, setInputType] = useState(type)
@@ -40,20 +46,36 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <div className="relative w-full">
+          {prefix && (
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-secondary)] pointer-events-none select-none">
+              {prefix}
+            </span>
+          )}
           <input
             id={name}
             type={inputType}
             name={name}
             placeholder=" "
             required={required}
-            className="peer w-full h-12 pt-4 pb-1 px-4 text-[14px] bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl appearance-none transition-colors duration-150 outline-none hover:border-[var(--color-border-hover)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15"
+            className={clx(
+              "peer w-full h-12 px-4 text-[14px] bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl appearance-none transition-colors duration-150 outline-none hover:border-[var(--color-border-hover)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15",
+              prefix && "pl-12"
+            )}
             {...props}
             ref={inputRef}
           />
+          {/* Floating label: rests vertically-centered, then floats up to sit
+              "notched" on the top border (white bg) on focus / when filled, so it
+              never collides with the border edge. Prefixed fields stay floated. */}
           <label
             htmlFor={name}
             onClick={() => inputRef.current?.focus()}
-            className="absolute left-4 top-3.5 text-[14px] text-[var(--color-text-muted)] origin-[0_0] transition-all duration-150 pointer-events-none peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-2 peer-focus:scale-75 peer-focus:text-[var(--color-plum)] peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:scale-75"
+            className={clx(
+              "absolute left-2.5 -translate-y-1/2 px-1 text-[14px] text-[var(--color-text-muted)] transition-all duration-150 pointer-events-none",
+              prefix
+                ? "top-0 text-[11px] bg-white peer-focus:text-[var(--color-plum)]"
+                : "top-1/2 bg-transparent peer-focus:top-0 peer-focus:text-[11px] peer-focus:bg-white peer-focus:text-[var(--color-plum)] peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:bg-white"
+            )}
           >
             {label}
             {required && <span className="text-rose-500 ml-0.5">*</span>}
