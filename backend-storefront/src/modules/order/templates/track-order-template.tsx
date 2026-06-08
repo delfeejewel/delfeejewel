@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Package, Mail, Hash, Search, Truck, ExternalLink } from "lucide-react"
 
 import { lookupOrder, lookupOrderByToken } from "@lib/data/orders"
@@ -38,8 +38,81 @@ type FoundOrder = {
 
 const FALLBACK = "/images/fallback-no-image.png"
 
+/* Floating jewellery decor + soft glows — mirrors the footer's ambient layer,
+   tuned for a light background. Purely decorative, behind the content. */
+function TrackDecor() {
+  const gold = "var(--color-gold)"
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none hidden small:block"
+      aria-hidden="true"
+    >
+      {/* Soft gradient glows */}
+      <div
+        className="absolute -top-28 -left-24 w-[30rem] h-[30rem] rounded-full bg-[var(--color-lavender)]/50 blur-3xl"
+        style={{ animation: "deco-glow 26s ease-in-out infinite" }}
+      />
+      <div
+        className="absolute top-[28%] -right-28 w-[26rem] h-[26rem] rounded-full bg-[var(--color-gold)]/[0.07] blur-3xl"
+        style={{ animation: "deco-glow 32s ease-in-out -8s infinite reverse" }}
+      />
+      <div
+        className="absolute -bottom-32 left-[18%] w-[28rem] h-[28rem] rounded-full bg-[var(--color-plum)]/[0.04] blur-[120px]"
+        style={{ animation: "deco-glow 30s ease-in-out -12s infinite" }}
+      />
+
+      {/* Ring — top right */}
+      <svg
+        className="absolute top-24 right-[7%] w-24 h-24 opacity-[0.08]"
+        style={{ animation: "deco-drift 28s ease-in-out infinite" }}
+        viewBox="0 0 24 24" fill="none" stroke={gold} strokeWidth={0.5}
+      >
+        <circle cx="12" cy="14" r="8" />
+        <ellipse cx="12" cy="14" rx="4" ry="8" />
+        <path d="M8 6.5c1-1.5 2.5-2.5 4-2.5s3 1 4 2.5" />
+      </svg>
+
+      {/* Gem — bottom left */}
+      <svg
+        className="absolute bottom-24 left-[6%] w-20 h-20 opacity-[0.09]"
+        style={{ animation: "deco-drift-alt 31s ease-in-out -6s infinite" }}
+        viewBox="0 0 24 24" fill="none" stroke={gold} strokeWidth={0.6}
+      >
+        <polygon points="12,2 22,8.5 17,22 7,22 2,8.5" />
+        <line x1="12" y1="2" x2="12" y2="22" />
+        <line x1="2" y1="8.5" x2="22" y2="8.5" />
+      </svg>
+
+      {/* Sparkles */}
+      <svg
+        className="absolute top-[35%] left-[4%] w-12 h-12 opacity-[0.12]"
+        style={{ animation: "deco-twinkle 7s ease-in-out infinite" }}
+        viewBox="0 0 24 24" fill={gold}
+      >
+        <path d="M12 0l1.5 10.5L24 12l-10.5 1.5L12 24l-1.5-10.5L0 12l10.5-1.5z" />
+      </svg>
+      <svg
+        className="absolute top-[16%] right-[26%] w-7 h-7 opacity-[0.1]"
+        style={{ animation: "deco-twinkle 6s ease-in-out -2s infinite" }}
+        viewBox="0 0 24 24" fill={gold}
+      >
+        <path d="M12 0l1.5 10.5L24 12l-10.5 1.5L12 24l-1.5-10.5L0 12l10.5-1.5z" />
+      </svg>
+      <svg
+        className="absolute bottom-[26%] right-[11%] w-9 h-9 opacity-[0.1]"
+        style={{ animation: "deco-twinkle 8s ease-in-out -3s infinite" }}
+        viewBox="0 0 24 24" fill={gold}
+      >
+        <path d="M12 0l1.5 10.5L24 12l-10.5 1.5L12 24l-1.5-10.5L0 12l10.5-1.5z" />
+      </svg>
+    </div>
+  )
+}
+
 export default function TrackOrderTemplate() {
   const params = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const [orderNum, setOrderNum] = useState("")
   const [email, setEmail] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -63,13 +136,27 @@ export default function TrackOrderTemplate() {
     lookupOrderByToken(token).then((res) => {
       if (!active) return
       setTokenLoading(false)
-      if (res.order) setOrder(res.order)
-      else setError(res.error || "This tracking link is invalid or has expired.")
+      if (res.order) {
+        setOrder(res.order)
+        // Reflect the email the order was placed with so the form is complete.
+        if (res.order.email) setEmail(res.order.email)
+      } else {
+        setError(res.error || "This tracking link is invalid or has expired.")
+      }
     })
     return () => {
       active = false
     }
   }, [params])
+
+  const reset = () => {
+    setOrder(null)
+    setError("")
+    setOrderNum("")
+    setEmail("")
+    // Drop ?order= / ?t= so a refresh doesn't reopen the previous order.
+    router.replace(pathname)
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,8 +181,9 @@ export default function TrackOrderTemplate() {
   const courier = meta.shiprocket_courier as string | undefined
 
   return (
-    <div className="bg-[var(--color-bg-primary)] min-h-screen">
-      <div className="page-container py-10 small:py-16">
+    <div className="relative bg-[var(--color-bg-primary)] overflow-hidden">
+      <TrackDecor />
+      <div className="page-container relative z-10 py-10 small:py-14">
         <header className="text-center mb-10">
           <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
             Order Tracking
@@ -103,7 +191,14 @@ export default function TrackOrderTemplate() {
           <h1 className="font-wittgenstein text-[32px] tablet:text-[42px] font-bold text-[var(--color-plum)] mt-2">
             Where&apos;s My Order?
           </h1>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mt-2 max-w-lg mx-auto">
+          <div className="flex items-center justify-center gap-2.5 mt-3.5">
+            <span className="h-px w-10 bg-gradient-to-r from-transparent to-[var(--color-gold)]/50" />
+            <svg className="w-3 h-3 text-[var(--color-gold)]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0l1.5 10.5L24 12l-10.5 1.5L12 24l-1.5-10.5L0 12l10.5-1.5z" />
+            </svg>
+            <span className="h-px w-10 bg-gradient-to-l from-transparent to-[var(--color-gold)]/50" />
+          </div>
+          <p className="text-[14px] text-[var(--color-text-secondary)] mt-3.5 max-w-lg mx-auto">
             Enter your order number and the email you used at checkout to see
             the latest delivery status.
           </p>
@@ -113,7 +208,7 @@ export default function TrackOrderTemplate() {
           {/* ── Lookup form ──────────────────────── */}
           <form
             onSubmit={submit}
-            className="bg-white rounded-2xl border border-[var(--color-lavender)] p-6 small:p-7 flex flex-col gap-4"
+            className="bg-white rounded-3xl border border-[var(--color-lavender)] shadow-[0_10px_40px_-12px_rgba(93,46,70,0.12)] p-6 small:p-7 flex flex-col gap-4"
           >
             <div className="flex items-center gap-3 pb-1">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-lavender)]/60 text-[var(--color-plum)]">
@@ -170,6 +265,16 @@ export default function TrackOrderTemplate() {
               {submitting ? "Searching..." : "Track Order"}
             </button>
 
+            {order && (
+              <button
+                type="button"
+                onClick={reset}
+                className="inline-flex items-center justify-center gap-2 py-2.5 rounded-full border border-[var(--color-border)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-lavender)]/40 transition-all"
+              >
+                Find another order
+              </button>
+            )}
+
             <p className="text-[11.5px] text-[var(--color-text-muted)]">
               Tip: your order number is in the confirmation email — it looks
               like #1234.
@@ -191,7 +296,7 @@ export default function TrackOrderTemplate() {
           {/* ── Result panel ─────────────────────── */}
           <div>
             {!order ? (
-              <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-[var(--color-lavender)] h-full min-h-[280px] p-8 text-center">
+              <div className="flex flex-col items-center justify-center bg-white rounded-3xl border border-[var(--color-lavender)] shadow-[0_10px_40px_-12px_rgba(93,46,70,0.12)] h-full min-h-[280px] p-8 text-center">
                 <div className="w-14 h-14 rounded-full bg-[var(--color-lavender)] flex items-center justify-center mb-3">
                   <Package
                     size={24}
@@ -211,7 +316,7 @@ export default function TrackOrderTemplate() {
                 </p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-[var(--color-lavender)] p-6 small:p-7">
+              <div className="bg-white rounded-3xl border border-[var(--color-lavender)] shadow-[0_10px_40px_-12px_rgba(93,46,70,0.12)] p-6 small:p-7 h-full flex flex-col">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 pb-4 border-b border-[var(--color-border)]">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-plum)]">
@@ -226,11 +331,8 @@ export default function TrackOrderTemplate() {
                       })}
                     </p>
                   </div>
-                  <span className="font-wittgenstein text-[20px] font-bold text-[var(--color-plum)]">
-                    {convertToLocale({
-                      amount: order.total,
-                      currency_code: order.currency_code,
-                    })}
+                  <span className="inline-flex items-center rounded-full bg-[var(--color-lavender)]/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-plum)] capitalize">
+                    {order.status === "canceled" ? "Cancelled" : "Active"}
                   </span>
                 </div>
 
@@ -323,6 +425,54 @@ export default function TrackOrderTemplate() {
                       )
                     })}
                   </ul>
+                </div>
+
+                {/* Price breakdown — pinned to the bottom so the card stays
+                    vertically balanced with the lookup form. */}
+                <div className="mt-auto pt-5">
+                  <div className="border-t border-[var(--color-border)] pt-4 flex flex-col gap-1.5 text-[13px]">
+                    <div className="flex justify-between">
+                      <span className="text-[var(--color-text-secondary)]">Subtotal</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        {convertToLocale({
+                          amount: Number(order.subtotal) || 0,
+                          currency_code: order.currency_code,
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[var(--color-text-secondary)]">Shipping</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        {Number(order.shipping_total) > 0
+                          ? convertToLocale({
+                              amount: Number(order.shipping_total),
+                              currency_code: order.currency_code,
+                            })
+                          : "Free"}
+                      </span>
+                    </div>
+                    {Number(order.discount_total) > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-[var(--color-text-secondary)]">Discount</span>
+                        <span className="tabular-nums text-green-600">
+                          −
+                          {convertToLocale({
+                            amount: Number(order.discount_total),
+                            currency_code: order.currency_code,
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2.5 mt-1 border-t border-[var(--color-border)]">
+                      <span className="font-semibold text-[var(--color-plum)]">Total</span>
+                      <span className="font-semibold tabular-nums text-[var(--color-plum)]">
+                        {convertToLocale({
+                          amount: Number(order.total) || 0,
+                          currency_code: order.currency_code,
+                        })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

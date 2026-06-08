@@ -85,48 +85,51 @@ export async function requestSignupOtp(
 }
 
 /**
- * Create a customer account after checkout, gated by the email-OTP code. The
- * backend verifies the code, creates the account, links the guest order(s) to
- * it, and returns a session token. Used by the post-order onboarding prompt.
+ * Standard registration, gated by an email-OTP code. The backend verifies the
+ * code, creates the account, links ALL prior guest orders for that email, and
+ * returns a session token. The active guest cart is then transferred to the new
+ * customer. Used by the /account register form (two-step: details → code).
  */
-export async function signupFromOrder(
-  _currentState: unknown,
-  formData: FormData
-) {
-  const payload = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-    first_name: formData.get("first_name") as string,
-    last_name: formData.get("last_name") as string,
-    phone: formData.get("phone") as string,
-    code: formData.get("code") as string,
-    order_id: formData.get("order_id") as string,
+export async function signupWithOtp(data: {
+  email: string
+  password: string
+  first_name: string
+  last_name: string
+  phone?: string
+  code: string
+}): Promise<{ success: boolean; error?: string; linked_orders?: number }> {
+  if (!data.code) {
+    return { success: false, error: "Please enter the verification code we emailed you." }
   }
-
-  if (!payload.code) {
-    return "Please enter the verification code we emailed you."
-  }
-
   try {
-    const { token } = await sdk.client.fetch<{ token: string }>(
-      `/store/account/create-verified`,
-      {
-        method: "POST",
-        body: payload,
-      }
-    )
+    const { token, linked_orders } = await sdk.client.fetch<{
+      token: string
+      linked_orders: number
+    }>(`/store/account/create-verified`, {
+      method: "POST",
+      body: data,
+    })
 
     await setAuthToken(token)
 
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
 
-    return "success"
+    // Attach the in-progress guest cart to the new account (best-effort).
+    try {
+      await transferCart()
+    } catch {
+      // non-fatal — the account is created and signed in regardless
+    }
+
+    return { success: true, linked_orders }
   } catch (error: any) {
-    return (
-      error?.message ||
-      "We couldn't create your account. Please check the code and try again."
-    )
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "We couldn't create your account. Please check the code and try again.",
+    }
   }
 }
 
@@ -227,56 +230,6 @@ export async function loginAction(
   return {}
 }
 
-export async function signupAction(data: {
-  email: string
-  password: string
-  first_name: string
-  last_name: string
-  phone?: string
-}): Promise<{ error?: string }> {
-  try {
-    const token = await sdk.auth.register("customer", "emailpass", {
-      email: data.email,
-      password: data.password,
-    })
-    await setAuthToken(token as string)
-
-    const headers = { ...(await getAuthHeaders()) }
-    await sdk.store.customer.create(
-      {
-        email: data.email,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        phone: data.phone,
-      },
-      {},
-      headers
-    )
-
-    const loginToken = await sdk.auth.login("customer", "emailpass", {
-      email: data.email,
-      password: data.password,
-    })
-    await setAuthToken(loginToken as string)
-
-    const customerCacheTag = await getCacheTag("customers")
-    revalidateTag(customerCacheTag)
-
-    await transferCart()
-
-    return {}
-  } catch (error: any) {
-    const msg: string = error?.message ?? error.toString()
-    if (
-      msg.includes("already exists") ||
-      msg.includes("identity with") ||
-      msg.includes("duplicate")
-    ) {
-      return { error: "An account with this email already exists. Please sign in." }
-    }
-    return { error: "Could not create account. Please try again." }
-  }
-}
 
 export async function signout(countryCode: string) {
   await sdk.auth.logout()

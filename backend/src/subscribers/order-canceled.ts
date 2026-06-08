@@ -41,7 +41,7 @@ export default async function orderCanceledHandler({
         quantity: item.quantity,
         price: convertToLocale(item.unit_price * item.quantity, order.currency_code),
       })),
-      brand_name: process.env.BRAND_NAME || "Aurum",
+      brand_name: process.env.BRAND_NAME || "Delfee",
     })
   } catch (error: any) {
     logger.error(`Order canceled email failed: ${error.message}`)

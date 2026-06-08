@@ -69,9 +69,11 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     { id: candidate.id, consumed_at: new Date() },
   ])
 
-  // ── 2. Reject if an account already exists ─────────────
+  // ── 2. Reject only if a *registered* account exists ────
+  // Guest customers (has_account=false) are created at checkout for every guest
+  // order — they must not block sign-up; we re-link their orders in step 5.
   const existing = await customerModule.listCustomers({ email: normalized })
-  if (existing.length > 0) {
+  if (existing.some((c: any) => c.has_account)) {
     return res.status(409).json({ message: EXISTS_MSG })
   }
 
@@ -104,12 +106,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     },
   })
 
-  // ── 5. Link unlinked guest orders for the verified email ─
+  // ── 5. Link every guest order for the verified email ───
+  // Guest orders point at a throwaway guest customer (has_account=false), so we
+  // re-point ALL of them to the new account — not just the null-customer_id ones.
   let linkedOrders = 0
   try {
     const orders = await orderModule.listOrders({ email: normalized })
     for (const o of orders) {
-      if (!o.customer_id) {
+      if (o.customer_id !== customer.id) {
         await orderModule.updateOrders(o.id, { customer_id: customer.id })
         linkedOrders++
       }

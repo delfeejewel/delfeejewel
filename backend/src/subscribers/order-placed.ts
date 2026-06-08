@@ -23,6 +23,8 @@ export default async function orderPlacedHandler({
         "email",
         "currency_code",
         "total",
+        "tax_total",
+        "discount_total",
         "metadata",
         "items.*",
         "items.product.handle",
@@ -57,22 +59,38 @@ export default async function orderPlacedHandler({
       ? `${address.first_name} ${address.last_name}, ${address.address_1}, ${address.city}, ${address.postal_code}`
       : undefined
 
+    const cc = order.currency_code
+    const subtotalNum = (order.items || []).reduce(
+      (sum: number, it: any) =>
+        sum + (Number(it.unit_price) || 0) * (it.quantity || 1),
+      0
+    )
+    const discountNum = Number(order.discount_total) || 0
+    const taxNum = Number(order.tax_total) || 0
+    const totalNum = Number(order.total) || subtotalNum
+    // Derive shipping so the breakdown always reconciles with the total.
+    const shippingNum = Math.max(0, totalNum - subtotalNum - taxNum + discountNum)
+
     await emailService.sendOrderEmail("order.placed", {
       order_id: order.id,
       order_number: order.display_id ?? order.id,
       customer_name: address?.first_name || "Customer",
       customer_email: order.email ?? "",
-      total: convertToLocale(order.total, order.currency_code),
+      subtotal: convertToLocale(subtotalNum, cc),
+      shipping: shippingNum > 0 ? convertToLocale(shippingNum, cc) : undefined,
+      shipping_is_free: shippingNum === 0,
+      discount: discountNum > 0 ? `−${convertToLocale(discountNum, cc)}` : undefined,
+      total: convertToLocale(totalNum, cc),
       items: (order.items || []).map((item: any) => ({
         title: item.title,
         quantity: item.quantity,
-        price: convertToLocale(item.unit_price * item.quantity, order.currency_code),
+        price: convertToLocale(item.unit_price * item.quantity, cc),
       })),
       shipping_address: shippingStr,
       track_token: order.email
         ? signTrackToken({ order_id: order.id, email: order.email })
         : undefined,
-      brand_name: process.env.BRAND_NAME || "Aurum",
+      brand_name: process.env.BRAND_NAME || "Delfee",
     })
   } catch (error: any) {
     logger.error(`Order placed email failed: ${error.message}`)

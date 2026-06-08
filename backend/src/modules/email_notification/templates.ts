@@ -4,6 +4,11 @@ export interface OrderEmailData {
   customer_name: string
   customer_email: string
   total: string
+  /** Pre-formatted line totals for the amount breakdown (order.placed). */
+  subtotal?: string
+  shipping?: string
+  shipping_is_free?: boolean
+  discount?: string
   items: { title: string; quantity: number; price: string }[]
   shipping_address?: string
   tracking_number?: string
@@ -12,11 +17,42 @@ export interface OrderEmailData {
   brand_name: string
 }
 
+/** Capitalise each word of a name for greetings ("testing" → "Testing"). */
+function titleCase(s: string): string {
+  return (s || "").trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/** Amount breakdown (subtotal / shipping / discount / total) for order emails. */
+function totalsBlock(data: OrderEmailData): string {
+  const line = (label: string, value: string) => `
+    <tr>
+      <td style="padding:7px 0;font-size:13.5px;color:#666;">${label}</td>
+      <td style="padding:7px 0;font-size:13.5px;color:#2a2a2a;text-align:right;">${value}</td>
+    </tr>`
+  const rows: string[] = []
+  if (data.subtotal) rows.push(line("Subtotal", data.subtotal))
+  if (data.shipping || data.shipping_is_free)
+    rows.push(line("Shipping", data.shipping || "Free"))
+  if (data.discount) rows.push(line("Discount", data.discount))
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:10px;">
+    ${rows.join("")}
+    <tr>
+      <td style="padding:14px 0 0;border-top:2px solid #e7e3dd;font-size:16px;font-weight:700;color:#5D2E46;">Total</td>
+      <td style="padding:14px 0 0;border-top:2px solid #e7e3dd;font-size:16px;font-weight:700;color:#5D2E46;text-align:right;">${data.total}</td>
+    </tr>
+  </table>`
+}
+
+/** Storefront origin used for links and hosted assets (logo) in emails. */
+function storefrontBase(): string {
+  return (process.env.STOREFRONT_URL || "http://localhost:8000").replace(/\/$/, "")
+}
+
 /** Build the storefront "Track your order" URL, including the signed token when available. */
 function trackOrderUrl(data: OrderEmailData): string {
-  const base = process.env.STOREFRONT_URL || "http://localhost:8000"
   const token = data.track_token ? `&t=${encodeURIComponent(data.track_token)}` : ""
-  return `${base}/track-order?order=${data.order_number}${token}`
+  return `${storefrontBase()}/track-order?order=${data.order_number}${token}`
 }
 
 export interface OtpEmailData {
@@ -31,7 +67,7 @@ export function otpVerifyTemplate(data: OtpEmailData) {
     subject: "Your verification code",
     html: baseLayout(`
       <h2>Confirm your email</h2>
-      <p>Hi ${data.customer_name || "there"},</p>
+      <p>Hi ${titleCase(data.customer_name || "there")},</p>
       <p>Use this code to confirm your email and create your account:</p>
       <div style="background:#f5f5f7;padding:20px;border-radius:8px;text-align:center;margin:24px 0;">
         <span style="font-size:34px;font-weight:700;letter-spacing:10px;font-family:monospace;color:#1a1a1a;">${data.code}</span>
@@ -41,72 +77,78 @@ export function otpVerifyTemplate(data: OtpEmailData) {
   }
 }
 
-const BRAND_NAME = process.env.BRAND_NAME || "Aurum"
+const BRAND_NAME = process.env.BRAND_NAME || "Delfee"
 
 function baseLayout(content: string): string {
-  return `
-<!DOCTYPE html>
-<html>
+  const year = new Date().getFullYear()
+  return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${BRAND_NAME}</title>
   <style>
-    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; color: #1a1a1a; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { padding: 32px; text-align: center; border-bottom: 1px solid #e5e5e5; }
-    .header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: #6b7280; }
-    .content { padding: 32px; }
-    .footer { padding: 24px 32px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #e5e5e5; }
-    .btn { display: inline-block; padding: 12px 32px; background: #6b7280; color: #ffffff; text-decoration: none; border-radius: 24px; font-size: 14px; font-weight: 500; }
-    .item-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-    .total-row { display: flex; justify-content: space-between; padding: 16px 0; font-weight: 600; font-size: 16px; border-top: 2px solid #e5e5e5; margin-top: 8px; }
-    h2 { font-size: 20px; font-weight: 500; margin: 0 0 8px 0; }
-    p { margin: 0 0 16px 0; line-height: 1.6; color: #555; }
+    body { margin:0; padding:0; }
+    a { color:#5D2E46; }
+    .content h2 { font-family:Georgia,'Times New Roman',serif; font-size:22px; font-weight:600; color:#2b2b2b; margin:0 0 14px; }
+    .content h3 { margin:28px 0 14px; font-size:12px; text-transform:uppercase; letter-spacing:2px; color:#a59bad; font-weight:600; }
+    .content p { margin:0 0 16px; line-height:1.65; font-size:14px; color:#555; }
+    .content strong { color:#2b2b2b; }
+    .btn { display:inline-block; padding:14px 38px; background:#5D2E46; color:#ffffff !important; text-decoration:none; border-radius:999px; font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+    @media (max-width:620px){ .px { padding-left:22px !important; padding-right:22px !important; } }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>${BRAND_NAME}</h1>
-    </div>
-    <div class="content">
-      ${content}
-    </div>
-    <div class="footer">
-      &copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.<br>
-      This is an automated email. Please do not reply directly.
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#f4f1ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ed;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(45,30,50,0.06);">
+        <tr><td style="background:#5D2E46;padding:34px 32px;text-align:center;">
+          <img src="${storefrontBase()}/images/logo-light.png" alt="${BRAND_NAME}" width="150" style="display:inline-block;width:150px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:6px;text-transform:uppercase;color:#ffffff;font-weight:600;">
+          <div style="height:1px;width:46px;background:#c9ccd1;margin:18px auto 0;line-height:1px;font-size:0;">&nbsp;</div>
+        </td></tr>
+        <tr><td class="content px" style="padding:38px 34px;">
+          ${content}
+        </td></tr>
+        <tr><td class="px" style="padding:26px 34px;background:#faf8f5;text-align:center;border-top:1px solid #ece8e2;">
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8a8a;line-height:1.6;">Need help? Email us at <a href="mailto:enquire@delfee.in" style="color:#5D2E46;text-decoration:none;">enquire@delfee.in</a></p>
+          <p style="margin:0;font-size:11px;color:#b3b0ab;line-height:1.6;">&copy; ${year} ${BRAND_NAME}. All rights reserved.<br>This is an automated message — please don't reply directly.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>`
 }
 
 function itemsTable(items: OrderEmailData["items"]): string {
-  return items
+  const rows = items
     .map(
       (item) => `
-    <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f0f0;">
-      <span>${item.title} x ${item.quantity}</span>
-      <span style="font-weight:500;">${item.price}</span>
-    </div>`
+    <tr>
+      <td style="padding:14px 0;border-bottom:1px solid #efece7;font-size:14px;color:#2a2a2a;">
+        ${item.title}<span style="color:#9b9b9b;font-size:13px;">&nbsp;&times;&nbsp;${item.quantity}</span>
+      </td>
+      <td style="padding:14px 0;border-bottom:1px solid #efece7;font-size:14px;color:#2a2a2a;font-weight:600;text-align:right;white-space:nowrap;">
+        ${item.price}
+      </td>
+    </tr>`
     )
     .join("")
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>`
 }
 
 export const templates = {
   "order.placed": (data: OrderEmailData) => ({
     subject: `Order Confirmed — #${data.order_number}`,
     html: baseLayout(`
-      <h2>Thank you for your order!</h2>
-      <p>Hi ${data.customer_name},</p>
-      <p>We've received your order <strong>#${data.order_number}</strong> and it's being processed. You'll receive an update when it ships.</p>
+      <h2>Your order is confirmed</h2>
+      <p>Hi ${titleCase(data.customer_name)},</p>
+      <p>Thank you for shopping with ${BRAND_NAME}. We're delighted to confirm order <strong>#${data.order_number}</strong> — our team is now carefully preparing each piece for dispatch. We'll email your tracking details the moment it ships.</p>
 
       <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Order Summary</h3>
       ${itemsTable(data.items)}
-      <div style="display:flex;justify-content:space-between;padding:16px 0;font-weight:600;font-size:16px;border-top:2px solid #e5e5e5;margin-top:8px;">
-        <span>Total</span>
-        <span>${data.total}</span>
-      </div>
+      ${totalsBlock(data)}
 
       ${data.shipping_address ? `<p style="margin-top:24px;font-size:13px;color:#999;"><strong>Shipping to:</strong> ${data.shipping_address}</p>` : ""}
 
@@ -120,7 +162,7 @@ export const templates = {
     subject: `Your Order #${data.order_number} Has Been Shipped!`,
     html: baseLayout(`
       <h2>Your order is on its way!</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Great news — your order <strong>#${data.order_number}</strong> has been shipped and is on its way to you.</p>
 
       ${data.tracking_number ? `
@@ -143,7 +185,7 @@ export const templates = {
     subject: `Your Order #${data.order_number} Has Been Delivered`,
     html: baseLayout(`
       <h2>Your order has been delivered!</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Your order <strong>#${data.order_number}</strong> has been delivered. We hope you love your new jewellery!</p>
 
       <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">What You Ordered</h3>
@@ -152,7 +194,7 @@ export const templates = {
       <p style="margin-top:24px;">If you have any questions or concerns about your order, please don't hesitate to contact us.</p>
 
       <div style="text-align:center;margin-top:32px;">
-        <a href="#" class="btn">Leave a Review</a>
+        <a href="${process.env.STOREFRONT_URL || 'http://localhost:8000'}/account/reviews" class="btn">Leave a Review</a>
       </div>
     `),
   }),
@@ -161,7 +203,7 @@ export const templates = {
     subject: `Order #${data.order_number} Has Been Cancelled`,
     html: baseLayout(`
       <h2>Your order has been cancelled</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Your order <strong>#${data.order_number}</strong> has been cancelled. If a payment was made, a refund will be processed within 5-7 business days.</p>
 
       <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Cancelled Items</h3>
@@ -175,7 +217,7 @@ export const templates = {
     subject: `How was your ${data.brand_name} experience? Leave a review!`,
     html: baseLayout(`
       <h2>We'd love your feedback!</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>It's been a few days since your order <strong>#${data.order_number}</strong> was delivered. We hope you're loving your new jewellery!</p>
 
       <p>Your opinion matters to us. Would you take a moment to share your experience?</p>
@@ -221,7 +263,7 @@ export function rtoRefundProcessedTemplate(data: RtoRefundEmailData) {
     subject: `Order #${data.order_number} returned — refund update`,
     html: baseLayout(`
       <h2>We've received your returned order</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Your order <strong>#${data.order_number}</strong> has arrived back at our warehouse.</p>
       ${
         data.is_prepaid && data.refund_amount
@@ -359,7 +401,7 @@ export function returnSubmittedTemplate(data: ReturnEmailData) {
     subject: `Return request received — order #${data.order_number}`,
     html: baseLayout(`
       <h2>We've received your return request</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>We've got your request to return items from order <strong>#${data.order_number}</strong>. Our team will review it shortly and email you next steps.</p>
       <p style="font-size:13px;color:#666;margin-top:24px;">Reference: <code>${data.request_id.slice(-8).toUpperCase()}</code></p>
     `),
@@ -372,7 +414,7 @@ export function returnApprovedTemplate(data: ReturnEmailData) {
     subject: `Return approved — order #${data.order_number}`,
     html: baseLayout(`
       <h2>Your return has been approved</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Your return request for order <strong>#${data.order_number}</strong> is approved.</p>
       <div style="background:#faf8f3;border:1px solid #ecdfd0;border-radius:12px;padding:20px;margin:20px 0;">
         <p style="font-weight:600;color:#5D2E46;margin:0 0 8px;">Send the items back to us:</p>
@@ -392,7 +434,7 @@ export function returnRejectedTemplate(data: ReturnEmailData) {
     subject: `Update on your return request — order #${data.order_number}`,
     html: baseLayout(`
       <h2>About your return request</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Unfortunately we weren't able to approve your return for order <strong>#${data.order_number}</strong>.</p>
       ${
         data.rejected_reason
@@ -409,7 +451,7 @@ export function returnCompletedTemplate(data: ReturnCompletedEmailData) {
     subject: `Return complete — refund update for order #${data.order_number}`,
     html: baseLayout(`
       <h2>We've received your return</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Your returned items for order <strong>#${data.order_number}</strong> are back with us. Thank you!</p>
       ${
         data.is_prepaid && data.refund_amount
@@ -471,7 +513,7 @@ export function exchangeSubmittedTemplate(data: ExchangeEmailData) {
     subject: `Exchange request received — order #${data.order_number}`,
     html: baseLayout(`
       <h2>We've received your exchange request</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>We've got your request to exchange items from order <strong>#${data.order_number}</strong>. Our team will review it shortly and email you next steps.</p>
       ${exchangeItemsList(data.items)}
       <p style="font-size:13px;color:#666;margin-top:24px;">Reference: <code>${data.request_id.slice(-8).toUpperCase()}</code></p>
@@ -485,7 +527,7 @@ export function exchangeApprovedTemplate(data: ExchangeEmailData) {
     subject: `Exchange approved — order #${data.order_number}`,
     html: baseLayout(`
       <h2>Your exchange has been approved</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>Your exchange request for order <strong>#${data.order_number}</strong> is approved.</p>
       ${exchangeItemsList(data.items)}
       <div style="background:#faf8f3;border:1px solid #ecdfd0;border-radius:12px;padding:20px;margin:20px 0;">
@@ -506,7 +548,7 @@ export function replacementShippedTemplate(data: ReplacementShippedEmailData) {
     subject: `Your replacement is on the way — order #${data.order_number}`,
     html: baseLayout(`
       <h2>Your replacement is on its way</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>We've shipped your replacement for order <strong>#${data.order_number}</strong>.</p>
       ${
         data.replacement_order_number
@@ -572,7 +614,7 @@ export function abandonedCartRecoveryTemplate(data: AbandonedCartEmailData) {
     subject: `You left something in your cart — ${data.brand_name}`,
     html: baseLayout(`
       <h2>Your cart is waiting</h2>
-      <p>Hi ${data.customer_name},</p>
+      <p>Hi ${titleCase(data.customer_name)},</p>
       <p>You left these items in your cart. They're still available — come back when you're ready.</p>
       <table style="width:100%;border-collapse:collapse;margin:20px 0;">
         ${itemRows}

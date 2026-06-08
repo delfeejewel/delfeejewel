@@ -32,13 +32,13 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     req.scope.resolve("email_notification")
   const customerModule = req.scope.resolve(Modules.CUSTOMER)
 
-  // If an account already exists for this email, don't waste a code — tell the
-  // user to log in. (Post-checkout onboarding of one's own email, so it's safe
-  // to disclose this here.)
+  // If a *registered* account already exists for this email, don't waste a code
+  // — tell the user to log in. Guest customers (has_account=false) are created
+  // at checkout for every guest order, so they must NOT block sign-up here.
   const existingCustomers = await customerModule.listCustomers({
     email: normalized,
   })
-  if (existingCustomers.length > 0) {
+  if (existingCustomers.some((c: any) => c.has_account)) {
     return res.status(409).json({
       message: "An account with this email already exists. Please log in.",
     })
