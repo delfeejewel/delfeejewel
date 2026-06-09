@@ -1,5 +1,8 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
+import { FAVICON_DATA_URI } from './src/admin/favicon-data'
+import { ADMIN_THEME_CSS } from './src/admin/admin-theme'
+
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
 // Redis-backed infrastructure modules. Without REDIS_URL (e.g. local dev) we
@@ -30,6 +33,32 @@ const redisModules = REDIS_URL
 module.exports = defineConfig({
   admin: {
     disable: process.env.DISABLE_ADMIN === "true",
+    // Swap Medusa's empty placeholder favicon for the Delfee "Df" mark.
+    // NOTE: Medusa applies this as mergeConfig(baseConfig, vite(baseConfig)),
+    // and Vite's mergeConfig CONCATENATES plugin arrays — so we must return
+    // ONLY our added plugin here. Returning the base config (or pushing onto
+    // its plugins) would duplicate @vitejs/plugin-react and double-inject the
+    // React Refresh preamble in dev ("inWebWorker has already been declared").
+    vite: () => ({
+      plugins: [
+        {
+          name: "delfee-admin-branding",
+          transformIndexHtml(html: string) {
+            return html
+              .replace(
+                /<link rel="icon"[^>]*data-placeholder-favicon[^>]*\/?>/,
+                `<link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />`
+              )
+              // Inject the brand-accent theme after Medusa's stylesheet so it
+              // wins; applies to every admin page.
+              .replace(
+                /<\/head>/,
+                `<style id="delfee-admin-theme">${ADMIN_THEME_CSS}</style></head>`
+              )
+          },
+        },
+      ],
+    }),
   },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
