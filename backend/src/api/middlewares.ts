@@ -161,10 +161,13 @@ async function requireDeveloper(
     const user = users?.[0] as any
     const role = user?.metadata?.role
 
-    // Developer or no role set — allow
-    if (role === "developer" || !role) return next()
+    // Developer only — managing users, invites, API keys and system/settings
+    // routes requires the developer role. (No more "no role" bootstrap pass:
+    // every real account now has an explicit role, so admins/ops/etc. are
+    // blocked here.)
+    if (role === "developer") return next()
 
-    // Explicit non-developer role — block
+    // Any other role (admin, ops, marketing, viewer) or no role — block.
     return res.status(403).json({
       message: "Access denied. This action requires developer privileges.",
     })

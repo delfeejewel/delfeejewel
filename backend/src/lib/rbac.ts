@@ -20,6 +20,7 @@ export const ROLE_LABELS: Record<Role, string> = {
  */
 export type Permission =
   | "users.manage"
+  | "users.write"
   | "products.write"
   | "orders.write"
   | "returns.write"
@@ -33,6 +34,7 @@ export type Permission =
 
 const ALL_PERMISSIONS: Permission[] = [
   "users.manage",
+  "users.write",
   "products.write",
   "orders.write",
   "returns.write",
@@ -47,7 +49,10 @@ const ALL_PERMISSIONS: Permission[] = [
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   developer: ALL_PERMISSIONS,
-  admin: ALL_PERMISSIONS.filter((p) => p !== "users.manage"),
+  // Admin manages the store but NOT team members / user accounts.
+  admin: ALL_PERMISSIONS.filter(
+    (p) => p !== "users.manage" && p !== "users.write"
+  ),
   ops: [
     "orders.write",
     "returns.write",
@@ -75,6 +80,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
  */
 export const PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
   [/^\/admin\/set-role/, "users.manage"],
+  // Create/delete/update team members — developer only. GET (list, /me) is
+  // softened (a .write perm is not enforced on reads), and /admin/users/me is
+  // excluded so anyone can view/edit their own profile.
+  [/^\/admin\/users(\/(?!me(\/|$))|$)/, "users.write"],
   [/^\/admin\/return-requests\/.+\/(approve|reject|mark-received|create-replacement)/, "returns.write"],
   [/^\/admin\/orders\/.+\/(refund|capture|cancel)/, "orders.write"],
   [/^\/admin\/products(\/|$)/, "products.write"],
