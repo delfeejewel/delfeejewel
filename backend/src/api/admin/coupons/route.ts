@@ -18,6 +18,7 @@ function toCoupon(p: any) {
   return {
     id: p.id,
     code: p.code,
+    description: p.metadata?.description || null,
     status: p.status,
     kind: am.type as "percentage" | "fixed", // percentage | fixed
     value: Number(am.value) || 0,
@@ -72,6 +73,7 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
   const body = (req.body || {}) as {
     code?: string
+    description?: string
     kind?: string
     value?: number
     target?: string
@@ -81,6 +83,7 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
   }
 
   const code = body.code?.trim().toUpperCase()
+  const description = body.description?.trim() || null
   const kind = body.kind === "fixed" ? "fixed" : "percentage"
   const value = Number(body.value)
   const target = body.target === "shipping" ? "shipping_methods" : "order"
@@ -89,6 +92,18 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
   if (!value || value <= 0) return ERR(res, 400, "A positive discount value is required.")
   if (kind === "percentage" && value > 100) {
     return ERR(res, 400, "A percentage discount can't exceed 100.")
+  }
+
+  // Expiry, if given, must be a valid future timestamp.
+  let endsAt: Date | null = null
+  if (body.ends_at) {
+    endsAt = new Date(body.ends_at)
+    if (isNaN(endsAt.getTime())) {
+      return ERR(res, 400, "Expiry date/time is invalid.")
+    }
+    if (endsAt.getTime() <= Date.now()) {
+      return ERR(res, 400, "Expiry must be in the future.")
+    }
   }
 
   const promoModule: any = req.scope.resolve(Modules.PROMOTION)
@@ -113,11 +128,11 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
   // A usage limit or expiry is modelled via an attached campaign.
   let campaign: Record<string, any> | undefined
   const usageLimit = Number(body.usage_limit)
-  if ((usageLimit && usageLimit > 0) || body.ends_at) {
+  if ((usageLimit && usageLimit > 0) || endsAt) {
     campaign = {
       name: `Coupon ${code}`,
       campaign_identifier: `coupon-${code}-${Date.now()}`,
-      ...(body.ends_at ? { ends_at: new Date(body.ends_at) } : {}),
+      ...(endsAt ? { ends_at: endsAt } : {}),
       ...(usageLimit && usageLimit > 0
         ? { budget: { type: "usage", limit: usageLimit } }
         : {}),
@@ -130,6 +145,7 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
     status: "active",
     is_automatic: false,
     application_method,
+    ...(description ? { metadata: { description } } : {}),
     ...(campaign ? { campaign } : {}),
   })
 

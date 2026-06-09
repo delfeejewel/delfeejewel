@@ -17,6 +17,7 @@ import { useEffect, useState } from "react"
 type Coupon = {
   id: string
   code: string
+  description: string | null
   status: "active" | "inactive" | "draft"
   kind: "percentage" | "fixed"
   value: number
@@ -40,8 +41,26 @@ const fmtDiscount = (c: Coupon) => {
 
 const PAGE_SIZE = 50
 
+// Unambiguous alphabet — no 0/O/1/I — for auto-generated codes.
+const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
+const generateCode = () => {
+  let s = ""
+  for (let i = 0; i < 8; i++) {
+    s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
+  }
+  return s
+}
+
+// Local "now" as a value for <input type="datetime-local"> (min + guard).
+const localNow = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 16)
+}
+
 const emptyForm = {
   code: "",
+  description: "",
   kind: "percentage",
   value: "",
   target: "order",
@@ -141,10 +160,14 @@ const CouponsPage = () => {
     if (form.kind === "percentage" && value > 100) {
       return toast.error("Percentage can't exceed 100.")
     }
+    if (form.ends_at && new Date(form.ends_at).getTime() <= Date.now()) {
+      return toast.error("Expiry must be in the future.")
+    }
     setCreating(true)
     try {
       const payload: Record<string, any> = {
         code: form.code,
+        description: form.description.trim() || undefined,
         kind: form.kind,
         value,
         target: form.target,
@@ -247,7 +270,14 @@ const CouponsPage = () => {
                 {rows.map((c) => (
                   <Table.Row key={c.id}>
                     <Table.Cell>
-                      <span style={{ fontFamily: "monospace", fontSize: 12.5 }}>{c.code}</span>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 12.5 }}>{c.code}</span>
+                        {c.description && (
+                          <span style={{ color: "var(--fg-subtle)", fontSize: 12 }}>
+                            {c.description}
+                          </span>
+                        )}
+                      </div>
                     </Table.Cell>
                     <Table.Cell>{fmtDiscount(c)}</Table.Cell>
                     <Table.Cell>
@@ -263,7 +293,12 @@ const CouponsPage = () => {
                         : "—"}
                     </Table.Cell>
                     <Table.Cell>
-                      {c.ends_at ? new Date(c.ends_at).toLocaleDateString("en-IN") : "—"}
+                      {c.ends_at
+                        ? new Date(c.ends_at).toLocaleString("en-IN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })
+                        : "—"}
                     </Table.Cell>
                     <Table.Cell>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
@@ -326,12 +361,31 @@ const CouponsPage = () => {
           <Drawer.Body style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <Label size="small" weight="plus">Code *</Label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Input
+                  placeholder="e.g. DIWALI20"
+                  value={form.code}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))
+                  }
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  onClick={() => setForm((f) => ({ ...f, code: generateCode() }))}
+                >
+                  Auto-generate
+                </Button>
+              </div>
+            </div>
+            <div>
+              <Label size="small" weight="plus">Description</Label>
               <Input
-                placeholder="e.g. DIWALI20"
-                value={form.code}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))
-                }
+                placeholder="Optional — e.g. Diwali sale, 20% off"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               />
             </div>
             <div>
@@ -351,8 +405,9 @@ const CouponsPage = () => {
               </Label>
               <Input
                 type="number"
-                min={1}
-                placeholder={form.kind === "percentage" ? "e.g. 20" : "e.g. 200"}
+                min={0}
+                step="any"
+                placeholder={form.kind === "percentage" ? "e.g. 12.5" : "e.g. 199.50"}
                 value={form.value}
                 onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
               />
@@ -373,18 +428,26 @@ const CouponsPage = () => {
               <Input
                 type="number"
                 min={1}
+                step={1}
                 placeholder="Optional — total redemptions"
                 value={form.usage_limit}
                 onChange={(e) => setForm((f) => ({ ...f, usage_limit: e.target.value }))}
               />
+              <Text size="xsmall" style={{ color: "var(--fg-muted)", marginTop: 4 }}>
+                Leave empty for unlimited uses.
+              </Text>
             </div>
             <div>
               <Label size="small" weight="plus">Expires on</Label>
               <Input
-                type="date"
+                type="datetime-local"
+                min={localNow()}
                 value={form.ends_at}
                 onChange={(e) => setForm((f) => ({ ...f, ends_at: e.target.value }))}
               />
+              <Text size="xsmall" style={{ color: "var(--fg-muted)", marginTop: 4 }}>
+                Leave empty for no expiry.
+              </Text>
             </div>
           </Drawer.Body>
           <Drawer.Footer>
