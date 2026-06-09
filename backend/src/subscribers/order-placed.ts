@@ -29,28 +29,41 @@ export default async function orderPlacedHandler({
         "items.*",
         "items.product.handle",
         "shipping_address.*",
+        // COD upfront token is stamped on the cart at verify time; it does NOT
+        // copy to the order on completion, so we read it across the link here.
+        "cart.metadata",
       ],
       filters: { id: data.id },
     })
 
     if (!order) return
 
-    // Detect gift-wrap line item and flag the order so the ops widget +
-    // warehouse staff know to apply branded packaging. Idempotent.
+    const orderMeta = (order.metadata as any) || {}
+    const cartMeta = ((order as any).cart?.metadata as any) || {}
+    const codUpfront = Number(cartMeta.cod_upfront_amount) || 0
+
+    // Build a single metadata patch: gift-wrap flag (ops/packaging) + the COD
+    // upfront token bridged from the cart so order pages/email can show it.
+    const metaPatch: Record<string, any> = {}
     const hasGiftWrap = ((order.items as any[]) || []).some(
       (it) => it?.product?.handle === "gift-wrap"
     )
-    if (hasGiftWrap && !(order.metadata as any)?.gift_wrap) {
+    if (hasGiftWrap && !orderMeta.gift_wrap) {
+      metaPatch.gift_wrap = true
+    }
+    if (codUpfront > 0 && !orderMeta.cod_upfront_amount) {
+      metaPatch.cod_upfront_amount = codUpfront
+      metaPatch.cod_upfront_payment_id = cartMeta.cod_upfront_payment_id
+      metaPatch.cod_upfront_paid_at = cartMeta.cod_upfront_paid_at
+    }
+    if (Object.keys(metaPatch).length > 0) {
       try {
         const orderModule: any = container.resolve(Modules.ORDER)
         await orderModule.updateOrders([
-          {
-            id: order.id,
-            metadata: { ...(order.metadata || {}), gift_wrap: true },
-          },
+          { id: order.id, metadata: { ...orderMeta, ...metaPatch } },
         ])
       } catch (e: any) {
-        logger.warn(`Could not flag gift_wrap on order ${order.id}: ${e?.message}`)
+        logger.warn(`Could not patch metadata on order ${order.id}: ${e?.message}`)
       }
     }
 
@@ -71,6 +84,9 @@ export default async function orderPlacedHandler({
     // Derive shipping so the breakdown always reconciles with the total.
     const shippingNum = Math.max(0, totalNum - subtotalNum - taxNum + discountNum)
 
+    // COD partial payment: token paid now vs balance due on delivery.
+    const codDueNum = codUpfront > 0 ? Math.max(0, totalNum - codUpfront) : 0
+
     await emailService.sendOrderEmail("order.placed", {
       order_id: order.id,
       order_number: order.display_id ?? order.id,
@@ -81,6 +97,8 @@ export default async function orderPlacedHandler({
       shipping_is_free: shippingNum === 0,
       discount: discountNum > 0 ? `−${convertToLocale(discountNum, cc)}` : undefined,
       total: convertToLocale(totalNum, cc),
+      cod_paid: codUpfront > 0 ? convertToLocale(codUpfront, cc) : undefined,
+      cod_due: codUpfront > 0 ? convertToLocale(codDueNum, cc) : undefined,
       items: (order.items || []).map((item: any) => ({
         title: item.title,
         quantity: item.quantity,

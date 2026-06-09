@@ -1,12 +1,9 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import type { CodPolicy } from "@lib/util/cod"
 
-export type CodPolicy = {
-  percent: number
-  min_order: number
-  currency: string
-}
+export type { CodPolicy }
 
 export type CodUpfrontOrder = {
   upfront_required: boolean
@@ -14,6 +11,8 @@ export type CodUpfrontOrder = {
   currency: string
   razorpay_order_id?: string
   razorpay_key_id?: string
+  /** Set when the token was already paid on a prior attempt — skip the popup. */
+  already_paid?: boolean
 }
 
 export const getCodPolicy = async (): Promise<CodPolicy | null> => {

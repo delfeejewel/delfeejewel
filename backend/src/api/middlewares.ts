@@ -112,5 +112,12 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/return-requests*",
       middlewares: [authenticate("customer", ["session", "bearer"])],
     },
+    // Razorpay webhook: preserve the raw body so we can verify the HMAC
+    // signature (Razorpay signs the exact bytes, not the parsed JSON).
+    {
+      matcher: "/hooks/razorpay",
+      method: ["POST"],
+      bodyParser: { preserveRawBody: true },
+    },
   ],
 })

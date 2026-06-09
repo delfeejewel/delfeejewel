@@ -9,6 +9,9 @@ export interface OrderEmailData {
   shipping?: string
   shipping_is_free?: boolean
   discount?: string
+  /** COD partial payment (set only when an upfront token was collected). */
+  cod_paid?: string
+  cod_due?: string
   items: { title: string; quantity: number; price: string }[]
   shipping_address?: string
   tracking_number?: string
@@ -20,6 +23,25 @@ export interface OrderEmailData {
 /** Capitalise each word of a name for greetings ("testing" → "Testing"). */
 function titleCase(s: string): string {
   return (s || "").trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/** COD partial-payment note (advance token paid now + balance due on delivery). */
+function codBlock(data: OrderEmailData): string {
+  if (!data.cod_paid) return ""
+  return `
+  <div style="margin-top:18px;padding:14px 16px;border-radius:10px;background:#faf8f5;border:1px solid #ece8e2;">
+    <p style="margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5D2E46;">Cash on Delivery</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      <tr>
+        <td style="padding:4px 0;font-size:13.5px;color:#666;">Advance paid (token)</td>
+        <td style="padding:4px 0;font-size:13.5px;color:#2a2a2a;text-align:right;">${data.cod_paid}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;font-size:13.5px;color:#666;">Due on delivery</td>
+        <td style="padding:4px 0;font-size:14px;font-weight:700;color:#5D2E46;text-align:right;">${data.cod_due}</td>
+      </tr>
+    </table>
+  </div>`
 }
 
 /** Amount breakdown (subtotal / shipping / discount / total) for order emails. */
@@ -149,6 +171,7 @@ export const templates = {
       <h3 style="margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:2px;color:#999;">Order Summary</h3>
       ${itemsTable(data.items)}
       ${totalsBlock(data)}
+      ${codBlock(data)}
 
       ${data.shipping_address ? `<p style="margin-top:24px;font-size:13px;color:#999;"><strong>Shipping to:</strong> ${data.shipping_address}</p>` : ""}
 

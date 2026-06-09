@@ -6,8 +6,8 @@ import {
   createCodUpfrontOrder,
   getCodPolicy,
   verifyCodUpfront,
-  type CodPolicy,
 } from "@lib/data/cod"
+import { computeCodToken, type CodPolicy } from "@lib/util/cod"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import React, { useEffect, useState } from "react"
@@ -115,10 +115,25 @@ const RazorpayPaymentButton = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [hasFailed, setHasFailed] = useState(false)
+  // True once Razorpay confirms a successful charge. Guards against re-charging
+  // if placeOrder() fails afterwards — the retry just completes the order.
+  const [paid, setPaid] = useState(false)
 
   const session = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
+
+  const completeOrder = async () => {
+    try {
+      await placeOrder()
+      setHasFailed(false)
+    } catch (err: any) {
+      if (isRedirectError(err)) throw err
+      setErrorMessage(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   // Returns the freshest razorpay_order_id available. If the last attempt
   // failed (or no attempt yet but the session is stale), mints a new session
@@ -156,6 +171,13 @@ const RazorpayPaymentButton = ({
     setSubmitting(true)
     setErrorMessage(null)
 
+    // Payment already succeeded on a prior attempt — don't re-open the popup
+    // (would re-charge). Just retry completing the order.
+    if (paid) {
+      await completeOrder()
+      return
+    }
+
     try {
       const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
       if (!razorpayKeyId) throw new Error("Razorpay key not configured")
@@ -177,14 +199,10 @@ const RazorpayPaymentButton = ({
         },
         theme: { color: "#5D2E46" },
         handler: async function () {
-          try {
-            await placeOrder()
-            setHasFailed(false)
-          } catch (err: any) {
-            if (isRedirectError(err)) throw err
-            setErrorMessage(err.message)
-          }
-          setSubmitting(false)
+          // Razorpay confirmed the charge — mark paid so any later retry
+          // completes the order rather than charging again.
+          setPaid(true)
+          await completeOrder()
         },
         modal: {
           ondismiss: function () {
@@ -218,7 +236,9 @@ const RazorpayPaymentButton = ({
         isLoading={submitting}
         data-testid={dataTestId}
       >
-        {hasFailed
+        {paid
+          ? "Complete your order"
+          : hasFailed
           ? retryCount > 1
             ? `Retry payment (attempt ${retryCount + 1})`
             : "Retry payment"
@@ -252,10 +272,7 @@ const CodPaymentButton = ({
   }, [])
 
   const total = Number(cart?.total) || 0
-  const upfrontAmount =
-    policy && total >= policy.min_order
-      ? Math.round((total * policy.percent) / 100)
-      : 0
+  const upfrontAmount = policy ? computeCodToken(total, policy) : 0
   const upfrontRequired = upfrontAmount > 0
   const dueOnDelivery = Math.max(0, total - upfrontAmount)
   const currency = cart?.currency_code || "inr"
@@ -292,6 +309,22 @@ const CodPaymentButton = ({
         // proceed as plain COD.
         await placeOrder()
         setSubmitting(false)
+        return
+      }
+      if (tokenResp.already_paid) {
+        // The token was already paid on a prior attempt (e.g. placeOrder failed
+        // after payment). Don't re-charge — just complete the order.
+        try {
+          await placeOrder()
+          setHasFailed(false)
+        } catch (err: any) {
+          if (isRedirectError(err)) throw err
+          setErrorMessage(
+            err?.message || "Could not complete the order after payment"
+          )
+        } finally {
+          setSubmitting(false)
+        }
         return
       }
 
@@ -362,7 +395,9 @@ const CodPaymentButton = ({
           </p>
           <div className="flex justify-between text-[var(--color-text-secondary)]">
             <span>
-              {policy?.percent}% token via Razorpay{" "}
+              {policy && total >= policy.threshold
+                ? `${policy.percent}% advance token via Razorpay`
+                : "Advance token via Razorpay"}{" "}
               <span className="text-[var(--color-text-muted)]">(now)</span>
             </span>
             <span className="font-semibold tabular-nums text-[var(--color-text-primary)]">

@@ -177,6 +177,8 @@ export default function TrackOrderTemplate() {
   }
 
   const meta = (order?.metadata || {}) as any
+  const codUpfront = Number(meta.cod_upfront_amount) || 0
+  const codDue = Math.max(0, (Number(order?.total) || 0) - codUpfront)
   const awb = meta.awb as string | undefined
   const courier = meta.shiprocket_courier as string | undefined
 
@@ -472,6 +474,34 @@ export default function TrackOrderTemplate() {
                         })}
                       </span>
                     </div>
+
+                    {/* COD advance token: paid now vs balance due on delivery */}
+                    {codUpfront > 0 && (
+                      <div className="mt-2.5 pt-3 border-t border-dashed border-[var(--color-border)] flex flex-col gap-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">
+                            Advance paid
+                          </span>
+                          <span className="tabular-nums text-[var(--color-text-primary)]">
+                            {convertToLocale({
+                              amount: codUpfront,
+                              currency_code: order.currency_code,
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">
+                            Due on delivery
+                          </span>
+                          <span className="font-semibold tabular-nums text-[var(--color-plum)]">
+                            {convertToLocale({
+                              amount: codDue,
+                              currency_code: order.currency_code,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
