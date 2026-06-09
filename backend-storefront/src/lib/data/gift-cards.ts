@@ -57,6 +57,24 @@ export const applyGiftCardToCart = async (
   }
 }
 
+/**
+ * Re-clamp gift-card holds on a cart to the current totals. Call after a cart
+ * change (items/shipping) so the displayed gift-card discount stays accurate.
+ * Best-effort: a failure here is non-fatal (checkout re-clamps authoritatively).
+ */
+export const recomputeGiftCards = async (cartId: string): Promise<void> => {
+  if (!cartId) return
+  const headers = await getAuthHeaders()
+  try {
+    await sdk.client.fetch(`/store/carts/${cartId}/gift-cards/recompute`, {
+      method: "POST",
+      headers,
+    })
+  } catch {
+    // non-fatal — totals are re-clamped on checkout completion
+  }
+}
+
 /** Remove an applied gift card from the cart. */
 export const removeGiftCardFromCart = async (
   code: string

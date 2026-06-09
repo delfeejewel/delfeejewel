@@ -5,6 +5,7 @@ import {
 } from "@medusajs/framework/utils"
 
 import { GIFT_CARD_MODULE } from "../../../../modules/gift_card"
+import { pendingHolds } from "../../../../modules/gift_card/lib/holds"
 
 const ERR = (res: MedusaResponse, status: number, message: string) =>
   res.status(status).json({ message })
@@ -20,6 +21,12 @@ function isExpired(expires_at: string | Date | null | undefined): boolean {
  *
  * Body: { cart_id: string, code: string }
  * Response: { applied: number, balance_remaining: number, code: string }
+ *
+ * NOTE: applying does NOT decrement the gift card balance. It only records a
+ * cart credit line (a hold). The balance is decremented once, at order
+ * placement, by the gift-card-redeemed subscriber. This prevents balance from
+ * being stranded on abandoned carts and prevents the same card being spent on
+ * two carts.
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const { cart_id, code } = (req.body || {}) as {
@@ -75,46 +82,51 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return ERR(res, 409, "This gift card is already applied to your cart.")
   }
 
-  // 4. Compute apply amount = min(balance, cart.total)
-  const cartTotal = Number(cart.total) || 0
+  // 4. Available = balance minus what this card already holds on other carts.
   const balance = Number(gc.balance) || 0
-  const applied = Math.min(balance, cartTotal)
+  const holds = await pendingHolds(req.scope, gc.id, cart_id)
+  const available = balance - holds
+  if (available <= 0) {
+    return ERR(
+      res,
+      409,
+      "This gift card's balance is already committed to another cart."
+    )
+  }
+
+  // 5. Apply amount = min(available balance, cart total).
+  const cartTotal = Number(cart.total) || 0
+  const applied = Math.min(available, cartTotal)
   if (applied <= 0) {
     return ERR(res, 400, "Cart total is already covered.")
   }
 
-  // 5. Add credit line to cart + decrement balance on the gift card
+  // 6. Record the hold as a cart credit line. Balance is untouched here.
   await cartModule.createCreditLines([
     {
       cart_id,
       amount: applied,
       reference: "gift_card",
       reference_id: gc.id,
-      metadata: { gift_card_code: gc.code },
-    },
-  ])
-
-  const newBalance = balance - applied
-  await giftCardModule.updateGiftCards([
-    {
-      id: gc.id,
-      balance: newBalance,
-      status: newBalance <= 0 ? "redeemed" : "active",
+      metadata: { gift_card_code: gc.code, consumed: false },
     },
   ])
 
   return res.json({
     code: gc.code,
     applied,
-    balance_remaining: newBalance,
+    balance_remaining: available - applied,
   })
 }
 
 /**
  * DELETE /store/gift-cards/redeem
- * Remove an applied gift card from the cart and restore its balance.
+ * Remove an applied gift card from the cart.
  *
  * Body: { cart_id: string, code: string }
+ *
+ * Only the cart credit line (hold) is removed. The balance was never
+ * decremented at apply time, so there is nothing to restore.
  */
 export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
   const { cart_id, code } = (req.body || {}) as {
@@ -143,23 +155,13 @@ export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
     return ERR(res, 404, "This gift card is not applied to your cart.")
   }
 
-  const restored = creditLines.reduce(
-    (sum: number, cl: any) => sum + Number(cl.amount || 0),
-    0
-  )
+  // Don't allow removing a hold that has already been reconciled (order placed).
+  const consumed = creditLines.filter((cl: any) => cl?.metadata?.consumed === true)
+  if (consumed.length) {
+    return ERR(res, 409, "This gift card has already been redeemed on an order.")
+  }
 
   await cartModule.deleteCreditLines(creditLines.map((cl: any) => cl.id))
-  await giftCardModule.updateGiftCards([
-    {
-      id: gc.id,
-      balance: Number(gc.balance || 0) + restored,
-      status: "active",
-    },
-  ])
 
-  return res.json({
-    code: gc.code,
-    restored,
-    balance: Number(gc.balance || 0) + restored,
-  })
+  return res.json({ code: gc.code, removed: true })
 }

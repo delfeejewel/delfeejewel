@@ -1,22 +1,9 @@
-import { randomBytes } from "crypto"
-
 import { SubscriberArgs, type SubscriberConfig } from "@medusajs/framework"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { GIFT_CARD_MODULE } from "../modules/gift_card"
+import { defaultExpiry, generateGiftCardCode } from "../modules/gift_card/lib/code"
 import { convertToLocale } from "../utils/money"
-
-const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ" // no 0/O/1/I
-const EXPIRY_DAYS = 365
-
-function generateGiftCardCode(): string {
-  const buf = randomBytes(12)
-  let code = ""
-  for (let i = 0; i < 12; i++) {
-    code += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length]
-  }
-  return `${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8, 12)}`
-}
 
 /**
  * On order.placed: scan the order's items for any Gift Card variants
@@ -66,7 +53,7 @@ export default async function giftCardPurchasedHandler({
   )
   if (!giftCardItems.length) return
 
-  const expiresAt = new Date(Date.now() + EXPIRY_DAYS * 86400_000)
+  const expiresAt = defaultExpiry()
   const expiresLabel = expiresAt.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",

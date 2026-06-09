@@ -24,6 +24,7 @@ export type Permission =
   | "orders.write"
   | "returns.write"
   | "promotions.write"
+  | "giftcards.write"
   | "analytics.read"
   | "customers.read"
   | "inventory.write"
@@ -36,6 +37,7 @@ const ALL_PERMISSIONS: Permission[] = [
   "orders.write",
   "returns.write",
   "promotions.write",
+  "giftcards.write",
   "analytics.read",
   "customers.read",
   "inventory.write",
@@ -56,6 +58,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   marketing: [
     "promotions.write",
+    "giftcards.write",
     "analytics.read",
     "customers.read",
   ],
@@ -78,6 +81,8 @@ export const PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
   [/^\/admin\/categories\/.+\/cover-image/, "products.write"],
   [/^\/admin\/qr-codes/, "inventory.write"],
   [/^\/admin\/low-stock/, "inventory.write"],
+  [/^\/admin\/gift-cards/, "giftcards.write"],
+  [/^\/admin\/coupons/, "promotions.write"],
   [/^\/admin\/analytics/, "analytics.read"],
   [/^\/admin\/customers\/segments/, "customers.read"],
 ]

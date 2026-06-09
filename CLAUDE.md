@@ -54,6 +54,12 @@ Medusa v2 uses a modular architecture. All customizations live in `src/`:
 
 Configuration is in `medusa-config.ts` (database URL, CORS, JWT/cookie secrets, registered modules).
 
+## Coupons & Gift Cards
+
+**Coupons** use Medusa's **built-in Promotion module** (no custom engine). Manage them in the admin under **Promotions** (percentage/fixed, order/item/shipping targets, usage limits, customer-group rules, and time-boxed campaigns with budgets). The storefront applies codes via `applyPromotions()` (`cart.ts`) → `promo_codes`; the `discount-code` checkout component handles the UI. Seed a starter set (`TEST10`, `WELCOME20`, `FLAT200`, `FREESHIP`, `SALE15`) with `npx medusa exec ./src/scripts/seed-promotions.ts` (idempotent).
+
+**Gift cards** are a custom module (`src/modules/gift_card`). They're issued automatically on `order.placed` when a purchased item carries `metadata.is_gift_card` (subscriber `gift-card-purchased.ts`), and can also be issued/voided/adjusted manually from the admin **Gift Cards** route (`/admin/gift-cards`, gated by the `giftcards.write` RBAC permission). Seed the purchasable Gift Card product with `npx medusa exec ./src/scripts/seed-gift-card-product.ts`. Redemption: `POST/DELETE /store/gift-cards/redeem` (adds a cart credit line).
+
 ## Storefront Architecture
 
 Next.js 15 App Router with country-code-prefixed routing:

@@ -8,6 +8,7 @@ import {
   permissionForPath,
   roleHas,
 } from "../lib/rbac"
+import { reconcileGiftCardHolds } from "../modules/gift_card/lib/holds"
 
 /**
  * Custom RBAC Middleware
@@ -61,6 +62,29 @@ async function requirePermission(
   }
 }
 
+/**
+ * Right before a cart is completed, re-clamp any gift-card holds so the order
+ * is created with correct totals (a hold left stale after the cart shrank
+ * would otherwise over-redeem the card / drive the total negative). Runs on
+ * the built-in POST /store/carts/:id/complete. Never blocks checkout — the
+ * gift-card-redeemed subscriber clamps again as a backstop.
+ */
+async function recomputeGiftCardsBeforeComplete(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  try {
+    const match = req.path.match(/\/store\/carts\/([^/]+)\/complete\/?$/)
+    if (match) {
+      await reconcileGiftCardHolds(req.scope as any, match[1])
+    }
+  } catch {
+    // Don't block order completion on a recompute failure.
+  }
+  return next()
+}
+
 async function requireDeveloper(
   req: MedusaRequest,
   res: MedusaResponse,
@@ -92,6 +116,11 @@ export default defineMiddlewares({
     {
       matcher: "/admin/*",
       middlewares: [requirePermission],
+    },
+    {
+      matcher: "/store/carts/*/complete",
+      method: ["POST"],
+      middlewares: [recomputeGiftCardsBeforeComplete],
     },
     ...RESTRICTED_ROUTES.map((route) => ({
       matcher: `${route}*`,
