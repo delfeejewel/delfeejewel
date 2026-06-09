@@ -1,7 +1,7 @@
 import { defineMiddlewares } from "@medusajs/medusa"
 import { authenticate } from "@medusajs/framework/http"
 import type { MedusaRequest, MedusaResponse, MedusaNextFunction } from "@medusajs/framework/http"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import {
   getUserRole,
@@ -85,6 +85,68 @@ async function recomputeGiftCardsBeforeComplete(
   return next()
 }
 
+/**
+ * Enforce "first order only" coupons at checkout. If the cart carries a
+ * promotion flagged `metadata.first_order_only` and the buyer already has an
+ * order (matched by customer_id when logged in, or by email for guests),
+ * block completion. Runs before the cart is completed.
+ */
+async function enforceFirstOrderCoupons(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  try {
+    const match = req.path.match(/\/store\/carts\/([^/]+)\/complete\/?$/)
+    if (!match) return next()
+    const cartId = match[1]
+
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: carts } = await query.graph({
+      entity: "cart",
+      filters: { id: cartId },
+      fields: [
+        "id",
+        "email",
+        "customer_id",
+        "promotions.code",
+        "promotions.metadata",
+      ],
+    })
+    const cart = carts?.[0] as any
+    if (!cart) return next()
+
+    const firstOrderPromo = (cart.promotions || []).find(
+      (p: any) => p?.metadata?.first_order_only === true
+    )
+    if (!firstOrderPromo) return next()
+
+    // Has this buyer ordered before? Check account + guest email.
+    const orFilters: any[] = []
+    if (cart.customer_id) orFilters.push({ customer_id: cart.customer_id })
+    if (cart.email) orFilters.push({ email: cart.email })
+    if (!orFilters.length) return next()
+
+    const { data: priorOrders } = await query.graph({
+      entity: "order",
+      filters: orFilters.length > 1 ? ({ $or: orFilters } as any) : orFilters[0],
+      fields: ["id"],
+      pagination: { take: 1 },
+    })
+
+    if ((priorOrders?.length || 0) > 0) {
+      return res.status(409).json({
+        message: `The code ${firstOrderPromo.code} is valid on your first order only. Please remove it to continue.`,
+        code: "first_order_only",
+      })
+    }
+    return next()
+  } catch {
+    // Never hard-block checkout on an internal error in this guard.
+    return next()
+  }
+}
+
 async function requireDeveloper(
   req: MedusaRequest,
   res: MedusaResponse,
@@ -120,7 +182,7 @@ export default defineMiddlewares({
     {
       matcher: "/store/carts/*/complete",
       method: ["POST"],
-      middlewares: [recomputeGiftCardsBeforeComplete],
+      middlewares: [enforceFirstOrderCoupons, recomputeGiftCardsBeforeComplete],
     },
     ...RESTRICTED_ROUTES.map((route) => ({
       matcher: `${route}*`,

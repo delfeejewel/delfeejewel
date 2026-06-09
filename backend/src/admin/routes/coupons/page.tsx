@@ -8,6 +8,7 @@ import {
   Heading,
   Input,
   Label,
+  Switch,
   Table,
   Text,
   toast,
@@ -18,6 +19,7 @@ type Coupon = {
   id: string
   code: string
   description: string | null
+  first_order_only: boolean
   status: "active" | "inactive" | "draft"
   kind: "percentage" | "fixed"
   value: number
@@ -67,6 +69,7 @@ const emptyForm = {
   currency_code: "inr",
   usage_limit: "",
   ends_at: "",
+  first_order_only: false,
 }
 
 const CouponsPage = () => {
@@ -175,6 +178,7 @@ const CouponsPage = () => {
       }
       if (Number(form.usage_limit) > 0) payload.usage_limit = Number(form.usage_limit)
       if (form.ends_at) payload.ends_at = new Date(form.ends_at).toISOString()
+      if (form.first_order_only) payload.first_order_only = true
 
       const r = await fetch(`/admin/coupons`, {
         method: "POST",
@@ -279,7 +283,16 @@ const CouponsPage = () => {
                         )}
                       </div>
                     </Table.Cell>
-                    <Table.Cell>{fmtDiscount(c)}</Table.Cell>
+                    <Table.Cell>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>{fmtDiscount(c)}</span>
+                        {c.first_order_only && (
+                          <Badge color="purple" size="2xsmall">
+                            1st order
+                          </Badge>
+                        )}
+                      </div>
+                    </Table.Cell>
                     <Table.Cell>
                       <Badge color={c.status === "active" ? "green" : "grey"} size="2xsmall">
                         {c.status}
@@ -448,6 +461,19 @@ const CouponsPage = () => {
               <Text size="xsmall" style={{ color: "var(--fg-muted)", marginTop: 4 }}>
                 Leave empty for no expiry.
               </Text>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <Switch
+                checked={form.first_order_only}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, first_order_only: v }))}
+              />
+              <div>
+                <Label size="small">First order only</Label>
+                <Text size="xsmall" style={{ color: "var(--fg-muted)" }}>
+                  Only customers with no previous order can use this code
+                  (checked at checkout for both accounts and guest emails).
+                </Text>
+              </div>
             </div>
           </Drawer.Body>
           <Drawer.Footer>

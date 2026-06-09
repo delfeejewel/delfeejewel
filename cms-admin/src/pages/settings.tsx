@@ -261,7 +261,7 @@ function StoreInfoForm() {
       </div>
 
       <Form.Item label="Store Name" name="store_name" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
-        <Input placeholder="Aurum Boutique" />
+        <Input placeholder="Delfee" />
       </Form.Item>
 
       <Form.Item label="Address" name="address" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
@@ -361,7 +361,7 @@ function StoreInfoForm() {
           rules={[{ required: true, type: "email", message: "Enter a valid email" }]}
           style={{ marginBottom: 12 }}
         >
-          <Input placeholder="hello@aurum.com" />
+          <Input placeholder="hello@delfee.in" />
         </Form.Item>
       </div>
 
@@ -380,7 +380,7 @@ function StoreInfoForm() {
           rules={[{ type: "url", message: "Enter a valid URL (https://…)" }]}
           style={{ marginBottom: 12 }}
         >
-          <Input placeholder="https://instagram.com/aurum" />
+          <Input placeholder="https://instagram.com/delfee" />
         </Form.Item>
         <Form.Item
           label="Facebook"
@@ -388,7 +388,7 @@ function StoreInfoForm() {
           rules={[{ type: "url", message: "Enter a valid URL (https://…)" }]}
           style={{ marginBottom: 12 }}
         >
-          <Input placeholder="https://facebook.com/aurum" />
+          <Input placeholder="https://facebook.com/delfee" />
         </Form.Item>
         <Form.Item
           label="YouTube"
@@ -396,7 +396,7 @@ function StoreInfoForm() {
           rules={[{ type: "url", message: "Enter a valid URL (https://…)" }]}
           style={{ marginBottom: 12 }}
         >
-          <Input placeholder="https://youtube.com/@aurum" />
+          <Input placeholder="https://youtube.com/@delfee" />
         </Form.Item>
         <Form.Item
           label="Pinterest"
@@ -404,7 +404,7 @@ function StoreInfoForm() {
           rules={[{ type: "url", message: "Enter a valid URL (https://…)" }]}
           style={{ marginBottom: 12 }}
         >
-          <Input placeholder="https://pinterest.com/aurum" />
+          <Input placeholder="https://pinterest.com/delfee" />
         </Form.Item>
       </div>
 

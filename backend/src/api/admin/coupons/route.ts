@@ -19,6 +19,7 @@ function toCoupon(p: any) {
     id: p.id,
     code: p.code,
     description: p.metadata?.description || null,
+    first_order_only: p.metadata?.first_order_only === true,
     status: p.status,
     kind: am.type as "percentage" | "fixed", // percentage | fixed
     value: Number(am.value) || 0,
@@ -80,10 +81,12 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
     currency_code?: string
     usage_limit?: number
     ends_at?: string | null
+    first_order_only?: boolean
   }
 
   const code = body.code?.trim().toUpperCase()
   const description = body.description?.trim() || null
+  const firstOrderOnly = body.first_order_only === true
   const kind = body.kind === "fixed" ? "fixed" : "percentage"
   const value = Number(body.value)
   const target = body.target === "shipping" ? "shipping_methods" : "order"
@@ -139,13 +142,17 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
     }
   }
 
+  const metadata: Record<string, any> = {}
+  if (description) metadata.description = description
+  if (firstOrderOnly) metadata.first_order_only = true
+
   const created = await promoModule.createPromotions({
     code,
     type: "standard",
     status: "active",
     is_automatic: false,
     application_method,
-    ...(description ? { metadata: { description } } : {}),
+    ...(Object.keys(metadata).length ? { metadata } : {}),
     ...(campaign ? { campaign } : {}),
   })
 
