@@ -206,6 +206,13 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/return-requests*",
       middlewares: [authenticate("customer", ["session", "bearer"])],
     },
+    // Self-service change-password: the handler verifies the current password
+    // and needs req.auth_context.actor_id (the customer id).
+    {
+      matcher: "/store/customers/me/password",
+      method: ["POST"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
     // Razorpay webhook: preserve the raw body so we can verify the HMAC
     // signature (Razorpay signs the exact bytes, not the parsed JSON).
     {

@@ -83,12 +83,13 @@ export default function Login({ setCurrentView }: Props) {
             >
               Password
             </label>
-            <a
-              href="#"
+            <button
+              type="button"
+              onClick={() => setCurrentView(LOGIN_VIEW.FORGOT_PASSWORD)}
               className="text-[11px] text-[var(--color-plum)] hover:underline underline-offset-2 transition-colors"
             >
               Forgot?
-            </a>
+            </button>
           </div>
           <div className="relative">
             <input

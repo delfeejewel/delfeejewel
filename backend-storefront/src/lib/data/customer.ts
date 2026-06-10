@@ -133,6 +133,87 @@ export async function signupWithOtp(data: {
   }
 }
 
+/**
+ * Request a password-reset code for a forgotten password. The backend only
+ * issues a code when a registered account exists, but always responds 200 so
+ * we never reveal whether the email has an account.
+ */
+export async function requestPasswordReset(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!email) {
+    return { success: false, error: "Email is required." }
+  }
+  try {
+    await sdk.client.fetch(`/store/account/reset-password/request`, {
+      method: "POST",
+      body: { email },
+    })
+    return { success: true }
+  } catch (error: any) {
+    return {
+      success: false,
+      error:
+        error?.message || "We couldn't send the code. Please try again shortly.",
+    }
+  }
+}
+
+/** Verify the emailed code and set a new password (forgotten-password flow). */
+export async function resetPassword(data: {
+  email: string
+  code: string
+  password: string
+}): Promise<{ success: boolean; error?: string }> {
+  if (!data.code) {
+    return {
+      success: false,
+      error: "Please enter the verification code we emailed you.",
+    }
+  }
+  try {
+    await sdk.client.fetch(`/store/account/reset-password/confirm`, {
+      method: "POST",
+      body: data,
+    })
+    return { success: true }
+  } catch (error: any) {
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "We couldn't reset your password. Please check the code and try again.",
+    }
+  }
+}
+
+/**
+ * Change the signed-in customer's password. Requires the current password,
+ * which the backend verifies before applying the change.
+ */
+export async function updateCustomerPassword(data: {
+  old_password: string
+  new_password: string
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const headers = {
+      ...(await getAuthHeaders()),
+    }
+    await sdk.client.fetch(`/store/customers/me/password`, {
+      method: "POST",
+      body: data,
+      headers,
+    })
+    return { success: true }
+  } catch (error: any) {
+    return {
+      success: false,
+      error:
+        error?.message || "We couldn't update your password. Please try again.",
+    }
+  }
+}
+
 export async function signup(_currentState: unknown, formData: FormData) {
   const password = formData.get("password") as string
   const customerForm = {

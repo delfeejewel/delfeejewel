@@ -13,6 +13,7 @@ import {
 import { pageMetadata, jsonLd } from "@lib/util/content-seo"
 import { BRAND } from "@lib/constants.brand"
 import { getBaseURL } from "@lib/util/env"
+import { getContactForm } from "@lib/data/cms"
 import PageHero from "@modules/content/components/page-hero"
 import ContactForm from "@modules/content/components/contact-form"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
 }
 
-const CHANNELS = [
+const DEFAULT_CHANNELS = [
   {
     icon: Mail,
     title: "Email Us",
@@ -51,7 +52,7 @@ const CHANNELS = [
     title: "Support Hours",
     text: "Mon–Sat, 10:00 AM – 7:00 PM IST",
     sub: "Messages outside hours are answered next day.",
-    href: null,
+    href: null as string | null,
   },
 ]
 
@@ -64,6 +65,24 @@ const QUICK_LINKS = [
 
 export default async function ContactPage({ params }: Props) {
   const { countryCode } = await params
+
+  const cfg = await getContactForm()
+
+  // Side-panel cards: CMS config when present, else the built-in defaults.
+  // (href "" or "#" → render as a non-link card.)
+  const cleanHref = (h?: string | null) =>
+    h && h !== "#" ? h : null
+  const channels = cfg
+    ? [
+        { icon: Mail, ...cfg.email_card, href: cleanHref(cfg.email_card?.href) },
+        { icon: MessageCircle, ...cfg.whatsapp_card, href: cleanHref(cfg.whatsapp_card?.href) },
+        { icon: Clock, ...cfg.hours_card, href: cleanHref(cfg.hours_card?.href) },
+      ]
+    : DEFAULT_CHANNELS
+
+  const heading = cfg?.heading || "Send us a message"
+  const subheading =
+    cfg?.subheading || "Fill in the form and we'll get back to you as soon as we can."
 
   const contactLd = {
     "@context": "https://schema.org",
@@ -98,17 +117,22 @@ export default async function ContactPage({ params }: Props) {
           {/* Form */}
           <div>
             <h2 className="font-wittgenstein text-[22px] small:text-[26px] font-bold text-[var(--color-plum)] mb-1.5">
-              Send us a message
+              {heading}
             </h2>
             <p className="text-[14px] text-[var(--color-text-muted)] mb-6">
-              Fill in the form and we'll get back to you as soon as we can.
+              {subheading}
             </p>
-            <ContactForm />
+            <ContactForm
+              subjects={cfg?.subjects}
+              submitLabel={cfg?.submit_label}
+              successTitle={cfg?.success_title}
+              successMessage={cfg?.success_message}
+            />
           </div>
 
           {/* Channels */}
           <aside className="flex flex-col gap-4">
-            {CHANNELS.map((c) => {
+            {channels.map((c) => {
               const Icon = c.icon
               const inner = (
                 <>

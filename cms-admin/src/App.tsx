@@ -20,6 +20,7 @@ import { Header } from "./pages/header"
 import { Footer } from "./pages/footer"
 import { MenuList, MenuCreate, MenuEdit } from "./pages/menus"
 import { Notifications, NotificationsText, NotificationsWhatsapp } from "./pages/notifications"
+import { Forms, ContactFormSettings, ContactSubmissions } from "./pages/forms"
 import { EmailSettings } from "./pages/email-settings"
 import { EmailTemplates } from "./pages/email-templates"
 
@@ -108,6 +109,11 @@ const App = () => {
                 meta: { label: "Store Info" },
               },
               {
+                name: "forms",
+                list: "/forms",
+                meta: { label: "Forms" },
+              },
+              {
                 name: "notifications",
                 list: "/notifications",
                 meta: { label: "Notifications" },
@@ -191,6 +197,13 @@ const App = () => {
 
                 {/* Settings */}
                 <Route path="/settings" element={<Settings />} />
+
+                {/* Forms — Contact Form config + Submissions inbox */}
+                <Route path="/forms" element={<Forms />}>
+                  <Route index element={<Navigate to="/forms/contact" replace />} />
+                  <Route path="contact" element={<ContactFormSettings />} />
+                  <Route path="submissions" element={<ContactSubmissions />} />
+                </Route>
 
                 {/* Notifications — Email (Settings/Templates), Text, WhatsApp */}
                 <Route path="/notifications" element={<Notifications />}>

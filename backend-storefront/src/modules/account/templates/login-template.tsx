@@ -5,10 +5,12 @@ import { AnimatePresence, motion } from "framer-motion"
 
 import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
+import ForgotPassword from "@modules/account/components/forgot-password"
 
 export enum LOGIN_VIEW {
   SIGN_IN = "sign-in",
   REGISTER = "register",
+  FORGOT_PASSWORD = "forgot-password",
 }
 
 /* ─── Jewellery decorative icons — same style as footer FloatingIcons ─── */
@@ -131,6 +133,20 @@ function BackgroundIcons() {
 export default function LoginTemplate() {
   const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
 
+  const isForgot = currentView === LOGIN_VIEW.FORGOT_PASSWORD
+
+  const heading = isForgot
+    ? "Reset Password"
+    : currentView === LOGIN_VIEW.SIGN_IN
+    ? "Welcome Back"
+    : "Create Account"
+
+  const subtitle = isForgot
+    ? "We'll email you a code to reset your password."
+    : currentView === LOGIN_VIEW.SIGN_IN
+    ? "Sign in to continue your curated journey."
+    : "Join us for an elevated jewellery experience."
+
   return (
     <div className="w-full font-outfit relative flex items-center justify-center py-10 small:py-16 overflow-hidden min-h-[560px]">
 
@@ -142,17 +158,19 @@ export default function LoginTemplate() {
         {/* Heading */}
         <div className="mb-8 text-center">
           <h2 className="font-wittgenstein text-[28px] font-semibold text-[var(--color-plum)] leading-tight">
-            {currentView === LOGIN_VIEW.SIGN_IN ? "Welcome Back" : "Create Account"}
+            {heading}
           </h2>
           <p className="text-[var(--color-text-muted)] text-[13px] mt-1.5 leading-relaxed">
-            {currentView === LOGIN_VIEW.SIGN_IN
-              ? "Sign in to continue your curated journey."
-              : "Join us for an elevated jewellery experience."}
+            {subtitle}
           </p>
         </div>
 
-        {/* Pill toggle */}
-        <div className="flex p-1 bg-[var(--color-bg-secondary)] rounded-lg mb-8">
+        {/* Pill toggle — hidden on the forgot-password view */}
+        <div
+          className={`flex p-1 bg-[var(--color-bg-secondary)] rounded-lg mb-8 ${
+            isForgot ? "hidden" : ""
+          }`}
+        >
           <button
             onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
             className={`flex-1 py-2.5 px-3 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all duration-200 ${
@@ -186,8 +204,10 @@ export default function LoginTemplate() {
           >
             {currentView === LOGIN_VIEW.SIGN_IN ? (
               <Login setCurrentView={setCurrentView} />
-            ) : (
+            ) : currentView === LOGIN_VIEW.REGISTER ? (
               <Register setCurrentView={setCurrentView} />
+            ) : (
+              <ForgotPassword setCurrentView={setCurrentView} />
             )}
           </motion.div>
         </AnimatePresence>

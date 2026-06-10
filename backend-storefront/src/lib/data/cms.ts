@@ -142,6 +142,36 @@ export async function getStoreInfo() {
   return data
 }
 
+export type ContactCard = {
+  title: string
+  text: string
+  sub: string
+  href?: string
+}
+
+export type ContactFormConfig = {
+  heading: string
+  subheading: string
+  subjects: string[]
+  submit_label: string
+  success_title: string
+  success_message: string
+  email_card: ContactCard
+  whatsapp_card: ContactCard
+  hours_card: ContactCard
+}
+
+export async function getContactForm(): Promise<ContactFormConfig | null> {
+  const { data, error } = await supabase
+    .from("cms_contact_form")
+    .select("*")
+    .limit(1)
+    .single()
+
+  if (error || !data) return null
+  return data as ContactFormConfig
+}
+
 export type SectionVisibility = Record<string, boolean>
 
 export async function getHomepageSections(): Promise<SectionVisibility> {

@@ -99,6 +99,28 @@ export function otpVerifyTemplate(data: OtpEmailData) {
   }
 }
 
+export interface PasswordResetEmailData {
+  email: string
+  code: string
+  customer_name?: string
+}
+
+/** One-time code email for resetting a forgotten password. */
+export function passwordResetTemplate(data: PasswordResetEmailData) {
+  return {
+    subject: "Reset your password",
+    html: baseLayout(`
+      <h2>Reset your password</h2>
+      <p>Hi ${titleCase(data.customer_name || "there")},</p>
+      <p>Use this code to reset your password:</p>
+      <div style="background:#f5f5f7;padding:20px;border-radius:8px;text-align:center;margin:24px 0;">
+        <span style="font-size:34px;font-weight:700;letter-spacing:10px;font-family:monospace;color:#1a1a1a;">${data.code}</span>
+      </div>
+      <p style="color:#999;font-size:13px;">This code expires in 10 minutes. If you didn't request a password reset, you can safely ignore this email — your password won't change.</p>
+    `),
+  }
+}
+
 const BRAND_NAME = process.env.BRAND_NAME || "Delfee"
 
 function baseLayout(content: string): string {
@@ -669,6 +691,36 @@ export function returnAdminAlertTemplate(data: ReturnAdminEmailData) {
       </ul>
       <p style="font-size:13px;color:#666;margin-top:20px;">Reference: <code>${data.request_id.slice(-8).toUpperCase()}</code></p>
       <p style="font-size:13px;color:#666;">Approve or reject via the admin API: <code>POST /admin/return-requests/${data.request_id}/{approve,reject}</code></p>
+    `),
+  }
+}
+
+export interface ContactNotificationData {
+  to: string
+  name: string
+  email: string
+  phone?: string | null
+  subject?: string | null
+  message: string
+}
+
+export function contactNotificationTemplate(data: ContactNotificationData) {
+  return {
+    subject: `[Contact] ${data.subject || "New message"} — from ${data.name}`,
+    html: baseLayout(`
+      <h2>New contact message</h2>
+      <p><strong>${data.name}</strong> sent a message through the Contact Us form.</p>
+      <table style="font-size:14px;line-height:1.8;margin:16px 0;">
+        <tr><td style="color:#999;padding-right:16px;">Email</td><td><a href="mailto:${data.email}">${data.email}</a></td></tr>
+        ${data.phone ? `<tr><td style="color:#999;padding-right:16px;">Phone</td><td>${data.phone}</td></tr>` : ""}
+        ${data.subject ? `<tr><td style="color:#999;padding-right:16px;">Subject</td><td>${data.subject}</td></tr>` : ""}
+      </table>
+      <h3 style="margin:24px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#999;">Message</h3>
+      <p style="font-size:14px;white-space:pre-wrap;padding:14px 18px;border-left:3px solid #D4AF37;background:#faf8f3;color:#5D2E46;">${data.message}</p>
+      <div style="text-align:center;margin-top:28px;">
+        <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject || "Your message")}" class="btn">Reply to ${data.name}</a>
+      </div>
+      <p style="font-size:12px;color:#999;margin-top:20px;">Manage all submissions in the CMS → Forms → Submissions.</p>
     `),
   }
 }

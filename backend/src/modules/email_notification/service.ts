@@ -30,6 +30,10 @@ import {
   AbandonedCartEmailData,
   otpVerifyTemplate,
   OtpEmailData,
+  passwordResetTemplate,
+  PasswordResetEmailData,
+  contactNotificationTemplate,
+  ContactNotificationData,
 } from "./templates"
 import { Logger } from "@medusajs/framework/types"
 
@@ -227,6 +231,11 @@ export default class EmailNotificationService extends MedusaService({}) {
     await this._send("otp.verify", data.email, subject, html)
   }
 
+  async sendPasswordResetEmail(data: PasswordResetEmailData) {
+    const { subject, html } = passwordResetTemplate(data)
+    await this._send("password.reset", data.email, subject, html)
+  }
+
   async sendGiftCardEmail(data: GiftCardEmailData) {
     const { subject, html } = giftCardPurchasedTemplate(data)
     await this._send(
@@ -235,5 +244,10 @@ export default class EmailNotificationService extends MedusaService({}) {
       subject,
       html
     )
+  }
+
+  async sendContactNotificationEmail(data: ContactNotificationData) {
+    const { subject, html } = contactNotificationTemplate(data)
+    await this._send(`contact ${data.email}`, data.to, subject, html)
   }
 }

@@ -1,10 +1,15 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { CONTACT_MODULE } from "../../../modules/contact"
-import type ContactModuleService from "../../../modules/contact/service"
+import EmailNotificationService from "../../../modules/email_notification/service"
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 /**
  * POST /store/contact
- * Public endpoint for the storefront Contact Us form. Stores the message.
+ * Notifies the team of a new Contact Us submission.
+ *
+ * The submission itself is stored by the storefront directly in Supabase
+ * (`contact_submissions`, managed in CMS → Forms). This endpoint only fires the
+ * team-notification email, fire-and-forget — it never blocks the storefront.
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const { name, email, phone, subject, message } = (req.body ?? {}) as Record<
@@ -17,19 +22,33 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       .status(400)
       .json({ message: "name, email and message are required" })
   }
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+  if (!EMAIL_RE.test(email)) {
     return res.status(400).json({ message: "A valid email is required" })
   }
 
-  const contactService: ContactModuleService = req.scope.resolve(CONTACT_MODULE)
+  const to =
+    process.env.CONTACT_NOTIFICATION_EMAIL ||
+    process.env.ADMIN_NOTIFICATION_EMAIL ||
+    "enquire@delfee.in"
 
-  const created = await contactService.createContactMessages({
-    name: name.trim().slice(0, 200),
-    email: email.trim().slice(0, 200),
-    phone: phone?.trim().slice(0, 50) || null,
-    subject: subject?.trim().slice(0, 200) || null,
-    message: message.trim().slice(0, 5000),
-  })
+  const emailService: EmailNotificationService =
+    req.scope.resolve("email_notification")
+  const logger = req.scope.resolve("logger")
 
-  return res.status(201).json({ success: true, id: (created as any)?.id })
+  // Fire-and-forget: the message is already persisted in Supabase, so don't
+  // hold the response on email delivery.
+  emailService
+    .sendContactNotificationEmail({
+      to,
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone?.trim() || null,
+      subject: subject?.trim() || null,
+      message: message.trim(),
+    })
+    .catch((err: any) =>
+      logger.error(`Contact notification email failed: ${err?.message}`)
+    )
+
+  return res.json({ success: true })
 }
