@@ -71,7 +71,16 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     attempts: 0,
   })
 
-  await emailService.sendOtpEmail({ email: normalized, code })
+  // Fire-and-forget: don't hold the HTTP response hostage to email delivery.
+  // The OTP record is already persisted above, so the user can proceed to the
+  // code-entry step immediately. _send() swallows and logs its own errors; the
+  // extra .catch guards against an unexpected throw (e.g. Supabase lookup).
+  const logger = req.scope.resolve("logger")
+  emailService
+    .sendOtpEmail({ email: normalized, code })
+    .catch((err: any) =>
+      logger.error(`OTP email send failed for ${normalized}: ${err?.message}`)
+    )
 
   return res.json({ success: true })
 }

@@ -20,6 +20,16 @@ export interface TransportConfig {
   smtp_secure?: boolean
 }
 
+// Fail fast instead of hanging on the nodemailer default connectionTimeout of
+// 120s. On hosts where the SMTP egress port is blocked/filtered (common on
+// cloud VMs), the TCP connect never completes — without these caps a single
+// send would block for a full 2 minutes before erroring.
+const TIMEOUTS = {
+  connectionTimeout: 10_000, // wait max 10s for the TCP connection
+  greetingTimeout: 10_000, // wait max 10s for the SMTP greeting
+  socketTimeout: 20_000, // wait max 20s of socket inactivity
+} as const
+
 export function createTransport(config: TransportConfig): Transporter {
   switch (config.type) {
     case "gmail":
@@ -29,6 +39,7 @@ export function createTransport(config: TransportConfig): Transporter {
           user: config.gmail_user,
           pass: config.gmail_app_password,
         },
+        ...TIMEOUTS,
       })
 
     case "ses":
@@ -40,6 +51,7 @@ export function createTransport(config: TransportConfig): Transporter {
           user: config.ses_access_key_id!,
           pass: config.ses_secret_access_key!,
         },
+        ...TIMEOUTS,
       })
 
     case "smtp":
@@ -51,6 +63,7 @@ export function createTransport(config: TransportConfig): Transporter {
           user: config.smtp_user,
           pass: config.smtp_pass,
         },
+        ...TIMEOUTS,
       })
 
     default:
