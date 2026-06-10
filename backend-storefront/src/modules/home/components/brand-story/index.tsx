@@ -10,7 +10,7 @@ export default function BrandStory() {
         <div className="relative">
           <div className="absolute -top-6 -left-6 w-64 h-64 [background:var(--color-lavender-soft)] rounded-full -z-10" />
           <Image
-            src="/images/ChatGPT Image May 21, 2026, 11_18_38 AM.png"
+            src="/images/heritage-artisan.png"
             alt="Artisan crafting jewellery"
             width={600}
             height={700}

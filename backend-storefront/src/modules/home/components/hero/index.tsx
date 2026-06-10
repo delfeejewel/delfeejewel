@@ -16,7 +16,7 @@ type HeroSlide = {
 
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
-    image_url: "/images/ChatGPT Image May 21, 2026, 11_00_33 AM.png",
+    image_url: "/images/hero-signature-silver.png",
     label: "Festive Edit 2025",
     title: "Signature Silver Collection",
     subtitle: "Handcrafted elegance that bridges generations. Discover the timeless brilliance of 925 sterling silver inspired by Indian heritage.",
@@ -32,7 +32,7 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     cta_link: "/store",
   },
   {
-    image_url: "/images/ChatGPT Image May 21, 2026, 10_49_22 AM.png",
+    image_url: "/images/hero-bridal-edit.png",
     label: "Limited Edition",
     title: "The Bridal Edit",
     subtitle: "Heirloom-worthy silver jewellery for your most precious moments. Each piece tells a story of timeless love.",

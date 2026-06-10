@@ -30,6 +30,41 @@ const redisModules = REDIS_URL
     ]
   : []
 
+// File storage. By default (local dev) Medusa's built-in local provider stores
+// uploads under ./static and serves them at `${backendUrl}/static/...` — which
+// bakes a `http://localhost:9000` URL into every product image. That breaks in
+// production (browsers can't reach localhost, and the container's ./static is
+// ephemeral). When S3 credentials are present we register the S3 provider
+// pointed at Supabase Storage (S3-compatible) so files persist with a correct
+// public URL across every environment. No creds → fall back to local for dev.
+const s3FileModule = process.env.S3_ENDPOINT
+  ? [
+      {
+        resolve: "@medusajs/medusa/file",
+        options: {
+          providers: [
+            {
+              resolve: "@medusajs/file-s3",
+              id: "s3",
+              options: {
+                file_url: process.env.S3_FILE_URL,
+                access_key_id: process.env.S3_ACCESS_KEY_ID,
+                secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
+                region: process.env.S3_REGION,
+                bucket: process.env.S3_BUCKET,
+                endpoint: process.env.S3_ENDPOINT,
+                // Supabase Storage requires path-style addressing.
+                additional_client_config: {
+                  forcePathStyle: true,
+                },
+              },
+            },
+          ],
+        },
+      },
+    ]
+  : []
+
 module.exports = defineConfig({
   admin: {
     disable: process.env.DISABLE_ADMIN === "true",
@@ -72,6 +107,7 @@ module.exports = defineConfig({
   },
   modules: [
     ...redisModules,
+    ...s3FileModule,
     {
       resolve: "./src/modules/email_notification",
     },

@@ -72,7 +72,7 @@ const DEFAULTS: AboutContent = {
   story: {
     eyebrow: "Where it began",
     title: "A love for silver, shaped by hand",
-    image: "/images/ChatGPT Image May 21, 2026, 11_18_38 AM.png",
+    image: "/images/heritage-artisan.png",
     body:
       `<p>${BRAND.name} began with a simple belief — that fine jewellery should feel personal, honest and built to last. We fell in love with sterling silver for its quiet elegance and its ability to carry a story.</p>` +
       "<p>Today we work hand-in-hand with master artisans across India, blending generations of craft with designs made for modern life. No mass production, no shortcuts — just thoughtfully made pieces you will reach for again and again.</p>",
