@@ -60,10 +60,27 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 }) => {
   if (!product || !product.id) return notFound()
 
-  const galleryImages = (images || product.images || []).map((img) => ({
-    id: img.id,
-    url: img.url,
-  }))
+  // Media = product images (videos auto-detected by extension) + any URLs in
+  // metadata.videos (array or comma-separated string). Videos render as <video>.
+  const VIDEO_RE = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i
+  const productMeta = (product.metadata || {}) as Record<string, any>
+  const metaVideos: string[] = Array.isArray(productMeta.videos)
+    ? productMeta.videos
+    : typeof productMeta.videos === "string"
+      ? productMeta.videos.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : []
+  const galleryMedia = [
+    ...(images || product.images || []).map((img) => ({
+      id: img.id,
+      url: img.url,
+      type: (VIDEO_RE.test(img.url) ? "video" : "image") as "image" | "video",
+    })),
+    ...metaVideos.map((url, i) => ({
+      id: `meta-video-${i}`,
+      url,
+      type: "video" as "image" | "video",
+    })),
+  ]
 
   return (
     <div className="relative bg-[var(--color-bg-primary)] min-h-screen font-outfit">
@@ -162,7 +179,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               <div className="mb-4">
                 <Breadcrumb product={product} />
               </div>
-              <ProductGallery images={galleryImages} title={product.title || "Product"} />
+              <ProductGallery media={galleryMedia} title={product.title || "Product"} />
             </div>
             {/* Right: scrollable content */}
             <div className="medium:col-span-7">

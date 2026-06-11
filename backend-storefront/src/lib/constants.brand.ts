@@ -10,7 +10,7 @@ export const BRAND = {
     "Discover handcrafted rings, necklaces, earrings and bracelets. Timeless jewellery in gold, silver and precious stones, designed to be treasured forever.",
   copyright: (year: number) => `© ${year} Delfee. All rights reserved.`,
   meta: {
-    title: "Delfee — Handcrafted Fine Jewellery",
+    title: "Delfee | Handcrafted Fine Jewellery",
     productSuffix: "Delfee",
     categorySuffix: "Delfee",
     collectionSuffix: "Delfee",

@@ -61,6 +61,10 @@ export default function ProductInfo({
   const [copied, setCopied] = useState(false)
   const [giftWrap, setGiftWrap] = useState(false)
 
+  // Per-product flag set in the admin (metadata.gift_ready). Controls the
+  // "Gift Ready" badge and the gift-wrap option below — both hidden unless on.
+  const giftReady = !!(product.metadata as any)?.gift_ready
+
   useEffect(() => {
     if (product.variants?.length === 1) {
       setOptions(optionsAsKeymap(product.variants[0].options) ?? {})
@@ -226,16 +230,18 @@ export default function ProductInfo({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Gift badge with tooltip */}
-          <div className="relative group/gift">
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--color-gold)]/[0.08] text-[10px] font-semibold text-[var(--color-gold)] tracking-[0.03em] cursor-default">
-              <Gift size={12} /> Gift Ready
-            </span>
-            <div className="absolute top-full right-0 mt-2 w-56 px-3 py-2.5 rounded-lg bg-[var(--color-plum)] text-white text-[11px] leading-[1.5] shadow-lg opacity-0 invisible group-hover/gift:opacity-100 group-hover/gift:visible transition-all duration-200 z-20 pointer-events-none">
-              This product is gift ready and will be delivered in a premium velvet box.
-              <div className="absolute -top-1 right-6 w-2 h-2 bg-[var(--color-plum)] rotate-45" />
+          {/* Gift badge with tooltip — only when this product is gift ready */}
+          {giftReady && (
+            <div className="relative group/gift">
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--color-gold)]/[0.08] text-[10px] font-semibold text-[var(--color-gold)] tracking-[0.03em] cursor-default">
+                <Gift size={12} /> Gift Ready
+              </span>
+              <div className="absolute top-full right-0 mt-2 w-56 px-3 py-2.5 rounded-lg bg-[var(--color-plum)] text-white text-[11px] leading-[1.5] shadow-lg opacity-0 invisible group-hover/gift:opacity-100 group-hover/gift:visible transition-all duration-200 z-20 pointer-events-none">
+                This product is gift ready and will be delivered in a premium velvet box.
+                <div className="absolute -top-1 right-6 w-2 h-2 bg-[var(--color-plum)] rotate-45" />
+              </div>
             </div>
-          </div>
+          )}
           {/* Share icon */}
           <button
             onClick={() => setShareOpen(true)}
@@ -421,18 +427,20 @@ export default function ProductInfo({
           )}
         </div>
 
-        {/* Gift wrap option */}
-        <label className="flex items-center gap-3 py-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={giftWrap}
-            onChange={(e) => setGiftWrap(e.target.checked)}
-            className="w-5 h-5 rounded border-2 border-[var(--color-lavender)] text-[var(--color-plum)] focus:ring-[var(--color-plum)]/20 focus:ring-offset-0 cursor-pointer accent-[var(--color-plum)]"
-          />
-          <span className="text-[14px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
-            Is this a <span className="font-semibold text-[var(--color-plum)]">Gift</span>? 🎁 Wrap it for just (<span className="font-semibold">₹50</span>)
-          </span>
-        </label>
+        {/* Gift wrap option — only when this product is gift ready */}
+        {giftReady && (
+          <label className="flex items-center gap-3 py-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={giftWrap}
+              onChange={(e) => setGiftWrap(e.target.checked)}
+              className="w-5 h-5 rounded border-2 border-[var(--color-lavender)] text-[var(--color-plum)] focus:ring-[var(--color-plum)]/20 focus:ring-offset-0 cursor-pointer accent-[var(--color-plum)]"
+            />
+            <span className="text-[14px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
+              Is this a <span className="font-semibold text-[var(--color-plum)]">Gift</span>? 🎁 Wrap it for just (<span className="font-semibold">₹50</span>)
+            </span>
+          </label>
+        )}
 
         {/* Quantity + Add to Cart + Wishlist — all on one line */}
         <div className="pt-2 space-y-3">

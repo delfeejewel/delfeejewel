@@ -22,7 +22,11 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   className,
   "data-testid": dataTestid,
 }) => {
-  const initialImage = thumbnail || images?.[0]?.url || FALLBACK_IMAGE
+  // Fall back to the first non-video image so a card never renders an mp4
+  const firstPhoto = images?.find(
+    (i) => i?.url && !/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(i.url)
+  )?.url
+  const initialImage = thumbnail || firstPhoto || FALLBACK_IMAGE
 
   return (
     <div

@@ -75,35 +75,63 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const meta = (product.metadata || {}) as Record<string, any>
   const category = (product as any).categories?.[0]
   const url = `${baseUrl}/${params.countryCode}/products/${params.handle}`
-  const images = product.images?.map((img) => img.url) || (product.thumbnail ? [product.thumbnail] : [])
+  // OG/social images: photos only — never a video file
+  const VIDEO_RE = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i
+  const photoImages = (product.images?.map((img) => img.url) ?? []).filter(
+    (u) => !VIDEO_RE.test(u)
+  )
+  const images = photoImages.length
+    ? photoImages
+    : product.thumbnail
+      ? [product.thumbnail]
+      : []
 
-  // Build SEO-rich title: "Product Title — Material | Brand"
+  // Build SEO-rich title: "Product Title, Metal | Brand" (short, readable, no hyphens)
   const capitalize = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase())
   const title = capitalize(product.title || "")
-  const material = capitalize(product.material || meta.metal || "")
-  const seoTitle = material
-    ? `${title} — ${material} | ${BRAND.meta.productSuffix}`
-    : `${title} | ${BRAND.meta.productSuffix}`
+  const rawMaterial = product.material || meta.metal || ""
+  // For the title, use only the core metal: drop "...with <stones>" and any "(...)" notes
+  const shortMaterial = capitalize(
+    rawMaterial.split(/\s+with\s+/i)[0].replace(/\s*\([^)]*\)/g, "").trim()
+  )
+  const material = capitalize(rawMaterial)
+  // Remove hyphens/dashes (-, –, —, minus, etc.) from meta text → spaces, then collapse
+  const noHyphens = (s: string) =>
+    s.replace(/[-‐-―−]+/g, " ").replace(/\s{2,}/g, " ").trim()
 
-  // Build SEO description
-  const seoDescription = product.description
-    ? product.description.slice(0, 160)
-    : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹999.`
+  const seoTitle = noHyphens(
+    shortMaterial
+      ? `${title}, ${shortMaterial} | ${BRAND.meta.productSuffix}`
+      : `${title} | ${BRAND.meta.productSuffix}`
+  )
+
+  // Build SEO description — trim to ~160 chars on a word boundary (no mid-word cut)
+  const trimMeta = (s: string, n = 160) =>
+    s.length <= n ? s : `${s.slice(0, s.lastIndexOf(" ", n)).trim()}…`
+  const seoDescription = noHyphens(
+    product.description
+      ? trimMeta(product.description)
+      : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹999.`
+  )
 
   return {
     title: seoTitle,
     description: seoDescription,
-    keywords: [
-      product.title,
-      material,
-      category?.name,
-      "silver jewellery",
-      "925 sterling silver",
-      "handcrafted jewellery",
-      BRAND.name,
-      "buy online",
-      "India",
-    ].filter(Boolean).join(", "),
+    keywords: noHyphens(
+      [
+        product.title,
+        material,
+        category?.name,
+        "silver jewellery",
+        "925 sterling silver",
+        "handcrafted jewellery",
+        BRAND.name,
+        "buy online",
+        "India",
+      ]
+        .filter(Boolean)
+        .join(", ")
+    ),
 
     alternates: {
       canonical: url,
@@ -160,7 +188,9 @@ function ProductJsonLd({ product, countryCode }: { product: HttpTypes.StoreProdu
     name: productTitle,
     description: product.description || `${productTitle} from ${BRAND.name}`,
     url,
-    image: product.images?.map((img) => img.url) || [],
+    image: (product.images?.map((img) => img.url) ?? []).filter(
+      (u) => !/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(u)
+    ),
     sku: product.variants?.[0]?.sku || product.id,
     brand: {
       "@type": "Brand",
