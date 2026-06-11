@@ -51,6 +51,11 @@ export const listProducts = async ({
 
   const next = {
     ...(await getCacheOptions("products")),
+    // Revalidate product data periodically so admin edits (price, description,
+    // SEO, gift_ready, etc.) appear on the storefront without a redeploy.
+    // Tag-based revalidation only fires on storefront actions, never on admin
+    // changes — this time window covers that gap.
+    revalidate: 60,
   }
 
   return sdk.client
@@ -68,7 +73,6 @@ export const listProducts = async ({
         },
         headers,
         next,
-        cache: "force-cache",
       }
     )
     .then(({ products, count }) => {
