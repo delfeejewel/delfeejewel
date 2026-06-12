@@ -1,4 +1,5 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk"
+import { Spinner } from "@medusajs/icons"
 import { AdminProduct } from "@medusajs/types"
 import { Container, Heading, Switch, Text, toast } from "@medusajs/ui"
 import { useState } from "react"
@@ -51,12 +52,16 @@ const ProductGiftReadyWidget = ({ data }: DetailWidgetProps) => {
             “Wrap it for ₹50” gift option on this product.
           </Text>
         </div>
-        <Switch
-          checked={giftReady}
-          disabled={saving}
-          onCheckedChange={toggle}
-          className="mt-1 shrink-0"
-        />
+        <div className="mt-1 flex shrink-0 items-center gap-2">
+          {saving && (
+            <Spinner className="text-ui-fg-muted animate-spin" aria-label="Saving" />
+          )}
+          <Switch
+            checked={giftReady}
+            disabled={saving}
+            onCheckedChange={toggle}
+          />
+        </div>
       </div>
     </Container>
   )

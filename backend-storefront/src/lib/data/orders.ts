@@ -2,12 +2,19 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
-import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { getAuthHeaders, getCacheOptions, getOrderToken } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
 
 export const retrieveOrder = async (id: string) => {
-  const headers = {
+  const headers: Record<string, string> = {
     ...(await getAuthHeaders()),
+  }
+
+  // Guests authorize the (IDOR-hardened) order route with the per-order token
+  // minted at checkout. Harmless for logged-in customers (session wins).
+  const orderToken = await getOrderToken(id)
+  if (orderToken) {
+    headers["x-order-token"] = orderToken
   }
 
   const next = {

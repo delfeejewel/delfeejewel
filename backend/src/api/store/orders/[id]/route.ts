@@ -3,6 +3,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { getOrderDetailWorkflow } from "@medusajs/core-flows"
+import { verifyTrackToken } from "../../../../utils/track-token"
 
 /**
  * Override of core GET /store/orders/:id.
@@ -13,18 +14,25 @@ import { getOrderDetailWorkflow } from "@medusajs/core-flows"
  * anonymous — caller could read any order by guessing/altering the id in the
  * URL (e.g. /account/orders/details/<someone-elses-id>).
  *
- * We scope the lookup to the authenticated customer. The global `/store`
- * auth middleware runs with `allowUnauthenticated: true`, so it populates
- * `req.auth_context.actor_id` for logged-in customers but lets anonymous
- * requests through — hence we must enforce ownership here in the handler.
+ * Authorization is one of two things. The global `/store` auth middleware runs
+ * with `allowUnauthenticated: true`, so it populates `req.auth_context.actor_id`
+ * for logged-in customers but lets anonymous requests through:
  *
- * - No customer session            -> 401
- * - Order belongs to someone else  -> 404 (the workflow's `throwIfKeyNotFound`
- *                                     fires when no order matches id+customer_id,
- *                                     so we never leak that the id exists)
+ *   1. Logged-in customer -> the lookup is scoped to `customer_id`, so a
+ *      customer can only read their own orders (foreign order -> 404 via the
+ *      workflow's `throwIfKeyNotFound`, so the id is never leaked).
  *
- * Guest order tracking is unaffected: it uses the separate
- * /store/orders/lookup and /store/orders/track-by-token routes, not this one.
+ *   2. Guest with a valid order token -> the order-confirmation page redirect
+ *      has no customer session, so guests authorize with a signed track token
+ *      (the same HMAC token used by the "Track your order" email link), minted
+ *      at checkout by POST /store/orders/confirmation-token. The token's
+ *      `order_id` must match the URL id, so it grants access to that one order
+ *      only — it can't be replayed against a different id.
+ *
+ * Anything else -> 401.
+ *
+ * Public guest order tracking (number + email) is unaffected: it uses the
+ * separate /store/orders/lookup and /store/orders/track-by-token routes.
  */
 export async function GET(
   req: AuthenticatedMedusaRequest,
@@ -32,18 +40,29 @@ export async function GET(
 ) {
   const customerId = req.auth_context?.actor_id
 
-  if (!customerId) {
-    return res.status(401).json({ message: "Unauthorized" })
+  const filters: Record<string, any> = { is_draft_order: false }
+
+  if (customerId) {
+    // Scope to the authenticated customer's own orders.
+    filters.customer_id = customerId
+  } else {
+    // No session: require a signed token that authorizes exactly this order.
+    const token =
+      (req.headers["x-order-token"] as string) ||
+      (req.query.token as string | undefined)
+    const payload = verifyTrackToken(token)
+
+    if (!payload || payload.order_id !== req.params.id) {
+      return res.status(401).json({ message: "Unauthorized" })
+    }
+    // Token is order-scoped; no extra filter needed beyond the id below.
   }
 
   const { result } = await getOrderDetailWorkflow(req.scope).run({
     input: {
       fields: req.queryConfig.fields,
       order_id: req.params.id,
-      filters: {
-        is_draft_order: false,
-        customer_id: customerId,
-      },
+      filters,
     },
   })
 

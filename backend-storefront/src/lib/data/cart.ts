@@ -12,6 +12,7 @@ import {
   getCartId,
   removeCartId,
   setCartId,
+  setOrderToken,
 } from "./cookies"
 import { getRegion } from "./regions"
 import { getLocale } from "@lib/data/locale-actions"
@@ -44,8 +45,14 @@ export async function retrieveCart(cartId?: string, fields?: string) {
     ...(await getAuthHeaders()),
   }
 
+  // Tag-based revalidation busts this instantly on cart mutations. The added
+  // `revalidate` is a safety net for backend-side changes that bypass the
+  // storefront entirely (e.g. an admin deleting a product, which removes the
+  // line item in the DB but never calls revalidateTag here) — without it, a
+  // cart cached before such a change would serve the now-deleted item forever.
   const next = {
     ...(await getCacheOptions("carts")),
+    revalidate: 30,
   }
 
   return await sdk.client
@@ -56,7 +63,6 @@ export async function retrieveCart(cartId?: string, fields?: string) {
       },
       headers,
       next,
-      cache: "force-cache",
     })
     .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
     .catch(() => null)
@@ -223,11 +229,13 @@ export async function addToCart({
   quantity,
   countryCode,
   metadata,
+  giftWrap,
 }: {
   variantId: string
   quantity: number
   countryCode: string
   metadata?: Record<string, unknown>
+  giftWrap?: boolean
 }) {
   if (!variantId) {
     throw new Error("Missing variant ID when adding to cart")
@@ -255,6 +263,22 @@ export async function addToCart({
       headers
     )
     .then(async () => {
+      // Optional gift-wrap add-on (PDP "Wrap it for ₹50" checkbox). Done here,
+      // against THIS resolved cart.id, so it shares one server action with the
+      // add — avoids the cross-action cookie race when the cart was just
+      // created. Non-fatal: the item is added regardless, wrap is also
+      // toggleable on the cart page.
+      if (giftWrap) {
+        try {
+          await sdk.client.fetch(`/store/carts/${cart.id}/gift-wrap`, {
+            method: "POST",
+            headers,
+            body: { enabled: true },
+          })
+        } catch {
+          /* ignore — gift wrap can still be added from the cart */
+        }
+      }
       await recomputeGiftCards(cart.id)
       const [cartCacheTag, fulfillmentCacheTag] = await Promise.all([
         getCacheTag("carts"),
@@ -537,14 +561,34 @@ export async function placeOrder(cartId?: string) {
     .catch(medusaError)
 
   if (cartRes?.type === "order") {
-    const countryCode =
-      cartRes.order.shipping_address?.country_code?.toLowerCase()
+    const order = cartRes.order
+    const countryCode = order.shipping_address?.country_code?.toLowerCase()
 
     const orderCacheTag = await getCacheTag("orders")
     revalidateTag(orderCacheTag)
 
+    // Guests have no customer session, so the IDOR-hardened GET
+    // /store/orders/:id would 401 on the confirmation page. Mint a per-order
+    // token (authorized by possession of this just-completed cart) and stash it
+    // so retrieveOrder() can authorize the read. Best-effort: a logged-in
+    // customer is already authorized by their session, and we never want a
+    // token hiccup to block the redirect to a successfully placed order.
+    if (!("authorization" in headers)) {
+      try {
+        const { token } = await sdk.client.fetch<{ token: string }>(
+          `/store/orders/confirmation-token`,
+          { method: "POST", body: { order_id: order.id, cart_id: id } }
+        )
+        if (token) {
+          await setOrderToken(order.id, token)
+        }
+      } catch {
+        // ignore — falls through to the redirect either way
+      }
+    }
+
     removeCartId()
-    redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+    redirect(`/${countryCode}/order/${order.id}/confirmed`)
   }
 
   return cartRes.cart

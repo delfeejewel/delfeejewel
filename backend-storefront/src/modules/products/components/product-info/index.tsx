@@ -13,12 +13,14 @@ import {
   Clock, Gift, RefreshCw, Package, Share2, Minus, Plus, X,
 } from "lucide-react"
 import { AnimatePresence } from "framer-motion"
+import type { ReviewSummary } from "@modules/reviews/types"
 
 type Props = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   isLoggedIn: boolean
   initialWishlisted: boolean
+  reviewSummary?: ReviewSummary
 }
 
 const optionsAsKeymap = (opts: HttpTypes.StoreProductVariant["options"]) =>
@@ -36,6 +38,7 @@ export default function ProductInfo({
   region,
   isLoggedIn,
   initialWishlisted,
+  reviewSummary,
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
@@ -64,6 +67,11 @@ export default function ProductInfo({
   // Per-product flag set in the admin (metadata.gift_ready). Controls the
   // "Gift Ready" badge and the gift-wrap option below — both hidden unless on.
   const giftReady = !!(product.metadata as any)?.gift_ready
+
+  // Live rating summary. The rating row is hidden entirely until the product
+  // has at least one approved review.
+  const reviewCount = reviewSummary?.count ?? 0
+  const avgRating = reviewSummary?.average ?? 0
 
   useEffect(() => {
     if (product.variants?.length === 1) {
@@ -105,15 +113,25 @@ export default function ProductInfo({
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) return
     setIsAdding(true)
-    await addToCart({ variantId: selectedVariant.id, quantity, countryCode })
+    // `giftWrap` (the "Wrap it for ₹50" checkbox) turns on the cart's gift-wrap
+    // add-on as part of the same add. Only adds when checked; removing a wrap is
+    // managed on the cart page.
+    await addToCart({ variantId: selectedVariant.id, quantity, countryCode, giftWrap })
     setIsAdding(false)
   }
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!selectedVariant?.id) return
     setIsBuying(true)
-    addToCart({ variantId: selectedVariant.id, quantity, countryCode })
-    setTimeout(() => router.push(`/${countryCode}/checkout`), 400)
+    try {
+      // Must finish adding the line item (and revalidating the cart) BEFORE
+      // navigating — otherwise checkout loads against an empty cart (₹0.00, no
+      // product). A fixed setTimeout raced the server action and lost.
+      await addToCart({ variantId: selectedVariant.id, quantity, countryCode, giftWrap })
+      router.push(`/${countryCode}/checkout?step=address`)
+    } catch (e) {
+      setIsBuying(false)
+    }
   }
 
   const handleWishlistToggle = async () => {
@@ -258,20 +276,23 @@ export default function ProductInfo({
         {product.title}
       </h1>
 
-      {/* Rating — clickable, scrolls to reviews */}
-      <button
-        onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-        className="flex items-center gap-3 mb-5 group cursor-pointer"
-      >
-        <div className="flex items-center gap-0.5">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <Star key={s} size={14} fill={s <= 4 ? "var(--color-gold)" : "none"} stroke={s <= 4 ? "var(--color-gold)" : "var(--color-border)"} strokeWidth={1.5} />
-          ))}
-        </div>
-        <span className="text-[12px] text-[var(--color-text-muted)] group-hover:text-[var(--color-plum)] group-hover:underline underline-offset-2 transition-colors">
-          4.8 (128 reviews)
-        </span>
-      </button>
+      {/* Rating — clickable, scrolls to reviews. Hidden until the product has
+          at least one review; stars + average + count are all dynamic. */}
+      {reviewCount > 0 && (
+        <button
+          onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className="flex items-center gap-3 mb-5 group cursor-pointer"
+        >
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} size={14} fill={s <= Math.round(avgRating) ? "var(--color-gold)" : "none"} stroke={s <= Math.round(avgRating) ? "var(--color-gold)" : "var(--color-border)"} strokeWidth={1.5} />
+            ))}
+          </div>
+          <span className="text-[12px] text-[var(--color-text-muted)] group-hover:text-[var(--color-plum)] group-hover:underline underline-offset-2 transition-colors">
+            {avgRating.toFixed(1)} ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
+          </span>
+        </button>
+      )}
 
       {/* Price + stock */}
       <div className="flex items-baseline gap-4 mb-1">

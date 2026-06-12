@@ -13,6 +13,7 @@ import { getProductPrice } from "@lib/util/get-product-price"
 // ─── Mobile Sticky Bar (Client) ──────────────────────
 import MobileStickyBar from "@modules/products/components/mobile-sticky-bar"
 import RecentlyViewedTracker from "@modules/products/components/recently-viewed-tracker"
+import { getProductReviews } from "@lib/data/reviews"
 
 // ─── Breadcrumb ──────────────────────────────────────
 function Breadcrumb({ product }: { product: HttpTypes.StoreProduct }) {
@@ -50,15 +51,19 @@ type ProductTemplateProps = {
   initialWishlisted: boolean
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+const ProductTemplate = async ({
   product,
   region,
   countryCode,
   images,
   isLoggedIn,
   initialWishlisted,
-}) => {
+}: ProductTemplateProps) => {
   if (!product || !product.id) return notFound()
+
+  // Rating summary for the PDP header (stars + count). Same fetch the reviews
+  // section uses below — deduped/cached by Next, so no extra round-trip.
+  const { summary: reviewSummary } = await getProductReviews(product.id)
 
   // Media = product images (videos auto-detected by extension) + any URLs in
   // metadata.videos (array or comma-separated string). Videos render as <video>.
@@ -188,6 +193,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 region={region}
                 isLoggedIn={isLoggedIn}
                 initialWishlisted={initialWishlisted}
+                reviewSummary={reviewSummary}
               />
 
               {/* Gradient divider */}

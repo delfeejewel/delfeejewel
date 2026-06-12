@@ -26,3 +26,5 @@ docs/
 
 # SQL migration / seed scripts — run manually against Supabase, not app code
 *.sql
+
+/Products

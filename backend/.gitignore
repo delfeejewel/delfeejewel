@@ -24,3 +24,13 @@ build
 !.yarn/versions
 
 .medusa
+# Local DB cleanup backups (contain customer PII — never commit)
+db-cleanup-backup-*/
+# Uploaded media in the local file dir — runtime uploads belong in object
+# storage, not the repo (videos especially bloat history). Tracked images
+# (invoice-logo.png, existing seed photos) are unaffected.
+static/*.mp4
+static/*.webm
+static/*.mov
+static/*.m4v
+static/*.ogv
