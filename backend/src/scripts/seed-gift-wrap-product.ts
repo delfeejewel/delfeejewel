@@ -49,7 +49,11 @@ export default async function seedGiftWrapProduct({ container }: ExecArgs) {
         {
           title: "Gift Wrap",
           handle: HANDLE,
-          status: ProductStatus.PUBLISHED,
+          // Draft on purpose: keeps the add-on OUT of the storefront (the Store
+          // API only returns published products), so it can't be browsed or
+          // bought separately. The "Wrap it for ₹50" toggle still applies it
+          // server-side via POST /store/carts/:id/gift-wrap. See hide-gift-wrap.ts.
+          status: ProductStatus.DRAFT,
           description:
             "Branded gift packaging — a hand-tied ribbon, our signature box, and a complimentary note card.",
           sales_channels: [{ id: sc.id }],

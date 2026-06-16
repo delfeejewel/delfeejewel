@@ -48,6 +48,7 @@ export default async function CollectionTemplate({
           initialProducts={response.products}
           initialCount={response.count}
           region={region}
+          fetchParams={{ collection_id: [collection.id] }}
         />
       </div>
     </div>

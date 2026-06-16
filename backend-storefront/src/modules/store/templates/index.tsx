@@ -14,6 +14,10 @@ import RecentlyViewed from "@modules/store/components/recently-viewed"
 import StaffPicks from "@modules/store/components/staff-picks"
 import TrustBadges from "@modules/categories/components/trust-badges"
 
+// First-paint batch fetched on the server for a fast initial render. This is
+// NOT a cap: ProductListingClient loads the rest of the catalogue page-by-page
+// on the client, so products beyond this still appear. SEO isn't needed on the
+// listing page, which is why client-side completion is acceptable here.
 const PRODUCT_LIMIT = 48
 const STAFF_PICK_LIMIT = 10
 
@@ -138,6 +142,7 @@ export default async function StoreTemplate({
           initialProducts={response.products}
           initialCount={response.count}
           region={region}
+          fetchParams={tag && tagId ? { tag_id: [tagId] } : undefined}
           hideTrustBadges
         />
       </div>

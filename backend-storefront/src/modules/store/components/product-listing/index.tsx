@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { motion } from "framer-motion"
-import { PackageSearch, ChevronLeft, ChevronRight } from "lucide-react"
+import { PackageSearch, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
+import { listProducts } from "@lib/data/products"
 import FilterSidebar, {
   type ActiveFilters,
 } from "@modules/store/components/filters/filter-sidebar"
@@ -18,6 +19,11 @@ import TrustBadges from "@modules/categories/components/trust-badges"
 
 const PRODUCTS_PER_PAGE = 12
 
+// Pages of this size are fetched client-side to load the full catalogue
+// (see the effect below). Not a cap — anything beyond the server's first-paint
+// batch still loads here.
+const FETCH_BATCH = 100
+
 type Props = {
   initialProducts: HttpTypes.StoreProduct[]
   initialCount: number
@@ -28,6 +34,12 @@ type Props = {
   hideQuickChips?: boolean
   /** When true, hides the bottom TrustBadges row (host can render its own). */
   hideTrustBadges?: boolean
+  /**
+   * Backend filters that scope this listing (e.g. { tag_id } on /store,
+   * { collection_id } on a collection). The client-side "load the rest"
+   * fetches reuse these so they stay within the same scope.
+   */
+  fetchParams?: Record<string, any>
 }
 
 export default function ProductListingClient({
@@ -37,6 +49,7 @@ export default function ProductListingClient({
   categoryHandle,
   hideQuickChips,
   hideTrustBadges,
+  fetchParams,
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
@@ -46,10 +59,56 @@ export default function ProductListingClient({
   const [sortBy, setSortBy] = useState<SortOption>("popular")
   const [gridCols, setGridCols] = useState<2 | 3 | 4>(3)
 
+  // The store grid is client-driven: it starts with the server's first-paint
+  // batch, then pulls the rest of the catalogue page-by-page so filtering,
+  // sorting and pagination all run over the COMPLETE set (no hard cap). SEO
+  // isn't needed on this listing page, so client-side completion is fine.
+  const [allProducts, setAllProducts] = useState(initialProducts)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  // Stable dep for the scope filters (object identity changes each render).
+  const fetchKey = JSON.stringify(fetchParams || {})
+
+  useEffect(() => {
+    let cancelled = false
+    setAllProducts(initialProducts)
+
+    if (initialProducts.length >= initialCount) {
+      setLoadingMore(false)
+      return
+    }
+
+    ;(async () => {
+      setLoadingMore(true)
+      const pages = Math.ceil(initialCount / FETCH_BATCH)
+      const all: HttpTypes.StoreProduct[] = []
+      for (let p = 1; p <= pages; p++) {
+        if (cancelled) return
+        try {
+          const { response } = await listProducts({
+            pageParam: p,
+            queryParams: { limit: FETCH_BATCH, ...(fetchParams || {}) },
+            regionId: region.id,
+          })
+          all.push(...response.products)
+        } catch {
+          break
+        }
+      }
+      if (!cancelled && all.length) setAllProducts(all)
+      if (!cancelled) setLoadingMore(false)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProducts, initialCount, fetchKey, region.id])
+
   const currentPage = Number(searchParams.get("page") || "1")
 
   const filteredProducts = useMemo(() => {
-    let products = [...initialProducts]
+    let products = [...allProducts]
 
     if (filters.price) {
       const [min, max] = filters.price as [number, number]
@@ -105,7 +164,7 @@ export default function ProductListingClient({
     }
 
     return products
-  }, [initialProducts, filters, sortBy])
+  }, [allProducts, filters, sortBy])
 
   const hasActiveFilters = Object.values(filters).some((v) => v && v.length > 0)
   const displayCount = hasActiveFilters ? filteredProducts.length : initialCount
@@ -150,6 +209,16 @@ export default function ProductListingClient({
             gridCols={gridCols}
             onGridChange={setGridCols}
           />
+
+          {loadingMore && (
+            <div
+              className="flex items-center gap-2 py-2 text-[13px]"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              <Loader2 size={14} className="animate-spin" />
+              Loading the full collection…
+            </div>
+          )}
 
           {paginatedProducts.length > 0 ? (
             <>

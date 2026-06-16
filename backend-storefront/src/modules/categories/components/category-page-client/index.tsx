@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { motion } from "framer-motion"
-import { PackageSearch, ChevronLeft, ChevronRight } from "lucide-react"
+import { PackageSearch, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { listProducts } from "@lib/data/products"
 import FilterSidebar, { type ActiveFilters } from "@modules/store/components/filters/filter-sidebar"
 import QuickChips from "@modules/categories/components/quick-chips"
 import SortBar, { type SortOption } from "@modules/categories/components/sort-bar"
@@ -12,6 +13,9 @@ import ProductCard from "@modules/categories/components/product-card"
 import TrustBadges from "@modules/categories/components/trust-badges"
 
 const PRODUCTS_PER_PAGE = 12
+// Pages of this size are fetched client-side to load the full category (see the
+// effect below). Not a cap — products beyond the server's first batch still load.
+const FETCH_BATCH = 100
 
 type Props = {
   initialProducts: HttpTypes.StoreProduct[]
@@ -40,11 +44,52 @@ export default function CategoryPageClient({
   const [sortBy, setSortBy] = useState<SortOption>("popular")
   const [gridCols, setGridCols] = useState<2 | 3 | 4>(3)
 
+  // Client-driven: start with the server's first batch, then pull the rest of
+  // the category page-by-page so filtering, sorting and pagination run over the
+  // COMPLETE set (no hard cap). SEO isn't needed on the listing page.
+  const [allProducts, setAllProducts] = useState(initialProducts)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setAllProducts(initialProducts)
+
+    if (initialProducts.length >= initialCount) {
+      setLoadingMore(false)
+      return
+    }
+
+    ;(async () => {
+      setLoadingMore(true)
+      const pages = Math.ceil(initialCount / FETCH_BATCH)
+      const all: HttpTypes.StoreProduct[] = []
+      for (let p = 1; p <= pages; p++) {
+        if (cancelled) return
+        try {
+          const { response } = await listProducts({
+            pageParam: p,
+            queryParams: { limit: FETCH_BATCH, category_id: [categoryId] },
+            regionId: region.id,
+          })
+          all.push(...response.products)
+        } catch {
+          break
+        }
+      }
+      if (!cancelled && all.length) setAllProducts(all)
+      if (!cancelled) setLoadingMore(false)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialProducts, initialCount, categoryId, region.id])
+
   const currentPage = Number(searchParams.get("page") || "1")
 
   // Client-side filtering
   const filteredProducts = useMemo(() => {
-    let products = [...initialProducts]
+    let products = [...allProducts]
 
     if (filters.price) {
       const [min, max] = filters.price as [number, number]
@@ -86,7 +131,7 @@ export default function CategoryPageClient({
     }
 
     return products
-  }, [initialProducts, filters, sortBy])
+  }, [allProducts, filters, sortBy])
 
   const hasActiveFilters = Object.values(filters).some((v) => v && v.length > 0)
   const displayCount = hasActiveFilters ? filteredProducts.length : initialCount
@@ -135,6 +180,16 @@ export default function CategoryPageClient({
             gridCols={gridCols}
             onGridChange={setGridCols}
           />
+
+          {loadingMore && (
+            <div
+              className="flex items-center gap-2 py-2 text-[13px]"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              <Loader2 size={14} className="animate-spin" />
+              Loading the full category…
+            </div>
+          )}
 
           {/* Product grid */}
           {paginatedProducts.length > 0 ? (
