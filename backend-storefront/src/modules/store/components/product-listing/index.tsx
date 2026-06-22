@@ -175,6 +175,11 @@ export default function ProductListingClient({
     currentPage * PRODUCTS_PER_PAGE
   )
 
+  // True while the full catalogue is still arriving (or hasn't started). Used
+  // to show a loader instead of the "No products found" empty state when the
+  // current page's slice is empty only because later products aren't loaded yet.
+  const isLoadingCatalogue = loadingMore || allProducts.length < initialCount
+
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     if (page <= 1) params.delete("page")
@@ -210,7 +215,7 @@ export default function ProductListingClient({
             onGridChange={setGridCols}
           />
 
-          {loadingMore && (
+          {loadingMore && paginatedProducts.length > 0 && (
             <div
               className="flex items-center gap-2 py-2 text-[13px]"
               style={{ color: "var(--color-text-secondary)" }}
@@ -287,6 +292,14 @@ export default function ProductListingClient({
                 </div>
               )}
             </>
+          ) : isLoadingCatalogue ? (
+            <div
+              className="flex flex-col items-center justify-center py-20 text-center"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              <Loader2 size={28} className="animate-spin mb-4" />
+              <p className="text-sm">Loading products…</p>
+            </div>
           ) : (
             <motion.div
               className="flex flex-col items-center justify-center py-20 text-center"
