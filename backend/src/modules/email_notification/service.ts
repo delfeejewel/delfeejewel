@@ -1,6 +1,5 @@
 import { MedusaService } from "@medusajs/framework/utils"
-import { Transporter } from "nodemailer"
-import { createTransport } from "./transport"
+import { createTransport, Mailer } from "./transport"
 import { getEmailSender } from "../../utils/get-email-sender"
 import {
   templates,
@@ -44,7 +43,7 @@ type InjectedDependencies = {
 export default class EmailNotificationService extends MedusaService({}) {
   // Transport is built lazily from the CMS sender config, and rebuilt only when
   // that config changes (keyed by a signature of the resolved config).
-  private transporter: Transporter | null = null
+  private transporter: Mailer | null = null
   private transporterKey = ""
   private logger: Logger
 
@@ -60,7 +59,7 @@ export default class EmailNotificationService extends MedusaService({}) {
   // is configured — in that case no email should be sent.
   private async getMailer(
     forceRefresh = false
-  ): Promise<{ transporter: Transporter; from: string } | null> {
+  ): Promise<{ transporter: Mailer; from: string } | null> {
     const config = await getEmailSender(forceRefresh)
     if (!config) return null
 

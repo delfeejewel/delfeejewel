@@ -11,6 +11,7 @@ import { supabaseClient } from "../providers/supabase"
 const { Title, Text } = Typography
 
 const PROVIDER_OPTIONS = [
+  { value: "resend", label: "Resend (recommended)" },
   { value: "gmail", label: "Gmail" },
   { value: "smtp", label: "SMTP" },
 ]
@@ -37,7 +38,7 @@ function EmailSettingsForm({ canEdit }: { canEdit: boolean }) {
   const [initialized, setInitialized] = useState(false)
   const [editing, setEditing] = useState(false)
 
-  const provider = Form.useWatch("provider", form) || "gmail"
+  const provider = Form.useWatch("provider", form) || "resend"
   const record = data?.data?.[0] as any
 
   useEffect(() => {
@@ -79,22 +80,34 @@ function EmailSettingsForm({ canEdit }: { canEdit: boolean }) {
   const handleSave = (values: any) => {
     // Only persist the credentials relevant to the chosen provider, so a
     // half-filled "other" provider's secrets never linger in the row.
+    const base = {
+      from_name: values.from_name || null,
+      from_email: values.from_email,
+      // Every branch clears the other providers' secrets so a half-filled
+      // "other" provider's credentials never linger in the row.
+      resend_api_key: null as string | null,
+      gmail_user: null as string | null,
+      gmail_app_password: null as string | null,
+      smtp_host: null as string | null,
+      smtp_port: null as number | null,
+      smtp_user: null as string | null,
+      smtp_pass: null as string | null,
+      smtp_secure: false,
+    }
+
     const payload =
-      values.provider === "gmail"
+      values.provider === "resend"
+        ? { ...base, provider: "resend", resend_api_key: values.resend_api_key }
+        : values.provider === "gmail"
         ? {
+            ...base,
             provider: "gmail",
-            from_name: values.from_name || null,
-            from_email: values.from_email,
             gmail_user: values.gmail_user,
             gmail_app_password: values.gmail_app_password,
-            smtp_host: null, smtp_port: null, smtp_user: null,
-            smtp_pass: null, smtp_secure: false,
           }
         : {
+            ...base,
             provider: "smtp",
-            from_name: values.from_name || null,
-            from_email: values.from_email,
-            gmail_user: null, gmail_app_password: null,
             smtp_host: values.smtp_host,
             smtp_port: values.smtp_port,
             smtp_user: values.smtp_user,
@@ -152,7 +165,7 @@ function EmailSettingsForm({ canEdit }: { canEdit: boolean }) {
       layout="vertical"
       onFinish={handleSave}
       disabled={!editing}
-      initialValues={record || { provider: "gmail", smtp_port: 587, smtp_secure: false }}
+      initialValues={record || { provider: "resend", smtp_port: 587, smtp_secure: false }}
     >
       {/* Action bar — developers only. Admins always see a read-only view. */}
       {canEdit && (
@@ -222,6 +235,41 @@ function EmailSettingsForm({ canEdit }: { canEdit: boolean }) {
       </div>
 
       <Divider style={{ margin: "8px 0 20px" }} />
+
+      {provider === "resend" && (
+        <>
+          {editing && (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 12 }}
+              message="Resend sends over HTTPS"
+              description={
+                <>
+                  Works on hosts that block SMTP. Create an API key at{" "}
+                  <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer">
+                    resend.com/api-keys
+                  </a>{" "}
+                  and verify your sending domain at{" "}
+                  <a href="https://resend.com/domains" target="_blank" rel="noreferrer">
+                    resend.com/domains
+                  </a>
+                  . The <b>From Email</b> above must use that verified domain.
+                </>
+              }
+            />
+          )}
+          <Form.Item
+            label="Resend API Key"
+            name="resend_api_key"
+            rules={[{ required: true, message: "Required" }]}
+            extra="Starts with re_ — created in the Resend dashboard"
+            style={{ maxWidth: 480 }}
+          >
+            <Input.Password placeholder="re_xxxxxxxxxxxxxxxxxxxx" autoComplete="new-password" />
+          </Form.Item>
+        </>
+      )}
 
       {provider === "gmail" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

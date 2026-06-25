@@ -1,6 +1,7 @@
-import nodemailer, { Transporter } from "nodemailer"
+import nodemailer from "nodemailer"
+import { Resend } from "resend"
 
-export type TransportType = "gmail" | "ses" | "smtp"
+export type TransportType = "gmail" | "ses" | "smtp" | "resend"
 
 export interface TransportConfig {
   type: TransportType
@@ -18,6 +19,21 @@ export interface TransportConfig {
   smtp_user?: string
   smtp_pass?: string
   smtp_secure?: boolean
+  // Resend (HTTP API — the only transport that works on hosts where outbound
+  // SMTP ports 25/465/587 are blocked, e.g. our DigitalOcean droplet)
+  resend_api_key?: string
+}
+
+// Minimal mailer contract shared by every transport. nodemailer's Transporter
+// already satisfies this structurally; the Resend adapter implements it over
+// the HTTP API. The service only ever calls sendMail(), so this is all it needs.
+export interface Mailer {
+  sendMail(opts: {
+    from: string
+    to: string
+    subject: string
+    html: string
+  }): Promise<unknown>
 }
 
 // Fail fast instead of hanging on the nodemailer default connectionTimeout of
@@ -30,8 +46,11 @@ const TIMEOUTS = {
   socketTimeout: 20_000, // wait max 20s of socket inactivity
 } as const
 
-export function createTransport(config: TransportConfig): Transporter {
+export function createTransport(config: TransportConfig): Mailer {
   switch (config.type) {
+    case "resend":
+      return createResendMailer(config.resend_api_key!)
+
     case "gmail":
       return nodemailer.createTransport({
         service: "gmail",
@@ -68,5 +87,27 @@ export function createTransport(config: TransportConfig): Transporter {
 
     default:
       throw new Error(`Unsupported email transport type: ${config.type}`)
+  }
+}
+
+// Resend speaks HTTPS, not SMTP, so it sails through the droplet's blocked SMTP
+// egress. The SDK resolves with { error } rather than throwing on an API
+// failure, so we re-throw to match nodemailer's throw-on-failure contract that
+// the service's try/catch (and the "Send test" button) rely on.
+function createResendMailer(apiKey: string): Mailer {
+  const resend = new Resend(apiKey)
+  return {
+    async sendMail({ from, to, subject, html }) {
+      const { data, error } = await resend.emails.send({
+        from,
+        to,
+        subject,
+        html,
+      })
+      if (error) {
+        throw new Error(error.message || "Resend API error")
+      }
+      return data
+    },
   }
 }

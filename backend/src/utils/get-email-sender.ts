@@ -24,6 +24,15 @@ function toConfig(row: any): TransportConfig | null {
     ? `${row.from_name} <${row.from_email}>`
     : row.from_email
 
+  if (row.provider === "resend") {
+    if (!row.resend_api_key) return null
+    return {
+      type: "resend",
+      from,
+      resend_api_key: row.resend_api_key,
+    }
+  }
+
   if (row.provider === "gmail") {
     if (!row.gmail_user || !row.gmail_app_password) return null
     return {
