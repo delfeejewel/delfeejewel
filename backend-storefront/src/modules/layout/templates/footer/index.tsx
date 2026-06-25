@@ -10,7 +10,7 @@ const footerLinks = {
   "Know Your Jewellery": [
     { name: "Jewellery Care", href: "/jewellery-care" },
     { name: "Ring Size Guide", href: "/size-guide" },
-    { name: "Authenticity & Hallmarking", href: "/authenticity" },
+    { name: "Authenticity", href: "/authenticity" },
     { name: "FAQs", href: "/faq" },
   ],
   "Customer Service": [

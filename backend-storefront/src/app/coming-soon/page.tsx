@@ -6,7 +6,7 @@ import ComingSoonClient from "./client"
 
 const TITLE = `Launching soon — ${BRAND.name}`
 const DESCRIPTION =
-  "Handcrafted fine jewellery — 925 silver, BIS-hallmarked, anti-tarnish. " +
+  "Handcrafted fine jewellery — 925 silver, anti-tarnish. " +
   "Heirloom designs made in India. Our store opens this season."
 const OG_IMAGE = "/images/coming-soon_2.png"
 
@@ -18,7 +18,6 @@ export const metadata: Metadata = {
     "fine jewellery",
     "silver jewellery",
     "925 silver",
-    "BIS hallmarked",
     "anti-tarnish jewellery",
     "handcrafted jewellery",
     "Indian jewellery",

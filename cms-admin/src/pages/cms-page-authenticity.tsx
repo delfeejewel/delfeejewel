@@ -66,8 +66,8 @@ function safeParse(s: string) {
 export const AUTH_DEFAULTS = {
   hero: {
     eyebrow: "Trust & Purity",
-    title: "Authenticity & Hallmarking",
-    description: "When you buy from us, you buy genuine silver — certified, hallmarked and made to be trusted. Here's our promise on purity.",
+    title: "Authenticity",
+    description: "When you buy from us, you buy genuine silver — certified and made to be trusted. Here's our promise on purity.",
   },
   intro: {
     icon: "badge-check",
@@ -82,21 +82,15 @@ export const AUTH_DEFAULTS = {
     heading: "Certified at every step",
     items: [
       { icon: "gem", title: "925 Sterling Silver", text: "Our jewellery is 92.5% pure silver alloyed for strength — the international standard for fine silver." },
-      { icon: "shield-check", title: "BIS Hallmarked", text: "Pieces are hallmarked by the Bureau of Indian Standards, independently certifying their purity." },
       { icon: "scroll-text", title: "Certificate of Authenticity", text: "Eligible orders include documentation confirming the metal and craftsmanship of your piece." },
       { icon: "award", title: "Responsibly Sourced", text: "We work with trusted suppliers and ethical practices from raw metal to finished jewellery." },
     ],
   },
   marks: {
-    eyebrow: "How to read a hallmark",
-    heading: "What to look for",
-    description: "A genuine BIS hallmark on silver carries a set of tiny stamps. Together, they confirm your jewellery is the real thing.",
-    items: [
-      { title: "BIS Standard Mark", text: "The official triangular BIS logo — the foundation of a genuine hallmark." },
-      { title: "Purity Grade", text: 'The fineness stamp, such as "925", confirming 92.5% silver purity.' },
-      { title: "Assaying Centre Mark", text: "Identifies the BIS-recognised centre that tested and certified the piece." },
-      { title: "Jeweller's Identification", text: "A unique mark linking the piece back to its responsible jeweller." },
-    ],
+    eyebrow: "",
+    heading: "",
+    description: "",
+    items: [],
   },
   promise: {
     icon: "shield-check",
@@ -341,7 +335,7 @@ export function AuthenticitySections() {
         <ItemListFields name={["pillars", "items"]} withIcon maxItems={4} addLabel="Add pillar" />
       </Card>
 
-      <Card title="Hallmark Marks" size="small" style={{ marginBottom: 16 }}>
+      <Card title="Marks" size="small" style={{ marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <Form.Item label="Eyebrow" name={["marks", "eyebrow"]} style={{ marginBottom: 12 }}><Input /></Form.Item>
           <Form.Item label="Heading" name={["marks", "heading"]} rules={req("Heading")} style={{ marginBottom: 12 }}><Input /></Form.Item>
@@ -446,7 +440,7 @@ export function AuthenticityTemplateEditor({ record }: { record: any }) {
             <PillarsFields />
           </EditableCard>
 
-          <EditableCard title="Hallmark Marks" tag={vis.marks === false ? hiddenTag : undefined} visible={vis.marks} onToggleVisible={(n) => toggleVisible("marks", n)} value={content.marks} saving={saving} onSave={(v, d) => saveSection("marks", v, d)} read={<ListRead v={content.marks} items={content.marks?.items} />}>
+          <EditableCard title="Marks" tag={vis.marks === false ? hiddenTag : undefined} visible={vis.marks} onToggleVisible={(n) => toggleVisible("marks", n)} value={content.marks} saving={saving} onSave={(v, d) => saveSection("marks", v, d)} read={<ListRead v={content.marks} items={content.marks?.items} />}>
             <MarksFields />
           </EditableCard>
 

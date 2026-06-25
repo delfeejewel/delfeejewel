@@ -84,7 +84,7 @@ const ABOUT_DEFAULTS = {
     heading: "The values behind every piece",
     items: [
       { title: "Handcrafted with Care", text: "Every piece is shaped by skilled artisans, never mass-produced.", icon: "hand-heart" },
-      { title: "Hallmarked Purity", text: "All our silver is 925 sterling and BIS hallmarked.", icon: "shield-check" },
+      { title: "925 Sterling Silver", text: "All our silver is genuine 925 sterling silver.", icon: "shield-check" },
       { title: "Responsibly Sourced", text: "We work with trusted suppliers and ethical practices.", icon: "leaf" },
       { title: "Made to Last", text: "Timeless designs and durable craftsmanship.", icon: "sparkles" },
     ],
@@ -95,7 +95,7 @@ const ABOUT_DEFAULTS = {
     steps: [
       { title: "Designed", text: "Our designers sketch each collection.", icon: "pen-tool" },
       { title: "Handcrafted", text: "Master artisans cast, set and finish every piece by hand.", icon: "hammer" },
-      { title: "Hallmarked", text: "Each piece is checked for purity and BIS hallmarked.", icon: "shield-check" },
+      { title: "Checked", text: "Each piece is checked for purity.", icon: "shield-check" },
       { title: "Delivered", text: "Your jewellery arrives in premium packaging.", icon: "package-check" },
     ],
   },
@@ -103,7 +103,7 @@ const ABOUT_DEFAULTS = {
     eyebrow: "",
     heading: "Find a piece that feels like you",
     icon: "gem",
-    description: "Explore our handcrafted collection — each one hallmarked and made to last.",
+    description: "Explore our handcrafted collection — each one made to last.",
     buttonLabel: "Shop the Collection",
     buttonHref: "/store",
     buttonTarget: "_self",

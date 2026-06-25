@@ -13,7 +13,7 @@ export const CODED_TEMPLATE = "coded"
 
 const ALL_TEMPLATES = [
   { value: ABOUT_TEMPLATE, label: "About Us" },
-  { value: AUTHENTICITY_TEMPLATE, label: "Authenticity & Hallmarking" },
+  { value: AUTHENTICITY_TEMPLATE, label: "Authenticity" },
   { value: CONTACT_TEMPLATE, label: "Contact Us" },
   { value: JEWELLERY_CARE_TEMPLATE, label: "Jewellery Care Guide" },
   { value: SIZE_GUIDE_TEMPLATE, label: "Ring Size Guide" },

@@ -93,7 +93,7 @@ const CATEGORIES: { name: string; items: FaqItem[] }[] = [
       {
         question: "Is your jewellery real sterling silver?",
         answer:
-          "Yes. All our silver jewellery is 925 sterling silver and BIS hallmarked, certifying its purity. Learn more on our Authenticity & Hallmarking page.",
+          "Yes. All our silver jewellery is 925 sterling silver, certifying its purity. Learn more on our Authenticity page.",
       },
       {
         question: "How do I care for my silver jewellery?",

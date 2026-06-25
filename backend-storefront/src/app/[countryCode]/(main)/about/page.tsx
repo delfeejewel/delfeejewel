@@ -89,7 +89,7 @@ const DEFAULTS: AboutContent = {
     heading: "The values behind every piece",
     items: [
       { title: "Handcrafted with Care", text: "Every piece is shaped by skilled Indian artisans, never mass-produced — so each one carries a human touch.", icon: "hand-heart" },
-      { title: "Hallmarked Purity", text: "All our silver is 925 sterling and BIS hallmarked, guaranteeing certified purity in every order.", icon: "shield-check" },
+      { title: "925 Sterling Silver", text: "All our silver is genuine 925 sterling silver, guaranteeing certified purity in every order.", icon: "shield-check" },
       { title: "Responsibly Sourced", text: "We work with trusted suppliers and ethical practices, from raw metal to the final polish.", icon: "leaf" },
       { title: "Made to Last", text: "Timeless designs and durable craftsmanship, backed by easy care guidance and lifetime support.", icon: "sparkles" },
     ],
@@ -100,7 +100,7 @@ const DEFAULTS: AboutContent = {
     steps: [
       { title: "Designed", text: "Our designers sketch each collection, balancing modern silhouettes with timeless Indian craft.", icon: "pen-tool" },
       { title: "Handcrafted", text: "Master artisans cast, set and finish every piece by hand in small, careful batches.", icon: "hammer" },
-      { title: "Hallmarked", text: "Each piece is checked for purity and BIS hallmarked before it ever leaves the workshop.", icon: "shield-check" },
+      { title: "Checked", text: "Each piece is checked for purity before it ever leaves the workshop.", icon: "shield-check" },
       { title: "Delivered", text: "Your jewellery arrives in premium packaging, ready to gift or to treasure yourself.", icon: "package-check" },
     ],
   },
@@ -108,7 +108,7 @@ const DEFAULTS: AboutContent = {
     eyebrow: "",
     heading: "Find a piece that feels like you",
     icon: "gem",
-    description: "Explore our handcrafted collection of rings, earrings, necklaces and more — each one hallmarked and made to last.",
+    description: "Explore our handcrafted collection of rings, earrings, necklaces and more — each one made to last.",
     buttonLabel: "Shop the Collection",
     buttonHref: "/store",
     buttonTarget: "_self",

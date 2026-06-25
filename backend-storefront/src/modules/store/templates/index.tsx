@@ -48,7 +48,7 @@ const TAG_TITLES: Record<string, { title: string; tagline: string }> = {
   },
   "sterling-silver-925": {
     title: "Sterling Silver 925",
-    tagline: "Hallmarked quality, certified at the source.",
+    tagline: "Sterling silver quality, certified at the source.",
   },
   minimal: {
     title: "Minimal",

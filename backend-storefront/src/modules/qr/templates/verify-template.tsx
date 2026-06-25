@@ -3,7 +3,6 @@ import {
   ShieldCheck,
   ShieldAlert,
   Sparkles,
-  Award,
   ArrowRight,
 } from "lucide-react"
 
@@ -49,7 +48,6 @@ export default function VerifyTemplate({
   const v = data.variant!
   const meta = p.metadata || {}
   const weight = meta.weight ? `${meta.weight}g` : null
-  const hallmark = meta.hallmark || meta.bis || meta.bis_hallmark || null
 
   return (
     <div className="bg-[var(--color-bg-primary)] min-h-screen">
@@ -131,24 +129,6 @@ export default function VerifyTemplate({
                 }
               />
             </div>
-
-            {hallmark && (
-              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border)]">
-                <Award
-                  size={20}
-                  className="text-[var(--color-gold)] shrink-0"
-                  strokeWidth={1.6}
-                />
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold">
-                    Hallmark
-                  </p>
-                  <p className="text-[13.5px] font-semibold text-[var(--color-plum)]">
-                    {String(hallmark)}
-                  </p>
-                </div>
-              </div>
-            )}
 
             <LocalizedClientLink
               href={`/products/${p.handle}`}

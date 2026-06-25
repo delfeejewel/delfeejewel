@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import Image from "next/image"
 
-const PROMISES = ["925 Silver", "BIS Hallmarked", "Anti-Tarnish", "Made in India"]
+const PROMISES = ["925 Silver", "Anti-Tarnish", "Made in India"]
 
 const SLIDES = [
   {

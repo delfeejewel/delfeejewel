@@ -520,7 +520,7 @@ export default function ProductInfo({
         {/* Trust badges — expanded */}
         <div className="grid grid-cols-2 small:grid-cols-3 gap-3 pt-6 border-t border-[var(--color-lavender)]">
           {[
-            { icon: Award, label: "925 Hallmarked" },
+            { icon: Award, label: "925 Sterling" },
             { icon: Truck, label: "Free Shipping" },
             { icon: ShieldCheck, label: "Secure Payment" },
             { icon: RefreshCw, label: "Easy Returns" },

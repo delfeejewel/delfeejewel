@@ -53,9 +53,9 @@ function resolveVisibility(v: any): AuthContent["visibility"] {
 const DEFAULTS: AuthContent = {
   hero: {
     eyebrow: "Trust & Purity",
-    title: "Authenticity & Hallmarking",
+    title: "Authenticity",
     description:
-      "When you buy from us, you buy genuine silver — certified, hallmarked and made to be trusted. Here's our promise on purity.",
+      "When you buy from us, you buy genuine silver — certified and made to be trusted. Here's our promise on purity.",
   },
   intro: {
     icon: "badge-check",
@@ -70,22 +70,15 @@ const DEFAULTS: AuthContent = {
     heading: "Certified at every step",
     items: [
       { icon: "gem", title: "925 Sterling Silver", text: "Our jewellery is 92.5% pure silver alloyed for strength — the international standard for fine silver." },
-      { icon: "shield-check", title: "BIS Hallmarked", text: "Pieces are hallmarked by the Bureau of Indian Standards, independently certifying their purity." },
       { icon: "scroll-text", title: "Certificate of Authenticity", text: "Eligible orders include documentation confirming the metal and craftsmanship of your piece." },
       { icon: "award", title: "Responsibly Sourced", text: "We work with trusted suppliers and ethical practices from raw metal to finished jewellery." },
     ],
   },
   marks: {
-    eyebrow: "How to read a hallmark",
-    heading: "What to look for",
-    description:
-      "A genuine BIS hallmark on silver carries a set of tiny stamps. Together, they confirm your jewellery is the real thing.",
-    items: [
-      { title: "BIS Standard Mark", text: "The official triangular BIS logo — the foundation of a genuine hallmark." },
-      { title: "Purity Grade", text: 'The fineness stamp, such as "925", confirming 92.5% silver purity.' },
-      { title: "Assaying Centre Mark", text: "Identifies the BIS-recognised centre that tested and certified the piece." },
-      { title: "Jeweller's Identification", text: "A unique mark linking the piece back to its responsible jeweller." },
-    ],
+    eyebrow: "",
+    heading: "",
+    description: "",
+    items: [],
   },
   promise: {
     icon: "shield-check",
@@ -132,10 +125,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return pageMetadata({
     countryCode,
     path: "/authenticity",
-    title: page?.meta_title || page?.title || "Authenticity & Hallmarking",
+    title: page?.meta_title || page?.title || "Authenticity",
     description:
       page?.meta_description ||
-      `Every ${BRAND.name} piece is genuine 925 sterling silver and BIS hallmarked. Learn what that means and how we guarantee purity.`,
+      `Every ${BRAND.name} piece is genuine 925 sterling silver. Learn what that means and how we guarantee purity.`,
   })
 }
 
@@ -161,7 +154,7 @@ export default async function AuthenticityPage({ params }: Props) {
           description={c.hero.description}
           breadcrumb={[
             { label: "Home", href: "/" },
-            { label: "Authenticity & Hallmarking" },
+            { label: "Authenticity" },
           ]}
         />
       )}
@@ -220,8 +213,8 @@ export default async function AuthenticityPage({ params }: Props) {
         </section>
       )}
 
-      {/* Hallmark marks */}
-      {c.visibility.marks && (
+      {/* Marks */}
+      {c.visibility.marks && c.marks.items.length > 0 && (
         <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border)]">
           <div className="page-container py-12 small:py-16">
             <div className="text-center max-w-2xl mx-auto mb-10">

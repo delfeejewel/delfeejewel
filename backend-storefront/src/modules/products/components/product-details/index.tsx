@@ -3,7 +3,7 @@
 import { useRef } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { motion, useInView } from "framer-motion"
-import { Leaf, History, Gem, Droplets, Shield, Sparkles, HandMetal } from "lucide-react"
+import { Leaf, History, Droplets, Shield, Sparkles, HandMetal } from "lucide-react"
 
 type Props = {
   product: HttpTypes.StoreProduct
@@ -83,7 +83,6 @@ export default function ProductDetails({ product }: Props) {
                 { icon: Shield, title: "Tarnish Resistant", desc: "Long-lasting shine" },
                 { icon: Leaf, title: "Sustainable", desc: "Ethically sourced silver" },
                 { icon: Sparkles, title: "Premium Finish", desc: "Rhodium plated" },
-                { icon: Gem, title: "Certified", desc: "BIS 925 hallmarked" },
               ].map((f, i) => (
                 <FeatureCard key={f.title} {...f} delay={i * 0.06} />
               ))}
