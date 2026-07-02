@@ -31,6 +31,7 @@ export type Permission =
   | "inventory.write"
   | "shipping.write"
   | "settings.write"
+  | "appointments.write"
 
 const ALL_PERMISSIONS: Permission[] = [
   "users.manage",
@@ -45,6 +46,7 @@ const ALL_PERMISSIONS: Permission[] = [
   "inventory.write",
   "shipping.write",
   "settings.write",
+  "appointments.write",
 ]
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -60,6 +62,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "shipping.write",
     "customers.read",
     "analytics.read",
+    "appointments.write",
   ],
   marketing: [
     "promotions.write",
@@ -86,12 +89,16 @@ export const PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
   [/^\/admin\/users(\/(?!me(\/|$))|$)/, "users.write"],
   [/^\/admin\/return-requests\/.+\/(approve|reject|mark-received|create-replacement)/, "returns.write"],
   [/^\/admin\/orders\/.+\/(refund|capture|cancel)/, "orders.write"],
+  [/^\/admin\/fraud-review/, "orders.write"],
   [/^\/admin\/products(\/|$)/, "products.write"],
   [/^\/admin\/categories\/.+\/cover-image/, "products.write"],
   [/^\/admin\/qr-codes/, "inventory.write"],
   [/^\/admin\/low-stock/, "inventory.write"],
   [/^\/admin\/gift-cards/, "giftcards.write"],
   [/^\/admin\/coupons/, "promotions.write"],
+  [/^\/admin\/marketing/, "promotions.write"],
+  [/^\/admin\/newsletter/, "promotions.write"],
+  [/^\/admin\/appointments/, "appointments.write"],
   [/^\/admin\/analytics/, "analytics.read"],
   [/^\/admin\/customers\/segments/, "customers.read"],
 ]
@@ -113,6 +120,25 @@ export function permissionForPath(
 
 export function roleHas(role: Role, perm: Permission): boolean {
   return ROLE_PERMISSIONS[role]?.includes(perm) || false
+}
+
+/**
+ * Handler-level permission check. Use this inside a route handler (which only
+ * runs AFTER admin auth, so auth_context.actor_id is reliably present) to gate
+ * security-sensitive WRITES. The PATH_PERMISSIONS middleware fails OPEN on
+ * routes that share a core prefix (e.g. /admin/products/*) because actor_id
+ * isn't populated in the middleware phase there — so don't rely on it alone.
+ *
+ * Fails closed: a missing actor_id returns false (denied).
+ */
+export async function actorHasPermission(
+  req: any,
+  perm: Permission
+): Promise<boolean> {
+  const actorId = req?.auth_context?.actor_id
+  if (!actorId) return false
+  const role = await getUserRole(req.scope as MedusaContainer, actorId)
+  return roleHas(role, perm)
 }
 
 /**

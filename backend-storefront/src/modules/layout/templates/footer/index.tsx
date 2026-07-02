@@ -3,6 +3,7 @@ import { getStoreInfo, getFooterSettings, getMenus } from "@lib/data/cms"
 import { BRAND } from "@lib/constants.brand"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import NewsletterForm from "@modules/layout/components/newsletter-form"
 
 /* ─── Static Data ─────────────────────────────────────── */
 
@@ -15,6 +16,7 @@ const footerLinks = {
   ],
   "Customer Service": [
     { name: "Track Your Order", href: "/track-order" },
+    { name: "Book an Appointment", href: "/book-appointment" },
     { name: "Returns & Exchange", href: "/returns-and-exchange" },
     { name: "Shipping Policy", href: "/shipping-policy" },
     { name: "Contact Us", href: "/contact" },
@@ -245,16 +247,7 @@ export default async function Footer() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)] mb-3">
               {newsletterHeading}
             </p>
-            <div className="flex">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="flex-1 h-11 px-4 rounded-l-lg bg-white/[0.07] border border-white/[0.1] border-r-0 text-[13px] text-white placeholder:text-white/30 focus:outline-none focus:border-[var(--color-gold)]/40 transition-colors"
-              />
-              <button className="h-11 px-6 rounded-r-lg text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-footer-bg-deep)] [background:var(--gradient-gold-btn)] transition-all duration-300 hover:brightness-110 shrink-0">
-                Subscribe
-              </button>
-            </div>
+            <NewsletterForm />
           </div>
         </div>
 

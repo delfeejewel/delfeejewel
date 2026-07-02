@@ -130,7 +130,7 @@ const UserRoleWidget = ({ data }: { data: { id: string; email?: string } }) => {
 }
 
 export const config = defineWidgetConfig({
-  zone: "user.details.side.before",
+  zone: "user.details.before",
 })
 
 export default UserRoleWidget

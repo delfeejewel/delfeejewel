@@ -130,6 +130,26 @@ module.exports = defineConfig({
       resolve: "./src/modules/otp_verification",
     },
     {
+      resolve: "./src/modules/marketing",
+    },
+    {
+      resolve: "./src/modules/appointment",
+    },
+    {
+      // Explicitly configure Auth so we can swap the stock emailpass provider
+      // for our TOTP-aware subclass. Registered under id `emailpass` so all
+      // login URLs are unchanged; non-enrolled users authenticate as before.
+      resolve: "@medusajs/medusa/auth",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/auth_emailpass_totp",
+            id: "emailpass",
+          },
+        ],
+      },
+    },
+    {
       resolve: "@medusajs/medusa/fulfillment",
       options: {
         providers: [

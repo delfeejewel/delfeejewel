@@ -149,6 +149,102 @@ export default class EmailNotificationService extends MedusaService({}) {
     }
   }
 
+  /**
+   * Send one marketing-campaign email. Unlike the fire-and-forget _send,
+   * this RETURNS the per-recipient outcome so the campaign sender can tally
+   * sent vs failed. The HTML is already fully rendered (incl. the compliance
+   * footer + unsubscribe link) by the caller.
+   */
+  async sendCampaignEmail(args: {
+    to: string
+    subject: string
+    html: string
+  }): Promise<{ ok: boolean; error?: string }> {
+    const mailer = await this.getMailer()
+    if (!mailer) {
+      return { ok: false, error: "No email sender configured in CMS" }
+    }
+    try {
+      await mailer.transporter.sendMail({
+        from: mailer.from,
+        to: args.to,
+        subject: args.subject,
+        html: args.html,
+      })
+      return { ok: true }
+    } catch (error: any) {
+      return { ok: false, error: error?.message || "send failed" }
+    }
+  }
+
+  /**
+   * Appointment lifecycle email (booked / confirmed / cancelled). HTML is built
+   * inline (no template-registry entry needed). Fire-and-forget via _send.
+   */
+  async sendAppointmentEmail(data: {
+    to: string
+    kind: "booked" | "confirmed" | "cancelled"
+    name: string
+    reference: string
+    service_type: string
+    date: string
+    slot: string
+    reason?: string
+  }): Promise<void> {
+    const prettyDate = (() => {
+      const [y, m, d] = data.date.split("-").map(Number)
+      const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1))
+      return dt.toLocaleDateString("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    })()
+
+    const headline =
+      data.kind === "cancelled"
+        ? "Your appointment was cancelled"
+        : data.kind === "confirmed"
+        ? "Your appointment is confirmed"
+        : "Your appointment is booked"
+
+    const intro =
+      data.kind === "cancelled"
+        ? `Hi ${data.name}, your appointment below has been cancelled.${
+            data.reason ? ` Reason: ${data.reason}.` : ""
+          } Please book again or contact us to reschedule.`
+        : `Hi ${data.name}, thank you for booking a visit. We look forward to seeing you at our Chandigarh store.`
+
+    const subject =
+      data.kind === "cancelled"
+        ? `Appointment cancelled — ${data.reference}`
+        : `Appointment ${data.kind === "confirmed" ? "confirmed" : "booked"} — ${data.reference}`
+
+    const struck = data.kind === "cancelled"
+    const row = (label: string, value: string) =>
+      `<tr><td style="padding:4px 12px 4px 0;color:#888;font-size:13px">${label}</td>` +
+      `<td style="padding:4px 0;font-size:14px;color:#1a1a1a${
+        struck ? ";text-decoration:line-through;color:#999" : ""
+      }">${value}</td></tr>`
+
+    const html = `
+      <div style="font-family:system-ui,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="margin:0 0 8px">${headline}</h2>
+        <p style="margin:0 0 16px;color:#444;font-size:14px;line-height:1.5">${intro}</p>
+        <table style="border-collapse:collapse;margin:0 0 16px">
+          ${row("Reference", data.reference)}
+          ${row("For", data.service_type)}
+          ${row("Date", prettyDate)}
+          ${row("Time", data.slot)}
+        </table>
+        <p style="margin:0;color:#888;font-size:12px">Please keep your reference handy. Need to change your visit? Just reply to this email.</p>
+      </div>`
+
+    await this._send(`appointment.${data.kind} ${data.reference}`, data.to, subject, html)
+  }
+
   async sendOrderEmail(
     templateName: keyof typeof templates,
     data: OrderEmailData
