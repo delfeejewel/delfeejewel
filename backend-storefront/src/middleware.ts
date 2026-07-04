@@ -227,13 +227,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
+  // if one of the country codes is in the url and the cache id is not set,
+  // set the cache id and render the page (do NOT redirect). Redirecting to the
+  // same URL to plant the cookie creates an infinite 307 loop for any client
+  // that doesn't persist cookies across redirects (payment-gateway verification
+  // bots, Googlebot, curl, etc.) — the site looked live in a browser but was
+  // unreachable to crawlers. Setting the cookie on a pass-through response fixes
+  // the loop while still seeding _medusa_cache_id on the first hit.
   if (urlHasCountryCode && !cacheIdCookie) {
-    response.cookies.set("_medusa_cache_id", cacheId, {
+    const passThrough = NextResponse.next()
+    passThrough.cookies.set("_medusa_cache_id", cacheId, {
       maxAge: 60 * 60 * 24,
     })
 
-    return response
+    return passThrough
   }
 
   const redirectPath =

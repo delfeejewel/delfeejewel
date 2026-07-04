@@ -416,13 +416,25 @@ export default async function Footer() {
           >
             {BRAND.copyright(new Date().getFullYear())}
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <LocalizedClientLink href="/privacy-policy" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
               Privacy Policy
             </LocalizedClientLink>
             <span className="text-white/10">|</span>
             <LocalizedClientLink href="/terms-and-conditions" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
               Terms & Conditions
+            </LocalizedClientLink>
+            <span className="text-white/10">|</span>
+            <LocalizedClientLink href="/returns-and-exchange" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+              Refund & Cancellation
+            </LocalizedClientLink>
+            <span className="text-white/10">|</span>
+            <LocalizedClientLink href="/shipping-policy" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+              Shipping Policy
+            </LocalizedClientLink>
+            <span className="text-white/10">|</span>
+            <LocalizedClientLink href="/contact" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+              Contact Us
             </LocalizedClientLink>
           </div>
         </div>
