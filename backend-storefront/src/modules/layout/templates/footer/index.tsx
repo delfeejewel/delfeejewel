@@ -301,7 +301,16 @@ export default async function Footer() {
               Contact Us
             </span>
             <div className="text-[13px] text-white/50 leading-relaxed space-y-1">
-              <p className="text-white/80 font-medium">{BRAND.name}</p>
+              <p className="text-white/80 font-medium">
+                {BRAND.legalName} ({BRAND.name})
+              </p>
+              <address className="not-italic text-white/50">
+                {BRAND.contact.addressLines.map((line, i) => (
+                  <span key={i} className="block">
+                    {line}
+                  </span>
+                ))}
+              </address>
               <p>24x7 Enquiry Support</p>
               <a
                 href={`mailto:${email}`}
@@ -309,7 +318,7 @@ export default async function Footer() {
               >
                 {email}
               </a>
-              {phone && <p className="text-white/50">{phone}</p>}
+              <p className="text-white/50">{phone || BRAND.contact.phone}</p>
             </div>
 
             {/* Contact icons row */}

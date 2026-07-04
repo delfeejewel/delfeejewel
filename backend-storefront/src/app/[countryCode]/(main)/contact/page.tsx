@@ -8,6 +8,8 @@ import {
   Truck,
   PackageSearch,
   ArrowRight,
+  MapPin,
+  Phone,
 } from "lucide-react"
 
 import { pageMetadata, jsonLd } from "@lib/util/content-seo"
@@ -132,6 +134,33 @@ export default async function ContactPage({ params }: Props) {
 
           {/* Channels */}
           <aside className="flex flex-col gap-4">
+            {/* Visit Us — real registered business address (always shown) */}
+            <div className="flex gap-3.5 rounded-2xl bg-white border border-[var(--color-lavender)] p-5">
+              <div className="w-11 h-11 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center shrink-0">
+                <MapPin size={20} className="text-[var(--color-plum)]" />
+              </div>
+              <div>
+                <p className="font-semibold text-[14px] text-[var(--color-text-primary)]">
+                  Visit Us
+                </p>
+                <address className="not-italic text-[13.5px] text-[var(--color-plum)] font-medium mt-0.5 leading-relaxed">
+                  {BRAND.legalName} ({BRAND.name})
+                  <br />
+                  {BRAND.contact.addressLines.map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
+                </address>
+                <a
+                  href={BRAND.contact.phoneHref}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] text-[var(--color-text-muted)] mt-2 hover:text-[var(--color-plum)] transition-colors"
+                >
+                  <Phone size={13} /> {BRAND.contact.phone}
+                </a>
+              </div>
+            </div>
             {channels.map((c) => {
               const Icon = c.icon
               const inner = (
