@@ -1,7 +1,10 @@
+import crypto from "crypto"
+
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { processRtoRefund } from "../../../lib/process-rto-refund"
+import { issueGiftCardsForOrder } from "../../../lib/issue-gift-cards"
 
 /**
  * POST /hooks/shiprocket
@@ -11,15 +14,35 @@ import { processRtoRefund } from "../../../lib/process-rto-refund"
  * Shiprocket sends the channel order_id we passed at fulfillment time, which
  * is the Medusa order display_id — used here to match the order.
  *
- * Configure the webhook URL + (optional) token in the Shiprocket dashboard:
- *   Settings -> API -> Webhooks.  If SHIPROCKET_WEBHOOK_TOKEN is set, the
- *   request must carry it in the `x-api-key` header.
+ * Configure the webhook URL + token in the Shiprocket dashboard:
+ *   Settings -> API -> Webhooks. The request must carry SHIPROCKET_WEBHOOK_TOKEN
+ *   in the `x-api-key` header.
  */
+
+/** Constant-time compare; false on any length/'type mismatch rather than throwing. */
+function tokenMatches(provided: unknown, expected: string): boolean {
+  if (typeof provided !== "string") return false
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
+
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
 
+  // Fails CLOSED: this handler issues gift cards on "delivered" and triggers
+  // real refunds on "RTO Delivered", so an unauthenticated caller must never
+  // reach it. A missing token is a misconfiguration, not permission to skip auth.
   const expected = process.env.SHIPROCKET_WEBHOOK_TOKEN
-  if (expected && req.headers["x-api-key"] !== expected) {
+  if (!expected) {
+    logger.error(
+      "Shiprocket webhook rejected: SHIPROCKET_WEBHOOK_TOKEN is not configured"
+    )
+    return res.status(503).json({ message: "Webhook not configured" })
+  }
+  if (!tokenMatches(req.headers["x-api-key"], expected)) {
+    logger.warn("Shiprocket webhook rejected: bad or missing x-api-key")
     return res.status(401).json({ message: "Unauthorized" })
   }
 
@@ -89,6 +112,19 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     logger.info(
       `Shiprocket webhook: order #${orderRef} status="${status}" delivered=${isDelivered}`
     )
+
+    // On delivery, issue any purchased gift cards that were deferred because
+    // the order wasn't paid at placement (COD). Idempotent + payment-gated;
+    // a no-op for orders without gift cards or already-issued ones.
+    if (isDelivered) {
+      try {
+        await issueGiftCardsForOrder(req.scope as any, order.id)
+      } catch (e: any) {
+        logger.error(
+          `Shiprocket webhook: gift-card issuance failed for #${orderRef}: ${e?.message}`
+        )
+      }
+    }
 
     // RTO Delivered = parcel back at warehouse → process refund + restock.
     // Idempotency is enforced inside processRtoRefund.

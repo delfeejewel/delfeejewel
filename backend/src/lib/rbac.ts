@@ -89,7 +89,12 @@ export const PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
   [/^\/admin\/users(\/(?!me(\/|$))|$)/, "users.write"],
   [/^\/admin\/return-requests\/.+\/(approve|reject|mark-received|create-replacement)/, "returns.write"],
   [/^\/admin\/orders\/.+\/(refund|capture|cancel)/, "orders.write"],
+  // Payment capture/refund live under /admin/payments/:id/* in Medusa v2.
+  [/^\/admin\/payments\/.+\/(capture|refund)/, "orders.write"],
   [/^\/admin\/fraud-review/, "orders.write"],
+  // Shipping/dispatch: warehouse pick-pack stages, RTO processing, and Medusa's
+  // own fulfilment endpoints on an order. "ops" holds shipping.write.
+  [/^\/admin\/orders\/.+\/(ops-status|pick-label|process-rto|fulfillments)/, "shipping.write"],
   [/^\/admin\/products(\/|$)/, "products.write"],
   [/^\/admin\/categories\/.+\/cover-image/, "products.write"],
   [/^\/admin\/qr-codes/, "inventory.write"],

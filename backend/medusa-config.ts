@@ -163,8 +163,16 @@ module.exports = defineConfig({
             options: {
               email: process.env.SHIPROCKET_EMAIL,
               password: process.env.SHIPROCKET_PASSWORD,
+              // Address nickname in Shiprocket, not a pincode — the two are
+              // used for different calls, so they're configured separately.
               pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-              default_weight: 0.1, // 100g default for jewellery
+              pickup_pincode: process.env.SHIPROCKET_PICKUP_PINCODE,
+              // Variant weights are catalogued in grams; declared parcel weight
+              // is summed from the items, plus packaging tare.
+              weight_unit: "g",
+              default_weight: 0.1, // fallback: 100g, for variants with no weight
+              packaging_weight: 0.05, // box + pouch
+              default_dimensions: { length: 10, breadth: 8, height: 5 },
             },
           },
         ],
