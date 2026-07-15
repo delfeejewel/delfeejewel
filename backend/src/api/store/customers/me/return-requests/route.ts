@@ -4,6 +4,7 @@ import type {
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
+import { getFeatureFlags } from "../../../../../lib/feature-flags"
 import { RETURN_REQUEST_MODULE } from "../../../../../modules/return_request"
 
 const RETURN_WINDOW_DAYS =
@@ -66,6 +67,17 @@ export async function POST(
   const customerId = req.auth_context?.actor_id
   if (!customerId) return ERR(res, 401, "Authentication required")
 
+  // Customer-facing returns can be switched off (dev-only feature toggle).
+  // Existing requests stay readable/processable; only NEW ones are blocked.
+  const flags = await getFeatureFlags(req.scope)
+  if (!flags.returns_enabled) {
+    return ERR(
+      res,
+      403,
+      "Returns are not available right now. Please contact support for help with your order."
+    )
+  }
+
   const { order_id, reason, message, items, type } = (req.body || {}) as {
     order_id?: string
     reason?: string
@@ -114,6 +126,9 @@ export async function POST(
       "items.thumbnail",
       "items.quantity",
       "items.unit_price",
+      // `total` is the discounted, tax-inclusive amount actually paid for the
+      // line — the correct basis for refunds (unit_price is pre-discount).
+      "items.total",
       "items.variant_id",
       "items.product_id",
       "items.variant_title",
@@ -162,6 +177,46 @@ export async function POST(
       409,
       "You already have an active return request for this order."
     )
+  }
+
+  // Cumulative quantities already returned per line item (any non-rejected
+  // request counts — rejected ones freed the items back up). Prevents serially
+  // returning the same units across multiple completed requests.
+  //
+  // Fetch the items via query.graph on return_request_item — the module's
+  // `relations: ["items"]` option is unreliable (see process-return-refund.ts),
+  // so we must not depend on it for a security-relevant quantity cap.
+  const alreadyReturnedByLine = new Map<string, number>()
+  const nonRejectedIds = (existing || [])
+    .filter((r: any) => r.status !== "rejected")
+    .map((r: any) => r.id)
+  if (nonRejectedIds.length) {
+    const { data: priorItems } = await query.graph({
+      entity: "return_request_item",
+      filters: { return_request_id: nonRejectedIds } as any,
+      fields: ["line_item_id", "quantity", "return_request_id"],
+    })
+    for (const it of (priorItems as any[]) || []) {
+      alreadyReturnedByLine.set(
+        it.line_item_id,
+        (alreadyReturnedByLine.get(it.line_item_id) || 0) +
+          Number(it.quantity || 0)
+      )
+    }
+  }
+
+  // Reject duplicate line items in the payload — each must appear once, or the
+  // per-line quantity cap below is trivially bypassed by repeating the entry.
+  const seenLineIds = new Set<string>()
+  for (const sel of items) {
+    if (seenLineIds.has(sel.line_item_id)) {
+      return ERR(
+        res,
+        400,
+        "Each item can only appear once in a return request."
+      )
+    }
+    seenLineIds.add(sel.line_item_id)
   }
 
   // Validate requested items are part of the order + quantities
@@ -227,15 +282,25 @@ export async function POST(
       return ERR(res, 400, `Item ${sel.line_item_id} isn't in this order.`)
     }
     const qty = Number(sel.quantity || 0)
-    if (qty < 1 || qty > Number(oi.quantity)) {
+    const alreadyReturned = alreadyReturnedByLine.get(oi.id) || 0
+    const remaining = Number(oi.quantity) - alreadyReturned
+    if (qty < 1 || qty > remaining) {
       return ERR(
         res,
         400,
-        `Quantity for "${oi.title}" must be between 1 and ${oi.quantity}.`
+        remaining <= 0
+          ? `"${oi.title}" has already been fully returned.`
+          : `Quantity for "${oi.title}" must be between 1 and ${remaining}.`
       )
     }
     const unit = Number(oi.unit_price || 0)
-    total += unit * qty
+    // Refund the discounted, tax-inclusive amount actually paid per unit —
+    // fall back to unit_price only when the line total isn't available.
+    const perUnitRefund =
+      oi.total != null && Number(oi.quantity) > 0
+        ? Number(oi.total) / Number(oi.quantity)
+        : unit
+    total += perUnitRefund * qty
 
     let exchangeVariantId: string | null = null
     if (isExchange) {
@@ -294,7 +359,7 @@ export async function POST(
     status: "pending",
     reason,
     message: message?.trim() || null,
-    refund_amount: isExchange ? null : total,
+    refund_amount: isExchange ? null : Math.round(total),
     currency_code: order.currency_code,
     items: itemRows,
   })

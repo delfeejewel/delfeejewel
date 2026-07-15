@@ -19,8 +19,8 @@ export const BRAND = {
   contact: {
     addressLines: ["Shop No. 62, Sector 19C", "Sector 19, Chandigarh – 160019"],
     addressFull: "Shop No. 62, Sector 19C, Sector 19, Chandigarh – 160019",
-    phone: "+91 7888930585",
-    phoneHref: "tel:+917888930585",
+    phone: "+91 9877686053",
+    phoneHref: "tel:+919877686053",
     email: "enquire@delfee.in",
   },
   meta: {

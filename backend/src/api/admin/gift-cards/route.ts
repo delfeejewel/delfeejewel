@@ -6,6 +6,7 @@ import type {
 import { GIFT_CARD_MODULE } from "../../../modules/gift_card"
 import { defaultExpiry, generateGiftCardCode } from "../../../modules/gift_card/lib/code"
 import { convertToLocale } from "../../../utils/money"
+import { actorHasPermission } from "../../../lib/rbac"
 
 const ERR = (res: MedusaResponse, status: number, message: string) =>
   res.status(status).json({ message })
@@ -51,6 +52,11 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
  *         message?, expires_at?, send_email? }
  */
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  // Fail-closed handler guard — the RBAC middleware fails open on this prefix.
+  if (!(await actorHasPermission(req, "giftcards.write"))) {
+    return res.status(403).json({ message: "Access denied. Gift card permission required." })
+  }
+
   const body = (req.body || {}) as {
     value?: number
     currency_code?: string

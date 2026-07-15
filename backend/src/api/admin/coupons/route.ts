@@ -3,6 +3,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
+import { actorHasPermission } from "../../../lib/rbac"
 
 const ERR = (res: MedusaResponse, status: number, message: string) =>
   res.status(status).json({ message })
@@ -72,6 +73,9 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
  * }
  */
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return ERR(res, 403, "Access denied. Promotions permission required.")
+  }
   const body = (req.body || {}) as {
     code?: string
     description?: string

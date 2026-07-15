@@ -4,6 +4,7 @@ import type {
 } from "@medusajs/framework/http"
 
 import { GIFT_CARD_MODULE } from "../../../../modules/gift_card"
+import { actorHasPermission } from "../../../../lib/rbac"
 
 const ERR = (res: MedusaResponse, status: number, message: string) =>
   res.status(status).json({ message })
@@ -27,6 +28,11 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
  *  - set_balance → set balance to `balance` (>= 0); status follows the new balance
  */
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  // Fail-closed handler guard — the RBAC middleware fails open on this prefix.
+  if (!(await actorHasPermission(req, "giftcards.write"))) {
+    return res.status(403).json({ message: "Access denied. Gift card permission required." })
+  }
+
   const id = req.params.id
   const { action, balance } = (req.body || {}) as {
     action?: string

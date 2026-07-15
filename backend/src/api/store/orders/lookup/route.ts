@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { fetchTrimmedOrder, normalizeEmail } from "../../../../utils/order-lookup"
+import { rateLimit, clientIp } from "../../../../utils/rate-limit"
 
 /**
  * POST /store/orders/lookup
@@ -9,6 +10,17 @@ import { fetchTrimmedOrder, normalizeEmail } from "../../../../utils/order-looku
  * Body: { display_id: number|string, email: string }
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  // Throttle enumeration: order numbers are sequential, so an unthrottled
+  // lookup lets an attacker walk display_ids against a known email (or guess
+  // emails for a known order). 10 attempts/min per IP.
+  const rl = rateLimit(`order-lookup:${clientIp(req)}`, 10, 60_000)
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", String(rl.retryAfterSec))
+    return res
+      .status(429)
+      .json({ message: "Too many attempts. Please try again shortly." })
+  }
+
   const { display_id, email } = (req.body || {}) as {
     display_id?: number | string
     email?: string

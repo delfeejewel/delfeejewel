@@ -52,13 +52,16 @@ export async function restockReturnItems(
   const adjustments: any[] = []
   for (const it of reqItems) {
     const invIds = variantInv.get(it.variant_id) || []
-    for (const inventoryItemId of invIds) {
-      adjustments.push({
-        inventoryItemId,
-        locationId: location.id,
-        adjustment: Number(it.quantity || 0),
-      })
-    }
+    // Adjust ONLY the canonical (first) inventory item. A variant can carry
+    // duplicate inventory items in this project (known gotcha); restocking all
+    // of them would multiply the returned quantity back into stock.
+    const inventoryItemId = invIds[0]
+    if (!inventoryItemId) continue
+    adjustments.push({
+      inventoryItemId,
+      locationId: location.id,
+      adjustment: Number(it.quantity || 0),
+    })
   }
   if (!adjustments.length) return { restocked: false, count: 0 }
 

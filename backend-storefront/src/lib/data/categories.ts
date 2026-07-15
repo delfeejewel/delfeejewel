@@ -5,6 +5,8 @@ import { getCacheOptions } from "./cookies"
 export const listCategories = async (query?: Record<string, any>) => {
   const next = {
     ...(await getCacheOptions("categories")),
+    // Safety net so admin edits to categories show without waiting ~24h.
+    revalidate: 60,
   }
 
   const limit = query?.limit || 100
@@ -31,6 +33,8 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
 
   const next = {
     ...(await getCacheOptions("categories")),
+    // Safety net so admin edits to categories show without waiting ~24h.
+    revalidate: 60,
   }
 
   return sdk.client

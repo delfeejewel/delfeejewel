@@ -19,7 +19,10 @@ export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
     const authHeaders = await getAuthHeaders()
 
-    if (!authHeaders) return null
+    // getAuthHeaders returns {} (which is truthy) for guests — check for the
+    // actual token, otherwise every anonymous render fires a doomed 401 to
+    // /store/customers/me.
+    if (!("authorization" in authHeaders)) return null
 
     const headers = {
       ...authHeaders,
@@ -27,6 +30,7 @@ export const retrieveCustomer =
 
     const next = {
       ...(await getCacheOptions("customers")),
+      revalidate: 60,
     }
 
     return await sdk.client
@@ -214,50 +218,9 @@ export async function updateCustomerPassword(data: {
   }
 }
 
-export async function signup(_currentState: unknown, formData: FormData) {
-  const password = formData.get("password") as string
-  const customerForm = {
-    email: formData.get("email") as string,
-    first_name: formData.get("first_name") as string,
-    last_name: formData.get("last_name") as string,
-    phone: formData.get("phone") as string,
-  }
-
-  try {
-    const token = await sdk.auth.register("customer", "emailpass", {
-      email: customerForm.email,
-      password: password,
-    })
-
-    await setAuthToken(token as string)
-
-    const headers = {
-      ...(await getAuthHeaders()),
-    }
-
-    const { customer: createdCustomer } = await sdk.store.customer.create(
-      customerForm,
-      {},
-      headers
-    )
-
-    const loginToken = await sdk.auth.login("customer", "emailpass", {
-      email: customerForm.email,
-      password,
-    })
-
-    await setAuthToken(loginToken as string)
-
-    const customerCacheTag = await getCacheTag("customers")
-    revalidateTag(customerCacheTag)
-
-    await transferCart()
-
-    return createdCustomer
-  } catch (error: any) {
-    return error.toString()
-  }
-}
+// NOTE: the legacy non-OTP `signup` action was removed — account creation now
+// goes exclusively through the OTP-verified flow (requestSignupOtp +
+// signupWithOtp). A password-only signup here would have bypassed that policy.
 
 export async function login(_currentState: unknown, formData: FormData) {
   const email = formData.get("email") as string

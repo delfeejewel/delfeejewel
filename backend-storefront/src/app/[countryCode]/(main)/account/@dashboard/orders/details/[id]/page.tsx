@@ -1,3 +1,4 @@
+import { getFeatureFlags } from "@lib/data/feature-flags"
 import { retrieveOrder } from "@lib/data/orders"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
 import { Metadata } from "next"
@@ -23,11 +24,16 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function OrderDetailPage(props: Props) {
   const params = await props.params
-  const order = await retrieveOrder(params.id).catch(() => null)
+  const [order, flags] = await Promise.all([
+    retrieveOrder(params.id).catch(() => null),
+    getFeatureFlags(),
+  ])
 
   if (!order) {
     notFound()
   }
 
-  return <OrderDetailsTemplate order={order} />
+  return (
+    <OrderDetailsTemplate order={order} returnsEnabled={flags.returns_enabled} />
+  )
 }

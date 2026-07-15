@@ -1,6 +1,11 @@
-import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
 
 import { MARKETING_MODULE } from "../../../../modules/marketing"
+import { actorHasPermission } from "../../../../lib/rbac"
 
 const AUDIENCE_TYPES = ["subscribers", "segment", "all_customers", "everyone"]
 const SEGMENTS = ["new", "repeat", "regular"]
@@ -16,7 +21,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 }
 
 /** POST /admin/campaigns — create a draft campaign. */
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return res.status(403).json({ message: "Access denied. Marketing permission required." })
+  }
   const b = (req.body || {}) as Record<string, any>
   const name = (b.name || "").trim()
   const subject = (b.subject || "").trim()

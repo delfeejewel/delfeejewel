@@ -89,48 +89,85 @@ class RazorpayProviderService extends AbstractPaymentProvider<RazorpayOptions> {
       const razorpayOrderId = data?.razorpay_order_id
       const razorpaySignature = data?.razorpay_signature
 
-      // Happy path: the storefront passed back the Razorpay callback →
-      // verify the signature locally.
-      if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+      // The trusted expected amount (paise) was set by OUR initiatePayment on
+      // the session data — it is not client-writable through the store API.
+      // Every authorization path below is checked against it so a valid-but-
+      // cheaper payment (or a different Razorpay order) can never authorize an
+      // expensive cart.
+      const expectedPaise =
+        data?.amount != null ? Math.round(Number(data.amount)) : undefined
+      if (!razorpayOrderId) {
+        // No order was ever initiated for this session → cannot be paid.
+        return { data: { ...data }, status: PaymentSessionStatus.PENDING }
+      }
+      if (expectedPaise == null || !Number.isFinite(expectedPaise)) {
+        this.logger_.error(
+          "Razorpay authorizePayment: session is missing the expected amount — refusing to authorize"
+        )
+        return {
+          data: { ...data, error: "Missing expected amount" },
+          status: PaymentSessionStatus.ERROR,
+        }
+      }
+
+      const amountMatches = (paise: any) =>
+        Number(paise) === expectedPaise
+
+      // If a signed callback was supplied, verify the signature first. This
+      // only proves the (order, payment) pair is authentic — it does NOT prove
+      // the order/amount is the one we initiated, so we still fall through to
+      // the server-to-server amount check below.
+      if (razorpayPaymentId && razorpaySignature) {
         const crypto = require("crypto")
         const generatedSignature = crypto
           .createHmac("sha256", this.options_.key_secret)
           .update(`${razorpayOrderId}|${razorpayPaymentId}`)
           .digest("hex")
 
-        if (generatedSignature !== razorpaySignature) {
+        const sigBuf = Buffer.from(String(razorpaySignature))
+        const expBuf = Buffer.from(generatedSignature)
+        const sigOk =
+          sigBuf.length === expBuf.length &&
+          crypto.timingSafeEqual(sigBuf, expBuf)
+        if (!sigOk) {
           return {
             data: { ...data, error: "Invalid payment signature" },
             status: PaymentSessionStatus.ERROR,
           }
         }
+      }
 
+      // Authoritative check: ask Razorpay (authenticated, server-to-server)
+      // for the payments on THIS session's order and require a captured/
+      // authorized one whose amount matches what we initiated.
+      const { items } = await this.razorpay_.orders.fetchPayments(razorpayOrderId)
+      const paid = (items || []).find(
+        (p: any) =>
+          (p.status === "captured" || p.status === "authorized") &&
+          amountMatches(p.amount)
+      )
+      if (paid) {
         return {
-          data: { ...data, razorpay_payment_id: razorpayPaymentId },
+          data: { ...data, razorpay_payment_id: paid.id },
           status: PaymentSessionStatus.AUTHORIZED,
         }
       }
 
-      // Fallback: the storefront completed the cart without passing the
-      // callback. We still hold razorpay_order_id from initiatePayment, so
-      // ask Razorpay directly (authenticated, server-to-server) whether this
-      // order has a captured/authorized payment.
-      if (razorpayOrderId) {
-        const { items } = await this.razorpay_.orders.fetchPayments(
-          razorpayOrderId
+      // A payment exists but the amount doesn't match → tampering / drift.
+      const anyPaid = (items || []).find(
+        (p: any) => p.status === "captured" || p.status === "authorized"
+      )
+      if (anyPaid) {
+        this.logger_.warn(
+          `Razorpay authorizePayment: amount mismatch on order ${razorpayOrderId} — paid ${anyPaid.amount}, expected ${expectedPaise}`
         )
-        const paid = (items || []).find(
-          (p: any) => p.status === "captured" || p.status === "authorized"
-        )
-        if (paid) {
-          return {
-            data: { ...data, razorpay_payment_id: paid.id },
-            status: PaymentSessionStatus.AUTHORIZED,
-          }
+        return {
+          data: { ...data, error: "Payment amount does not match order" },
+          status: PaymentSessionStatus.ERROR,
         }
       }
 
-      // No payment id and the order isn't paid yet → leave it pending.
+      // No payment yet → leave it pending.
       return {
         data: { ...data },
         status: PaymentSessionStatus.PENDING,
@@ -242,23 +279,79 @@ class RazorpayProviderService extends AbstractPaymentProvider<RazorpayOptions> {
     return { data: { ...input.data } }
   }
 
-  async getWebhookActionAndData(data: any): Promise<any> {
-    const event = data.body?.event
+  async getWebhookActionAndData(payload: any): Promise<any> {
+    // Medusa passes { data: parsedBody, rawData: Buffer, headers } here.
+    // NEVER trust the parsed body without first verifying the HMAC signature
+    // Razorpay computed over the raw bytes — otherwise anyone can POST a
+    // forged "payment.captured" to the auto-mounted /hooks/payment/razorpay
+    // route and mark a session paid.
+    const crypto = require("crypto")
+    const secret =
+      this.options_.webhook_secret || process.env.RAZORPAY_WEBHOOK_SECRET
 
-    switch (event) {
+    if (!secret) {
+      this.logger_.error(
+        "Razorpay getWebhookActionAndData: webhook_secret not configured — ignoring event"
+      )
+      return { action: PaymentActions.NOT_SUPPORTED }
+    }
+
+    const headers = payload?.headers || {}
+    const signatureRaw =
+      headers["x-razorpay-signature"] || headers["X-Razorpay-Signature"]
+    const signature = Array.isArray(signatureRaw) ? signatureRaw[0] : signatureRaw
+
+    let raw: Buffer | undefined = payload?.rawData
+    if (raw && (raw as any).type === "Buffer" && Array.isArray((raw as any).data)) {
+      raw = Buffer.from((raw as any).data)
+    } else if (typeof raw === "string") {
+      raw = Buffer.from(raw, "utf8")
+    }
+
+    if (!signature || !raw) {
+      this.logger_.warn(
+        "Razorpay getWebhookActionAndData: missing signature or raw body"
+      )
+      return { action: PaymentActions.NOT_SUPPORTED }
+    }
+
+    const expected = crypto.createHmac("sha256", secret).update(raw).digest("hex")
+    const sigBuf = Buffer.from(signature)
+    const expBuf = Buffer.from(expected)
+    const valid =
+      sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf)
+    if (!valid) {
+      this.logger_.warn("Razorpay getWebhookActionAndData: invalid signature")
+      return { action: PaymentActions.NOT_SUPPORTED }
+    }
+
+    // Signature verified — parse from the raw bytes we authenticated.
+    let body: any
+    try {
+      body = JSON.parse(raw.toString("utf8"))
+    } catch {
+      body = payload?.data
+    }
+    const entity = body?.payload?.payment?.entity
+    // Razorpay amounts are in paise; this provider works in rupees.
+    const amount =
+      entity?.amount != null ? Math.round(Number(entity.amount) / 100) : undefined
+
+    switch (body?.event) {
       case "payment.captured":
         return {
           action: PaymentActions.SUCCESSFUL,
           data: {
-            session_id: data.body?.payload?.payment?.entity?.notes?.session_id,
-            amount: data.body?.payload?.payment?.entity?.amount,
+            session_id: entity?.notes?.session_id,
+            amount,
           },
         }
       case "payment.failed":
         return {
           action: PaymentActions.FAILED,
           data: {
-            session_id: data.body?.payload?.payment?.entity?.notes?.session_id,
+            session_id: entity?.notes?.session_id,
+            amount,
           },
         }
       default:

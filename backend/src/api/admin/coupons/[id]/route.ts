@@ -3,6 +3,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
+import { actorHasPermission } from "../../../../lib/rbac"
 
 const ERR = (res: MedusaResponse, status: number, message: string) =>
   res.status(status).json({ message })
@@ -12,6 +13,9 @@ const ERR = (res: MedusaResponse, status: number, message: string) =>
  * Body: { status: "active" | "inactive" }
  */
 export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return ERR(res, 403, "Access denied. Promotions permission required.")
+  }
   const id = req.params.id
   const { status } = (req.body || {}) as { status?: string }
   if (status !== "active" && status !== "inactive") {
@@ -30,6 +34,9 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
  * DELETE /admin/coupons/:id — permanently remove a coupon.
  */
 export async function DELETE(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return ERR(res, 403, "Access denied. Promotions permission required.")
+  }
   const id = req.params.id
   const promoModule: any = req.scope.resolve(Modules.PROMOTION)
 

@@ -1,6 +1,7 @@
 import "server-only"
 
 import { sdk } from "@lib/config"
+import { HIDDEN_PRODUCT_HANDLES } from "@lib/constants"
 import { HttpTypes } from "@medusajs/types"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { getCacheOptions } from "./cookies"
@@ -15,6 +16,14 @@ import type {
 const SUGGEST_FIELDS = "*variants.calculated_price,+metadata"
 const RESULT_FIELDS =
   "*variants.calculated_price,+variants.inventory_quantity,*variants.images,+metadata,+tags,*categories"
+
+function dropHiddenProducts<T extends { handle?: string | null }>(
+  products: T[]
+): T[] {
+  return products.filter(
+    (p) => !HIDDEN_PRODUCT_HANDLES.includes(p.handle ?? "")
+  )
+}
 
 function toSuggestProduct(product: HttpTypes.StoreProduct): SuggestProduct {
   let price: string | null = null
@@ -60,7 +69,10 @@ export async function searchProducts(
         cache: "force-cache",
       }
     )
-    .then(({ products, count }) => ({ products, count }))
+    .then(({ products, count }) => {
+      const visible = dropHiddenProducts(products)
+      return { products: visible, count: count - (products.length - visible.length) }
+    })
     .catch(() => ({ products: [], count: 0 }))
 }
 
@@ -96,7 +108,7 @@ export async function searchSuggestions(
         next,
         cache: "force-cache",
       })
-      .then(({ products }) => products)
+      .then(({ products }) => dropHiddenProducts(products))
       .catch(() => [] as HttpTypes.StoreProduct[]),
     listCategories({ limit: 100 }).catch(
       () => [] as HttpTypes.StoreProductCategory[]
@@ -131,7 +143,7 @@ export async function searchSuggestions(
         next,
         cache: "force-cache",
       })
-      .then(({ products }) => products.map(toSuggestProduct))
+      .then(({ products }) => dropHiddenProducts(products).map(toSuggestProduct))
       .catch(() => [])
   }
 

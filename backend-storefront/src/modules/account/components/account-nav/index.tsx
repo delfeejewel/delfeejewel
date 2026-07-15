@@ -19,11 +19,16 @@ const navLinks = [
 
 const AccountNav = ({
   customer,
+  returnsEnabled = true,
 }: {
   customer: HttpTypes.StoreCustomer | null
+  returnsEnabled?: boolean
 }) => {
   const route = usePathname()
   const { countryCode } = useParams() as { countryCode: string }
+  const visibleLinks = navLinks.filter(
+    (link) => returnsEnabled || link.href !== "/account/returns"
+  )
 
   const handleLogout = async () => {
     await signout(countryCode)
@@ -47,7 +52,7 @@ const AccountNav = ({
         </h2>
 
         <nav className="flex flex-col">
-          {navLinks.map((link) => {
+          {visibleLinks.map((link) => {
             const active = isActive(link.href)
             const Icon = link.icon
             return (
@@ -87,7 +92,7 @@ const AccountNav = ({
       {/* ── Mobile — horizontal scroll nav ────────── */}
       <div className="small:hidden -mx-6 px-6 mb-6" data-testid="mobile-account-nav">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {navLinks.map((link) => {
+          {visibleLinks.map((link) => {
             const active = isActive(link.href)
             const Icon = link.icon
             return (

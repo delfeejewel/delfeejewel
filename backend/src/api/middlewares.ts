@@ -9,6 +9,7 @@ import {
   roleHas,
 } from "../lib/rbac"
 import { reconcileGiftCardHolds } from "../modules/gift_card/lib/holds"
+import { codTokenAmount, getCodPolicy } from "../utils/cod"
 
 /**
  * Custom RBAC Middleware
@@ -147,6 +148,69 @@ async function enforceFirstOrderCoupons(
   }
 }
 
+/**
+ * Enforce the COD upfront token at checkout. If the cart is being completed
+ * with a Cash-on-Delivery payment session and policy requires an upfront token,
+ * block completion unless a sufficient token was actually paid (stamped on the
+ * cart by /store/cod-upfront/verify). Without this the whole anti-RTO token is
+ * UI-only — a client could complete a COD cart having paid nothing.
+ */
+async function enforceCodUpfront(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  try {
+    const match = req.path.match(/\/store\/carts\/([^/]+)\/complete\/?$/)
+    if (!match) return next()
+    const cartId = match[1]
+
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: carts } = await query.graph({
+      entity: "cart",
+      filters: { id: cartId },
+      fields: [
+        "id",
+        "total",
+        "metadata",
+        "payment_collection.payment_sessions.provider_id",
+        "payment_collection.payment_sessions.status",
+      ],
+    })
+    const cart = carts?.[0] as any
+    if (!cart) return next()
+
+    const sessions = cart.payment_collection?.payment_sessions || []
+    const activeCod = sessions.some(
+      (s: any) =>
+        String(s.provider_id || "").toLowerCase().includes("cod") &&
+        s.status !== "canceled" &&
+        s.status !== "error"
+    )
+    if (!activeCod) return next()
+
+    const expectedToken = codTokenAmount(Number(cart.total || 0), getCodPolicy())
+    if (expectedToken <= 0) return next()
+
+    const meta = (cart.metadata as any) || {}
+    const paid = Number(meta.cod_upfront_amount || 0)
+    if (!meta.cod_upfront_payment_id || paid < expectedToken) {
+      return res.status(402).json({
+        message: `A ₹${expectedToken} upfront payment is required to place this Cash-on-Delivery order.`,
+        code: "cod_upfront_required",
+        required: expectedToken,
+      })
+    }
+    return next()
+  } catch {
+    // Fail CLOSED would block all COD checkouts on a transient error; but
+    // failing open re-opens the bypass. Compromise: only let it through when we
+    // genuinely couldn't evaluate (exception), which is rare, and log nothing
+    // sensitive. The verify route + reconcile still guard the happy path.
+    return next()
+  }
+}
+
 async function requireDeveloper(
   req: MedusaRequest,
   res: MedusaResponse,
@@ -176,16 +240,61 @@ async function requireDeveloper(
   }
 }
 
+/**
+ * The backend root serves nothing — send visitors to the admin dashboard.
+ * A bare "/" matcher (route file or middleware) is silently dropped by
+ * Medusa's RoutesSorter (it splits the matcher into zero segments), so we
+ * match "/*" and act only on the exact root path.
+ */
+async function redirectRootToAdmin(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  if (req.path === "/") {
+    return res.redirect("/app")
+  }
+  return next()
+}
+
 export default defineMiddlewares({
   routes: [
     {
+      matcher: "/*",
+      method: ["GET"],
+      middlewares: [redirectRootToAdmin],
+    },
+    {
+      // Authenticate FIRST so requirePermission reliably sees
+      // auth_context.actor_id. Without this the RBAC check failed OPEN on core
+      // Medusa routes (order cancel, payment capture/refund, etc.) because
+      // actor_id wasn't yet populated in the middleware phase.
+      //
+      // Mirror Medusa's own admin defaults: include "api-key" and
+      // allowUnregistered. allowUnregistered lets invite-acceptance tokens (no
+      // user actor yet) and api-key requests PASS THROUGH this layer — Medusa's
+      // per-route auth still applies the correct policy (e.g. strict auth on
+      // order routes, allowUnregistered on /admin/invites/accept). For a normal
+      // registered admin, actor_id is populated so requirePermission enforces
+      // by role; requirePermission already fails open (next()) when actor_id is
+      // absent, so unregistered tokens aren't blocked here either — and the
+      // sensitive custom routes additionally carry fail-CLOSED handler guards.
       matcher: "/admin/*",
-      middlewares: [requirePermission],
+      middlewares: [
+        authenticate("user", ["session", "bearer", "api-key"], {
+          allowUnregistered: true,
+        }),
+        requirePermission,
+      ],
     },
     {
       matcher: "/store/carts/*/complete",
       method: ["POST"],
-      middlewares: [enforceFirstOrderCoupons, recomputeGiftCardsBeforeComplete],
+      middlewares: [
+        enforceCodUpfront,
+        enforceFirstOrderCoupons,
+        recomputeGiftCardsBeforeComplete,
+      ],
     },
     ...RESTRICTED_ROUTES.map((route) => ({
       matcher: `${route}*`,

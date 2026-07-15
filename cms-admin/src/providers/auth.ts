@@ -31,13 +31,14 @@ export const authProvider: AuthProvider = {
     return { authenticated: false, redirectTo: "/login" }
   },
 
-  // Role comes from Supabase user metadata. Defaults to the most restrictive
-  // role ("admin") when none is set. Set role: "developer" in a user's
-  // app_metadata (or user_metadata) to unlock developer-only controls.
+  // Role comes ONLY from app_metadata, which users cannot modify themselves.
+  // (user_metadata is writable via supabase.auth.updateUser(), so trusting it
+  // would let a user grant themselves the "developer" role.) Defaults to the
+  // most restrictive role ("admin") when none is set.
   getPermissions: async () => {
     const { data } = await supabaseClient.auth.getUser()
     const u = data?.user
-    return (u?.app_metadata?.role || u?.user_metadata?.role || "admin") as string
+    return (u?.app_metadata?.role || "admin") as string
   },
 
   getIdentity: async () => {

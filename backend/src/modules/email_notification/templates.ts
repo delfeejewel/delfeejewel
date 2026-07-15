@@ -133,9 +133,12 @@ function baseLayout(content: string): string {
   <meta name="x-apple-disable-message-reformatting">
   <title>${BRAND_NAME}</title>
   <style>
+    /* Brand fonts (match the storefront: Outfit body, Wittgenstein headings).
+       Clients that block remote fonts fall back to the system stacks below. */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Wittgenstein:wght@400;600;700&display=swap');
     body { margin:0; padding:0; }
     a { color:#5D2E46; }
-    .content h2 { font-family:Georgia,'Times New Roman',serif; font-size:22px; font-weight:600; color:#2b2b2b; margin:0 0 14px; }
+    .content h2 { font-family:'Wittgenstein',Georgia,'Times New Roman',serif; font-size:22px; font-weight:600; color:#2b2b2b; margin:0 0 14px; }
     .content h3 { margin:28px 0 14px; font-size:12px; text-transform:uppercase; letter-spacing:2px; color:#a59bad; font-weight:600; }
     .content p { margin:0 0 16px; line-height:1.65; font-size:14px; color:#555; }
     .content strong { color:#2b2b2b; }
@@ -143,12 +146,12 @@ function baseLayout(content: string): string {
     @media (max-width:620px){ .px { padding-left:22px !important; padding-right:22px !important; } }
   </style>
 </head>
-<body style="margin:0;padding:0;background:#f4f1ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#f4f1ed;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ed;">
     <tr><td align="center" style="padding:32px 16px;">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(45,30,50,0.06);">
         <tr><td style="background:#5D2E46;padding:34px 32px;text-align:center;">
-          <img src="${storefrontBase()}/images/logo-light.png" alt="${BRAND_NAME}" width="150" style="display:inline-block;width:150px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:6px;text-transform:uppercase;color:#ffffff;font-weight:600;">
+          <img src="${storefrontBase()}/images/logo-light.png" alt="${BRAND_NAME}" width="150" style="display:inline-block;width:150px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;font-family:'Wittgenstein',Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:6px;text-transform:uppercase;color:#ffffff;font-weight:600;">
           <div style="height:1px;width:46px;background:#c9ccd1;margin:18px auto 0;line-height:1px;font-size:0;">&nbsp;</div>
         </td></tr>
         <tr><td class="content px" style="padding:38px 34px;">

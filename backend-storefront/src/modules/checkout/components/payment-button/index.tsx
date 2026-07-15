@@ -145,10 +145,17 @@ const RazorpayPaymentButton = ({
   }> => {
     if (!forceRefresh && session?.data) {
       const orderId = (session.data as any)?.razorpay_order_id
-      if (orderId) {
+      const sessionAmount = Number((session.data as any)?.amount)
+      const expectedAmount = Math.round(Number(cart.total || 0) * 100)
+      // Re-initiate if the cart total changed since the session was created
+      // (item added in another tab, coupon applied/removed) — otherwise we'd
+      // open Razorpay for a stale amount that the backend then rejects.
+      const amountFresh =
+        Number.isFinite(sessionAmount) && sessionAmount === expectedAmount
+      if (orderId && amountFresh) {
         return {
           orderId,
-          amount: (session.data as any)?.amount,
+          amount: sessionAmount,
           currency: (session.data as any)?.currency || "INR",
         }
       }

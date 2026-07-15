@@ -41,10 +41,11 @@ module.exports = {
           border: "#2a2a2a",
           "border-hover": "#3a3a3a",
         },
+        // Brand gold — keep in sync with --color-gold in styles/globals.css.
         accent: {
-          DEFAULT: "#d4a853",
-          light: "#e8c97a",
-          dark: "#b08a3a",
+          DEFAULT: "#D4AF37",
+          light: "#e9c349",
+          dark: "#C4A030",
         },
         text: {
           primary: "#f5f5f5",

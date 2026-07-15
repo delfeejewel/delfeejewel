@@ -1,6 +1,11 @@
-import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
 
 import { MARKETING_MODULE } from "../../../../../modules/marketing"
+import { actorHasPermission } from "../../../../../lib/rbac"
 
 /** GET /admin/campaigns/:id */
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
@@ -11,7 +16,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 }
 
 /** POST /admin/campaigns/:id — update a draft (can't edit one that's sending/sent). */
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return res.status(403).json({ message: "Access denied. Marketing permission required." })
+  }
   const marketing: any = req.scope.resolve(MARKETING_MODULE)
   const campaign = await marketing.retrieveCampaign(req.params.id).catch(() => null)
   if (!campaign) return res.status(404).json({ message: "Campaign not found." })
@@ -37,7 +45,10 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 }
 
 /** DELETE /admin/campaigns/:id — only drafts/failed can be removed. */
-export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
+export async function DELETE(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return res.status(403).json({ message: "Access denied. Marketing permission required." })
+  }
   const marketing: any = req.scope.resolve(MARKETING_MODULE)
   const campaign = await marketing.retrieveCampaign(req.params.id).catch(() => null)
   if (!campaign) return res.status(404).json({ message: "Campaign not found." })

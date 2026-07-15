@@ -22,6 +22,7 @@ import { HttpTypes } from "@medusajs/types"
 
 type Props = {
   order: HttpTypes.StoreOrder
+  returnsEnabled?: boolean
 }
 
 const STEPS = [
@@ -96,7 +97,10 @@ function fmtDateTime(d?: string | Date | null) {
   )
 }
 
-export default function OrderDetailsTemplate({ order }: Props) {
+export default function OrderDetailsTemplate({
+  order,
+  returnsEnabled = true,
+}: Props) {
   const fulfillment = (order as any).fulfillments?.[0] as any | undefined
   const meta = (order.metadata as any) || {}
   const displayStatus = getDisplayFulfillmentStatus(order)
@@ -221,8 +225,9 @@ export default function OrderDetailsTemplate({ order }: Props) {
         </div>
       </section>
 
-      {/* Request a return — only shown when delivered + within window */}
-      <RequestReturn order={order} />
+      {/* Request a return — only when the feature toggle is on AND the
+          order is delivered + within window (checked inside the component) */}
+      {returnsEnabled && <RequestReturn order={order} />}
 
       {/* ── Bento: items + shipping/payment/courier/help ── */}
       <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">

@@ -5,11 +5,13 @@ import { HttpTypes } from "@medusajs/types"
 
 interface AccountLayoutProps {
   customer: HttpTypes.StoreCustomer | null
+  returnsEnabled?: boolean
   children: React.ReactNode
 }
 
 const AccountLayout: React.FC<AccountLayoutProps> = ({
   customer,
+  returnsEnabled = true,
   children,
 }) => {
   return (
@@ -21,7 +23,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
         {customer ? (
           <div className="grid grid-cols-1 small:grid-cols-[280px_1fr] gap-10">
             <div>
-              <AccountNav customer={customer} />
+              <AccountNav customer={customer} returnsEnabled={returnsEnabled} />
             </div>
             <div className="flex-1">{children}</div>
           </div>

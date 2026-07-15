@@ -18,6 +18,9 @@ export const listCartPaymentMethods = async (regionId: string) => {
 
   const next = {
     ...(await getCacheOptions("payment_providers")),
+    // Safety net so enabling/disabling COD or Razorpay reaches checkout
+    // without waiting ~24h (this tag is never busted on admin changes).
+    revalidate: 60,
   }
 
   return sdk.client

@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { HIDDEN_PRODUCT_HANDLES } from "@lib/constants"
 import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -76,12 +77,18 @@ export const listProducts = async ({
       }
     )
     .then(({ products, count }) => {
+      // Add-on products (gift wrap) are published so carts accept them, but
+      // must never appear in customer-facing listings.
+      const visible = products.filter(
+        (p) => !HIDDEN_PRODUCT_HANDLES.includes(p.handle ?? "")
+      )
+      const hidden = products.length - visible.length
       const nextPage = count > offset + limit ? pageParam + 1 : null
 
       return {
         response: {
-          products,
-          count,
+          products: visible,
+          count: count - hidden,
         },
         nextPage: nextPage,
         queryParams,
@@ -110,13 +117,17 @@ export const listProductsWithSort = async ({
 }> => {
   const limit = queryParams?.limit || 12
 
+  // Sorting (esp. by price) is computed client-side, so we must pull the WHOLE
+  // result set before sorting + slicing — otherwise anything past the fetch
+  // window sorts wrong and later pages render empty. 1000 comfortably exceeds
+  // the catalogue; revisit if it ever approaches that.
   const {
     response: { products, count },
   } = await listProducts({
     pageParam: 0,
     queryParams: {
       ...queryParams,
-      limit: 100,
+      limit: 1000,
     },
     countryCode,
   })

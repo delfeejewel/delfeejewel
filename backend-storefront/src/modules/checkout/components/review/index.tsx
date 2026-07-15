@@ -13,11 +13,13 @@ const Review = ({ cart }: { cart: any }) => {
   const [agreed, setAgreed] = useState(false)
 
   const paidByGiftcard =
-    cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
+    ((cart?.credit_lines as any[]) || []).some(
+      (cl: any) => cl?.reference === "gift_card"
+    ) && cart?.total === 0
 
   const previousStepsCompleted =
     cart.shipping_address &&
-    cart.shipping_methods.length > 0 &&
+    (cart.shipping_methods?.length ?? 0) > 0 &&
     (cart.payment_collection || paidByGiftcard)
 
   return (

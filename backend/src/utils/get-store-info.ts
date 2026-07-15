@@ -21,8 +21,25 @@ const GST_STATE_CODES: Record<string, string> = {
   "telangana": "36", "ladakh": "38",
 }
 
+// Common 2-letter abbreviations customers type in the free-text state field.
+const STATE_ALIASES: Record<string, string> = {
+  jk: "jammu & kashmir", hp: "himachal pradesh", pb: "punjab",
+  ch: "chandigarh", uk: "uttarakhand", ua: "uttarakhand", hr: "haryana",
+  dl: "delhi", rj: "rajasthan", up: "uttar pradesh", br: "bihar",
+  sk: "sikkim", ar: "arunachal pradesh", nl: "nagaland", mn: "manipur",
+  mz: "mizoram", tr: "tripura", ml: "meghalaya", as: "assam",
+  wb: "west bengal", jh: "jharkhand", od: "odisha", or: "odisha",
+  cg: "chhattisgarh", mp: "madhya pradesh", gj: "gujarat",
+  mh: "maharashtra", ap: "andhra pradesh", ka: "karnataka", ga: "goa",
+  ld: "lakshadweep", kl: "kerala", tn: "tamil nadu", py: "puducherry",
+  an: "andaman & nicobar islands", ts: "telangana", tg: "telangana",
+  la: "ladakh",
+}
+
 export function getStateCode(state: string): string {
-  return GST_STATE_CODES[state.toLowerCase()] || "99"
+  const s = (state || "").trim().toLowerCase()
+  const name = STATE_ALIASES[s] || s
+  return GST_STATE_CODES[name] || "99"
 }
 
 export async function getStoreInfo() {
@@ -34,10 +51,10 @@ export async function getStoreInfo() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   const fallback = {
-    store_name: process.env.BRAND_NAME || "Delfee",
+    store_name: process.env.SELLER_NAME || process.env.BRAND_NAME || "Delfee",
     address: process.env.SELLER_ADDRESS || "",
     city: "",
-    state: process.env.SELLER_STATE || "Haryana",
+    state: process.env.SELLER_STATE || "Chandigarh",
     pincode: "",
     gstin: process.env.SELLER_GSTIN || "",
     gst_rate: Number(process.env.GST_RATE || "3"),

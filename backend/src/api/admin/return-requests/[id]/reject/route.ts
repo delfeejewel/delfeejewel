@@ -5,11 +5,16 @@ import type {
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { RETURN_REQUEST_MODULE } from "../../../../../modules/return_request"
+import { actorHasPermission } from "../../../../../lib/rbac"
 
 export async function POST(
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) {
+  if (!(await actorHasPermission(req, "returns.write"))) {
+    return res.status(403).json({ message: "Access denied. Returns permission required." })
+  }
+
   const id = req.params.id
   const { reason } = (req.body || {}) as { reason?: string }
 

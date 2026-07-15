@@ -97,7 +97,6 @@ export default async function seedShowcaseProduct({ container }: ExecArgs) {
             gemstone_origin: "Sri Lanka",
             care_instructions:
               "Store in the provided anti-tarnish pouch. Avoid contact with perfumes, lotions, and water. Clean gently with a soft silver polishing cloth.",
-            hallmark: "BIS 925 Hallmarked",
             packaging: "Luxury velvet box with certificate of authenticity",
             warranty: "6-month manufacturing warranty",
             return_policy: "15-day easy returns",

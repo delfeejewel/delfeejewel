@@ -37,8 +37,13 @@ export type ReturnResult = {
  */
 export async function processReturnRefund(
   returnRequestId: string,
-  container: MedusaContainer
+  container: MedusaContainer,
+  opts: { restock?: boolean } = {}
 ): Promise<ReturnResult> {
+  // Restock is NOT idempotent on its own (there's no restocked_at marker and a
+  // failed refund leaves processed_at unset). The caller passes restock:false
+  // on a retry so inventory isn't adjusted twice; only the first pass restocks.
+  const shouldRestock = opts.restock !== false
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const returnModule: any = container.resolve(RETURN_REQUEST_MODULE)
@@ -77,6 +82,13 @@ export async function processReturnRefund(
   // 2. Restock — query each variant's inventory items, adjust at first location
   let restocked = false
   try {
+    if (!shouldRestock) {
+      logger.info(
+        `Return ${rr.id}: restock skipped (retry) — not re-adjusting inventory`
+      )
+      // Fall through to the refund step without restocking.
+      throw { __skipRestock: true }
+    }
     const locations = await stockLocationModule.listStockLocations(
       {},
       { take: 1 }
@@ -104,7 +116,11 @@ export async function processReturnRefund(
         }
         for (const it of reqItems) {
           const invIds = variantInv.get(it.variant_id) || []
-          for (const inventoryItemId of invIds) {
+          // Only the canonical (first) inventory item — a variant can carry
+          // duplicate inventory items in this project; adjusting all would
+          // multiply the returned quantity back into stock.
+          const inventoryItemId = invIds[0]
+          if (inventoryItemId) {
             adjustments.push({
               inventoryItemId,
               locationId: location.id,
@@ -126,7 +142,9 @@ export async function processReturnRefund(
       }
     }
   } catch (e: any) {
-    logger.error(`Return ${rr.id} restock failed: ${e.message}`)
+    if (!e?.__skipRestock) {
+      logger.error(`Return ${rr.id} restock failed: ${e.message}`)
+    }
   }
 
   // 3. Refund — find a captured online payment on the order, refund the
@@ -181,7 +199,23 @@ export async function processReturnRefund(
       )
     }
 
-    // 4. Mark + email — uses the order we just fetched
+    // 4. If the refund was attempted but FAILED, do NOT mark the return
+    // completed or stamp processed_at — that would both lie about the money and
+    // block a retry. Leave it "received" so an admin can re-run mark-received.
+    if (refundError) {
+      logger.error(
+        `Return ${rr.id}: leaving status "received" — refund failed, not marking completed.`
+      )
+      return {
+        success: false,
+        restocked,
+        refunded: false,
+        refundAmount: 0,
+        refundError,
+      }
+    }
+
+    // Refund succeeded (or nothing was refundable) → mark completed + email.
     const nowIso = new Date().toISOString()
     await returnModule.updateReturnRequests([
       {

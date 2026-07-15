@@ -1,5 +1,9 @@
-import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { actorHasPermission } from "../../../../../lib/rbac"
 
 /**
  * POST /admin/fraud-review/:id/clear
@@ -8,7 +12,10 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
  *
  * Gated by `orders.write` (lib/rbac.ts).
  */
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "orders.write"))) {
+    return res.status(403).json({ message: "Access denied. Orders permission required." })
+  }
   const orderId = req.params.id
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const orderModule: any = req.scope.resolve(Modules.ORDER)

@@ -1,12 +1,14 @@
 import crypto from "crypto"
 
+import { APP_SECRET } from "./app-secret"
+
 /**
  * Helpers for the email-OTP confirmation flow. Codes are never stored in
  * plaintext — only an HMAC hash (peppered with JWT_SECRET) is persisted, and
  * comparison is constant-time.
  */
 
-const PEPPER = process.env.JWT_SECRET || "supersecret"
+const PEPPER = APP_SECRET
 
 export const OTP_TTL_MS = 10 * 60 * 1000 // 10 minutes
 export const OTP_MAX_ATTEMPTS = 5 // wrong-code attempts per issued code

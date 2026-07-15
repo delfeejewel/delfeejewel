@@ -49,7 +49,7 @@ const SECTIONS: LegalSection[] = [
         </p>
         <p>Delfee</p>
         <p>Shop No. 62, Sector 19C, Sector 19, Chandigarh – 160019</p>
-        <p>Phone: +91 7888930585</p>
+        <p>Phone: +91 9877686053</p>
         <p>
           Email: <a href="mailto:enquire@delfee.in">enquire@delfee.in</a>
         </p>
@@ -308,7 +308,7 @@ const SECTIONS: LegalSection[] = [
         <p>Privacy Officer: Rajat Jain</p>
         <p>Vardhman Jewellers (Delfee)</p>
         <p>Shop No. 62, Sector 19C, Sector 19, Chandigarh – 160019</p>
-        <p>Phone: +91 7888930585</p>
+        <p>Phone: +91 9877686053</p>
         <p>
           Email: <a href="mailto:enquire@delfee.in">enquire@delfee.in</a>
         </p>

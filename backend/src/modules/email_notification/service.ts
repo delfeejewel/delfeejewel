@@ -129,8 +129,8 @@ export default class EmailNotificationService extends MedusaService({}) {
 
     const subject = "Test email from your store"
     const html = `
-      <div style="font-family:system-ui,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
-        <h2 style="margin:0 0 12px">✅ Email sender is working</h2>
+      <div style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="margin:0 0 12px;font-family:'Wittgenstein',Georgia,'Times New Roman',serif;color:#5D2E46">✅ Email sender is working</h2>
         <p style="margin:0 0 8px">This is a test email sent from your store's configured sender.</p>
         <p style="margin:0;color:#666;font-size:13px">Sent from: ${mailer.from}</p>
       </div>`
@@ -230,8 +230,8 @@ export default class EmailNotificationService extends MedusaService({}) {
       }">${value}</td></tr>`
 
     const html = `
-      <div style="font-family:system-ui,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a">
-        <h2 style="margin:0 0 8px">${headline}</h2>
+      <div style="font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="margin:0 0 8px;font-family:'Wittgenstein',Georgia,'Times New Roman',serif;color:#5D2E46">${headline}</h2>
         <p style="margin:0 0 16px;color:#444;font-size:14px;line-height:1.5">${intro}</p>
         <table style="border-collapse:collapse;margin:0 0 16px">
           ${row("Reference", data.reference)}

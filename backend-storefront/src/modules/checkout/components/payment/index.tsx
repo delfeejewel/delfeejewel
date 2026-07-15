@@ -39,11 +39,17 @@ const Payment = ({
     setSelectedPaymentMethod(method)
   }
 
+  // Gift cards in this store are cart CREDIT LINES, not the (non-existent)
+  // cart.gift_cards field — a fully gift-card-covered cart has total 0 and at
+  // least one gift_card credit line, and must skip the payment provider step.
   const paidByGiftcard =
-    cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
+    ((cart?.credit_lines as any[]) || []).some(
+      (cl: any) => cl?.reference === "gift_card"
+    ) && cart?.total === 0
 
   const paymentReady =
-    (activeSession && cart?.shipping_methods.length !== 0) || paidByGiftcard
+    (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||
+    paidByGiftcard
 
   const createQueryString = useCallback(
     (name: string, value: string) => {

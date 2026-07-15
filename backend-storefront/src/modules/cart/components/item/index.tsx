@@ -29,8 +29,16 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const [optimisticQty, setOptimisticQty] = useOptimistic(item.quantity)
   const [optimisticRemoved, setOptimisticRemoved] = useOptimistic(false)
 
+  // Clamp to available stock (when inventory is managed) as well as the sane
+  // per-line max, so the stepper can't overshoot what the server will accept.
+  const invQty = (item.variant as any)?.inventory_quantity
+  const maxQty =
+    (item.variant as any)?.manage_inventory && typeof invQty === "number"
+      ? Math.max(1, Math.min(MAX_QTY, invQty))
+      : MAX_QTY
+
   const setQuantity = (next: number) => {
-    if (next < 1 || next > MAX_QTY || next === optimisticQty) return
+    if (next < 1 || next > maxQty || next === optimisticQty) return
     setError(null)
     startTransition(async () => {
       setOptimisticQty(next)
@@ -180,7 +188,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             <button
               type="button"
               onClick={() => setQuantity(optimisticQty + 1)}
-              disabled={isPending || optimisticQty >= MAX_QTY}
+              disabled={isPending || optimisticQty >= maxQty}
               className="w-8 h-8 rounded-md bg-white border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-plum)] disabled:opacity-40 disabled:hover:border-[var(--color-border)] transition-colors"
               aria-label="Increase quantity"
               data-testid="product-increase-button"

@@ -25,12 +25,15 @@ export type InvoiceData = {
   order_date: string
   currency_code: string
 
-  // Items
+  // Items — retail prices are GST-inclusive, so the taxable value is
+  // back-calculated per line (taxable = gross / (1 + rate/100)) and the
+  // invoice grand total equals what the customer actually paid.
   items: {
     name: string
     hsn_code: string
     quantity: number
-    unit_price: number // actual amount in major currency unit (e.g. rupees)
+    unit_price: number // gross unit price in major currency unit (GST-inclusive)
+    line_total?: number // gross line total after discounts; defaults to unit_price × quantity
     tax_rate: number // e.g. 3 for 3%
   }[]
 
@@ -239,9 +242,11 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       let totalTax = 0
 
       data.items.forEach((item, i) => {
-        const taxable = Number(item.unit_price) * item.quantity
-        const taxAmt = taxable * (item.tax_rate / 100)
-        const lineTotal = taxable + taxAmt
+        const gross =
+          Number(item.line_total ?? Number(item.unit_price) * item.quantity) || 0
+        const taxable = gross / (1 + item.tax_rate / 100)
+        const taxAmt = gross - taxable
+        const lineTotal = gross
         subtotal += taxable
         totalTax += taxAmt
 

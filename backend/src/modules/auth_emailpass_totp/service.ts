@@ -6,6 +6,7 @@ import {
 } from "@medusajs/framework/types"
 
 import { verifyTotp, consumeBackupCode } from "../../lib/totp"
+import { rateLimit } from "../../utils/rate-limit"
 import { TWO_FACTOR_PROVIDER } from "../../lib/two-factor"
 
 /**
@@ -53,6 +54,17 @@ export default class EmailPassTotpAuthService extends EmailPassAuthService {
       return {
         success: false,
         error: "TWO_FACTOR_REQUIRED",
+      }
+    }
+
+    // Throttle second-factor guessing. The password already verified above, so
+    // this only limits an attacker (or a stolen password) brute-forcing the
+    // 6-digit code / backup codes: 5 attempts per 5 minutes per account.
+    const rl = rateLimit(`totp:${email.toLowerCase()}`, 5, 5 * 60_000)
+    if (!rl.allowed) {
+      return {
+        success: false,
+        error: "Too many two-factor attempts. Please wait a few minutes and try again.",
       }
     }
 

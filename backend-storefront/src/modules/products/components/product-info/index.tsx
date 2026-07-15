@@ -7,6 +7,7 @@ import { isEqual } from "lodash"
 import { motion, useInView } from "framer-motion"
 import { addToCart } from "@lib/data/cart"
 import { addWishlistItem, removeWishlistItem } from "@lib/data/wishlist"
+import { loginAction } from "@lib/data/customer"
 import { getProductPrice } from "@lib/util/get-product-price"
 import {
   Heart, Award, Truck, ShieldCheck, CheckCircle, Star,
@@ -58,6 +59,7 @@ export default function ProductInfo({
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState("")
   const [quantity, setQuantity] = useState(1)
+  const [addError, setAddError] = useState("")
   const [pincode, setPincode] = useState("")
   const [deliveryResult, setDeliveryResult] = useState<"available" | "unavailable" | "invalid" | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
@@ -109,15 +111,29 @@ export default function ProductInfo({
   const collection = product.collection
   const stockQty = selectedVariant?.inventory_quantity || 0
   const lowStock = selectedVariant?.manage_inventory && stockQty > 0 && stockQty <= 5
+  // Cap the quantity stepper: never above stock (when inventory is managed),
+  // never above a sane per-line max.
+  const MAX_QTY = 10
+  const maxQty = selectedVariant?.manage_inventory
+    ? Math.max(1, Math.min(stockQty, MAX_QTY))
+    : MAX_QTY
 
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) return
     setIsAdding(true)
-    // `giftWrap` (the "Wrap it for ₹50" checkbox) turns on the cart's gift-wrap
-    // add-on as part of the same add. Only adds when checked; removing a wrap is
-    // managed on the cart page.
-    await addToCart({ variantId: selectedVariant.id, quantity, countryCode, giftWrap })
-    setIsAdding(false)
+    setAddError("")
+    try {
+      // `giftWrap` (the "Wrap it for ₹50" checkbox) turns on the cart's gift-wrap
+      // add-on as part of the same add. Only adds when checked; removing a wrap is
+      // managed on the cart page.
+      await addToCart({ variantId: selectedVariant.id, quantity, countryCode, giftWrap })
+    } catch (e: any) {
+      setAddError(
+        e?.message || "Couldn't add to your bag. Please try again."
+      )
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   const handleBuyNow = async () => {
@@ -155,47 +171,27 @@ export default function ProductInfo({
     }
   }
 
-  const BACKEND = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
-  const API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
-
   const handleAuth = async () => {
+    // Signup must go through the OTP-verified account flow — we never create an
+    // account (and never mint a session) inline here. Route the shopper to the
+    // register page; their wishlist intent survives because they return to this
+    // PDP after signing in.
+    if (authMode === "signup") {
+      setWishlistAuthOpen(false)
+      router.push(`/${countryCode}/account`)
+      return
+    }
+
     if (!authForm.email || !authForm.password) { setAuthError("Email and password required"); return }
-    if (authMode === "signup" && (!authForm.first_name || !authForm.last_name)) { setAuthError("Name is required"); return }
-    if (authMode === "signup" && authForm.password.length < 6) { setAuthError("Password must be at least 6 characters"); return }
 
     setAuthLoading(true)
     try {
-      if (authMode === "login") {
-        const res = await fetch(`${BACKEND}/auth/customer/emailpass`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: authForm.email, password: authForm.password }),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.message || "Invalid credentials")
-        document.cookie = `_medusa_jwt=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}`
-      } else {
-        const regRes = await fetch(`${BACKEND}/auth/customer/emailpass/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: authForm.email, password: authForm.password }),
-        })
-        const regData = await regRes.json()
-        if (!regRes.ok) throw new Error(regData.message || "Registration failed")
-
-        await fetch(`${BACKEND}/store/customers`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${regData.token}`, "x-publishable-api-key": API_KEY },
-          body: JSON.stringify({ email: authForm.email, first_name: authForm.first_name, last_name: authForm.last_name, phone: authForm.phone || undefined }),
-        })
-
-        const loginRes = await fetch(`${BACKEND}/auth/customer/emailpass`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: authForm.email, password: authForm.password }),
-        })
-        const loginData = await loginRes.json()
-        if (loginRes.ok) document.cookie = `_medusa_jwt=${loginData.token}; path=/; max-age=${60 * 60 * 24 * 7}`
+      // loginAction is a server action: it sets the session cookie httpOnly on
+      // the server (never exposed to JS) and transfers the guest cart.
+      const res = await loginAction(authForm.email, authForm.password)
+      if (res?.error) {
+        setAuthError(res.error)
+        return
       }
       setWishlistAuthOpen(false)
       window.location.reload()
@@ -476,8 +472,9 @@ export default function ProductInfo({
               </button>
               <span className="w-9 text-center text-[14px] font-semibold text-[var(--color-text-primary)]">{quantity}</span>
               <button
-                className="w-10 h-full flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors rounded-r-lg"
-                onClick={() => setQuantity(quantity + 1)}
+                className="w-10 h-full flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors rounded-r-lg disabled:opacity-40"
+                onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
+                disabled={quantity >= maxQty}
               >
                 <Plus size={14} className="text-[var(--color-text-secondary)]" />
               </button>
@@ -506,6 +503,12 @@ export default function ProductInfo({
               />
             </button>
           </div>
+
+          {addError && (
+            <p className="text-[13px] text-red-500" role="alert">
+              {addError}
+            </p>
+          )}
 
           <button
             onClick={handleBuyNow}

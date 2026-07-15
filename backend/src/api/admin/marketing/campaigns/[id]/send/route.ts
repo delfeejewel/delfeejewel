@@ -1,7 +1,11 @@
-import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
 
 import { MARKETING_MODULE } from "../../../../../../modules/marketing"
 import { sendCampaign } from "../../../../../../lib/send-campaign"
+import { actorHasPermission } from "../../../../../../lib/rbac"
 
 /**
  * POST /admin/campaigns/:id/send
@@ -9,7 +13,10 @@ import { sendCampaign } from "../../../../../../lib/send-campaign"
  * close the double-click window, then runs the throttled send in the background
  * (fire-and-forget) so the request returns immediately.
  */
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse) {
+  if (!(await actorHasPermission(req, "promotions.write"))) {
+    return res.status(403).json({ message: "Access denied. Marketing permission required." })
+  }
   const marketing: any = req.scope.resolve(MARKETING_MODULE)
   const campaign = await marketing.retrieveCampaign(req.params.id).catch(() => null)
   if (!campaign) return res.status(404).json({ message: "Campaign not found." })

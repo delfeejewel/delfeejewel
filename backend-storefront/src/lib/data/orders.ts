@@ -19,6 +19,10 @@ export const retrieveOrder = async (id: string) => {
 
   const next = {
     ...(await getCacheOptions("orders")),
+    // Safety net for admin-side status changes (fulfilled/shipped) that never
+    // call revalidateTag here — without it the order page shows frozen status
+    // until the cache-id cookie rotates (~24h).
+    revalidate: 30,
   }
 
   return sdk.client
@@ -47,6 +51,10 @@ export const listOrders = async (
 
   const next = {
     ...(await getCacheOptions("orders")),
+    // Safety net for admin-side status changes (fulfilled/shipped) that never
+    // call revalidateTag here — without it the order page shows frozen status
+    // until the cache-id cookie rotates (~24h).
+    revalidate: 30,
   }
 
   return sdk.client

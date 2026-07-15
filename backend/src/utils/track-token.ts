@@ -1,5 +1,7 @@
 import crypto from "crypto"
 
+import { APP_SECRET } from "./app-secret"
+
 /**
  * Self-contained signed token for the guest "Track your order" email link.
  *
@@ -11,7 +13,7 @@ import crypto from "crypto"
  * shares the app's existing secret rotation.
  */
 
-const SECRET = process.env.JWT_SECRET || "supersecret"
+const SECRET = APP_SECRET
 const TTL_MS = 1000 * 60 * 60 * 24 * 60 // 60 days
 
 export type TrackTokenPayload = {

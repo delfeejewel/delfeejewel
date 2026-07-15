@@ -1,5 +1,7 @@
 import crypto from "crypto"
 
+import { APP_SECRET } from "./app-secret"
+
 /**
  * Self-contained signed token for one-click newsletter unsubscribe links.
  *
@@ -10,7 +12,7 @@ import crypto from "crypto"
  * Long-lived (1 year): an unsubscribe link in an old email must still work.
  */
 
-const SECRET = process.env.JWT_SECRET || "supersecret"
+const SECRET = APP_SECRET
 const TTL_MS = 1000 * 60 * 60 * 24 * 365 // 1 year
 
 function sign(body: string): string {

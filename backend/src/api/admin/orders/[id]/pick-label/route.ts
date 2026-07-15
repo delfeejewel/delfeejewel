@@ -121,7 +121,7 @@ export async function GET(
   )
 
   const sender = {
-    name: process.env.BRAND_NAME || "Delfee",
+    name: process.env.SELLER_NAME || process.env.BRAND_NAME || "Delfee",
     address: process.env.SELLER_ADDRESS || "",
     gstin: process.env.SELLER_GSTIN || "",
   }

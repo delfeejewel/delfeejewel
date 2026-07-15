@@ -428,29 +428,33 @@ export async function applyPromotions(codes: string[]) {
     ...(await getAuthHeaders()),
   }
 
-  return sdk.store.cart
+  const { cart } = await sdk.store.cart
     .update(cartId, { promo_codes: codes }, {}, headers)
-    .then(async () => {
-      await recomputeGiftCards(cartId)
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
     .catch(medusaError)
-}
 
-export async function submitPromotionForm(
-  currentState: unknown,
-  formData: FormData
-) {
-  const code = formData.get("code") as string
-  try {
-    await applyPromotions([code])
-  } catch (e: any) {
-    return e.message
+  await recomputeGiftCards(cartId)
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  revalidateTag(fulfillmentCacheTag)
+
+  // Medusa silently DROPS unknown/inactive promo codes instead of erroring, so
+  // an invalid coupon otherwise looks "applied". Surface it: any submitted code
+  // missing from the resulting cart wasn't accepted.
+  const applied = new Set(
+    ((cart?.promotions as any[]) || [])
+      .map((p) => p?.code?.toUpperCase())
+      .filter(Boolean)
+  )
+  const missing = codes.filter((c) => !applied.has(c.toUpperCase()))
+  if (missing.length) {
+    throw new Error(
+      `That code isn't valid or can't be applied to your cart.`
+    )
   }
+
+  return cart
 }
 
 // Normalise a 10-digit local number to E.164 with India's fixed +91 ISD code.
@@ -587,7 +591,10 @@ export async function placeOrder(cartId?: string) {
       }
     }
 
-    removeCartId()
+    // Must await: redirect() throws synchronously, so an un-awaited cookie
+    // clear may not be committed to the response and the completed cart's id
+    // lingers (a later visit then fetches a completed cart).
+    await removeCartId()
     redirect(`/${countryCode}/order/${order.id}/confirmed`)
   }
 
@@ -629,6 +636,9 @@ export async function listCartOptions() {
   }
   const next = {
     ...(await getCacheOptions("shippingOptions")),
+    // The "shippingOptions" tag is never revalidated on admin changes
+    // (mutations bust "fulfillment"), so add a TTL safety net for new prices.
+    revalidate: 60,
   }
 
   return await sdk.client.fetch<{

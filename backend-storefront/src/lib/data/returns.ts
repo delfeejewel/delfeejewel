@@ -51,7 +51,7 @@ export const createReturnRequest = async (input: {
 export const getMyReturnRequests = async (): Promise<ReturnRequest[]> => {
   const headers = await getAuthHeaders()
   if (!hasAuth(headers)) return []
-  const next = { ...(await getCacheOptions("returns")) }
+  const next = { ...(await getCacheOptions("returns")), revalidate: 60 }
   return sdk.client
     .fetch<{ return_requests: ReturnRequest[] }>(
       `/store/customers/me/return-requests`,
@@ -122,7 +122,7 @@ export const getMyReturnRequest = async (
 ): Promise<ReturnRequest | null> => {
   const headers = await getAuthHeaders()
   if (!hasAuth(headers)) return null
-  const next = { ...(await getCacheOptions("returns")) }
+  const next = { ...(await getCacheOptions("returns")), revalidate: 60 }
   return sdk.client
     .fetch<{ return_request: ReturnRequest }>(
       `/store/customers/me/return-requests/${id}`,

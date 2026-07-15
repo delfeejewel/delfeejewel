@@ -102,7 +102,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   }
 
   // 6. Record the hold as a cart credit line. Balance is untouched here.
-  await cartModule.createCreditLines([
+  const created = await cartModule.createCreditLines([
     {
       cart_id,
       amount: applied,
@@ -111,12 +111,82 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       metadata: { gift_card_code: gc.code, consumed: false },
     },
   ])
+  const createdLine = Array.isArray(created) ? created[0] : created
 
-  return res.json({
-    code: gc.code,
-    applied,
-    balance_remaining: available - applied,
-  })
+  // 7. Close the redeem race (TOCTOU): two carts redeeming the same card
+  // concurrently both pass the check at step 4 and both write a hold. Re-read
+  // ALL live holds now and give precedence to the earliest-created line — ours
+  // only keeps the room left after every hold created before it. This is
+  // deterministic (created_at, then id) so exactly one winner emerges without a
+  // DB lock; over-committed later holds are clamped or rolled back.
+  try {
+    const allLines = await cartModule.listCreditLines({
+      reference: "gift_card",
+      reference_id: gc.id,
+    })
+    const liveCartIds = [
+      ...new Set(
+        (allLines || [])
+          .filter((cl: any) => cl?.metadata?.consumed !== true)
+          .map((cl: any) => cl.cart_id)
+      ),
+    ]
+    const { data: liveCarts } = await query.graph({
+      entity: "cart",
+      filters: { id: liveCartIds } as any,
+      fields: ["id", "completed_at"],
+    })
+    const completedCarts = new Set(
+      (liveCarts || []).filter((c: any) => c.completed_at).map((c: any) => c.id)
+    )
+    const ordered = (allLines || [])
+      .filter(
+        (cl: any) =>
+          cl?.metadata?.consumed !== true && !completedCarts.has(cl.cart_id)
+      )
+      .sort((a: any, b: any) => {
+        const ta = new Date(a.created_at).getTime()
+        const tb = new Date(b.created_at).getTime()
+        if (ta !== tb) return ta - tb
+        return String(a.id) < String(b.id) ? -1 : 1
+      })
+
+    let sumBefore = 0
+    for (const cl of ordered) {
+      if (cl.id === createdLine.id) break
+      sumBefore += Number(cl.amount || 0)
+    }
+    const room = Math.max(0, balance - sumBefore)
+    const finalAmount = Math.min(applied, room)
+
+    if (finalAmount <= 0) {
+      await cartModule.deleteCreditLines([createdLine.id])
+      return ERR(
+        res,
+        409,
+        "This gift card's balance was just committed to another cart."
+      )
+    }
+    if (finalAmount !== applied) {
+      await cartModule.updateCreditLines([
+        { id: createdLine.id, amount: finalAmount },
+      ])
+    }
+
+    return res.json({
+      code: gc.code,
+      applied: finalAmount,
+      balance_remaining: balance - sumBefore - finalAmount,
+    })
+  } catch {
+    // If the re-check itself fails, fall back to the originally applied amount
+    // (the reconcile-before-complete middleware clamps again as a backstop).
+    return res.json({
+      code: gc.code,
+      applied,
+      balance_remaining: available - applied,
+    })
+  }
 }
 
 /**

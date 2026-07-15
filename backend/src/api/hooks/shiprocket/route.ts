@@ -31,9 +31,9 @@ function tokenMatches(provided: unknown, expected: string): boolean {
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
 
-  // Fails CLOSED: this handler issues gift cards on "delivered" and triggers
-  // real refunds on "RTO Delivered", so an unauthenticated caller must never
-  // reach it. A missing token is a misconfiguration, not permission to skip auth.
+  // Money-moving actions (gift cards on "delivered", refunds on "RTO Delivered")
+  // are gated on a valid token below — an unauthenticated caller can NEVER trigger
+  // them. A missing server token is a misconfiguration, not permission to skip auth.
   const expected = process.env.SHIPROCKET_WEBHOOK_TOKEN
   if (!expected) {
     logger.error(
@@ -41,9 +41,30 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     )
     return res.status(503).json({ message: "Webhook not configured" })
   }
+  // Shiprocket validates + tests the webhook by probing this URL WITHOUT the
+  // token and requires a 2xx ("endpoint should be open access"). So we ACK an
+  // unauthenticated request with 200 but do nothing — real status updates carry
+  // the x-api-key and fall through to the guarded processing below. This keeps
+  // the fail-closed guarantee for state changes while letting the dashboard save.
   if (!tokenMatches(req.headers["x-api-key"], expected)) {
-    logger.warn("Shiprocket webhook rejected: bad or missing x-api-key")
-    return res.status(401).json({ message: "Unauthorized" })
+    const raw = req.body as any
+    const probe = Array.isArray(raw) ? raw[0] : raw
+    const looksLikeStatus =
+      probe != null &&
+      (probe.order_id != null ||
+        probe.awb != null ||
+        probe.current_status != null ||
+        probe.shipment_status != null)
+    if (looksLikeStatus) {
+      // A real-looking status update arrived without a valid token — dropped, not
+      // acted on. If this ever logs in prod, the dashboard token is misconfigured.
+      logger.warn(
+        "Shiprocket webhook: DROPPED a status payload with bad/missing x-api-key"
+      )
+    } else {
+      logger.info("Shiprocket webhook: reachability probe (no token) acknowledged")
+    }
+    return res.status(200).json({ received: true, authenticated: false })
   }
 
   try {

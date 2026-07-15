@@ -2,6 +2,7 @@ import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { WISHLIST_MODULE } from "../../../../../modules/wishlist"
 import type WishlistModuleService from "../../../../../modules/wishlist/service"
 
@@ -46,6 +47,20 @@ export async function POST(
   const { product_id } = (req.body ?? {}) as { product_id?: string }
   if (!product_id) {
     return res.status(400).json({ message: "product_id is required" })
+  }
+
+  // Only real products can be wishlisted — otherwise arbitrary ids pile up
+  // as junk rows and break the wishlist page's product hydration.
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const {
+    data: [product],
+  } = await query.graph({
+    entity: "product",
+    fields: ["id"],
+    filters: { id: product_id },
+  })
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" })
   }
 
   const wishlistService: WishlistModuleService =

@@ -128,8 +128,13 @@ const COMING_SOON_BYPASS_PATHS = [
   "/sitemap",
 ]
 
+// Real static-asset extensions only — NOT any URL containing a dot (which let
+// e.g. /some.page slip past the coming-soon gate).
+const STATIC_ASSET_RE =
+  /\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|mp4|webm|wasm)$/i
+
 function isComingSoonAllowed(pathname: string): boolean {
-  if (pathname.includes(".")) return true // static assets
+  if (STATIC_ASSET_RE.test(pathname)) return true // static assets
   return COMING_SOON_BYPASS_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`) || pathname.startsWith(`${p}?`)
   )
@@ -178,7 +183,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Static assets should never hit the region-map fetch
-  if (request.nextUrl.pathname.includes(".")) {
+  if (STATIC_ASSET_RE.test(request.nextUrl.pathname)) {
     return NextResponse.next()
   }
 
@@ -190,12 +195,28 @@ export async function middleware(request: NextRequest) {
 
   let cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
-  const regionMap = await getRegionMap(cacheId)
+  // A backend hiccup (or a cold edge instance with an empty cache) must not
+  // 500 the ENTIRE site. If the region map can't be fetched, pass the request
+  // through instead of throwing — pages degrade rather than the whole site
+  // going down while Medusa restarts.
+  let regionMap
+  try {
+    regionMap = await getRegionMap(cacheId)
+  } catch (e) {
+    console.error("middleware: region map fetch failed, passing through", e)
+    return NextResponse.next()
+  }
 
   const countryCode = regionMap && (await getCountryCode(request, regionMap))
 
+  // Exact match on the first path segment — NOT a substring. With the region
+  // code "in", a substring check (`.includes`) wrongly treats /rings,
+  // /earrings, /info, /india etc. as already-prefixed, so they render with a
+  // bogus countryCode and a null region. The first segment must BE a known
+  // country code.
+  const firstSegment = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
   const urlHasCountryCode =
-    countryCode && request.nextUrl.pathname.split("/")[1].includes(countryCode)
+    !!firstSegment && !!regionMap && regionMap.has(firstSegment)
 
   // Cart recovery deep link from the abandoned-cart email:
   //   /{country}/cart/recover/{cartId}

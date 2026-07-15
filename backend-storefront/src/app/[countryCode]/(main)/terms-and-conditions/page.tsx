@@ -277,7 +277,7 @@ const SECTIONS: LegalSection[] = [
           <br />
           Shop No. 62, Sector 19C, Sector 19, Chandigarh – 160019
           <br />
-          Phone: +91 7888930585
+          Phone: +91 9877686053
           <br />
           Email: <a href="mailto:enquire@delfee.in">enquire@delfee.in</a>
         </p>

@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
 import { GIFT_CARD_MODULE } from "../../../../modules/gift_card"
+import { rateLimit, clientIp } from "../../../../utils/rate-limit"
 
 /**
  * GET /store/gift-cards/:code
@@ -8,6 +9,13 @@ import { GIFT_CARD_MODULE } from "../../../../modules/gift_card"
  * status and expiry — useful for the storefront to validate before redeem.
  */
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
+  // Throttle code-guessing (balance/existence probing). 20/min per IP.
+  const rl = rateLimit(`gc-balance:${clientIp(req)}`, 20, 60_000)
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", String(rl.retryAfterSec))
+    return res.status(429).json({ message: "Too many requests. Please slow down." })
+  }
+
   const code = String(req.params.code || "")
     .toUpperCase()
     .trim()
