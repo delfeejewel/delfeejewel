@@ -28,6 +28,11 @@ type ShiprocketOptions = {
   /** HSN code for shipments when an item carries none. 7113 = articles of
    *  jewellery of precious metal (925 sterling silver). */
   default_hsn?: string
+  /** Free-shipping rule (Standard option only): the customer pays ₹0 when the
+   *  item subtotal (pre-discount) is ABOVE this AND the live courier cost is
+   *  BELOW `free_ship_max_courier`. Both in rupees. Defaults: 5000 / 400. */
+  free_ship_min_subtotal?: number
+  free_ship_max_courier?: number
 }
 
 // Shiprocket API base
@@ -196,54 +201,71 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     data: any,
     context: any
   ): Promise<any> {
+    // IMPORTANT: this store keeps prices in RUPEES (major unit) — a ₹1999 ring
+    // is stored as 1999, and the flat shipping options are 99 / 299. So every
+    // amount returned here is in rupees (NOT paise).
+    const isExpress =
+      optionData?.id === "shiprocket-express" || data?.id === "shiprocket-express"
+    const FALLBACK = isExpress ? 299 : 99 // rupees, if Shiprocket can't be reached
+
+    // Client free-shipping rule (Standard only): free to the customer when the
+    // item subtotal (pre-discount) is above ₹5,000 AND the real courier cost is
+    // under ₹400 — the client absorbs that courier cost in margin.
+    const FREE_MIN_SUBTOTAL = Number(this.options_.free_ship_min_subtotal ?? 5000)
+    const FREE_MAX_COURIER = Number(this.options_.free_ship_max_courier ?? 400)
+
     try {
       const address = context?.shipping_address
+      const items: any[] = context?.items || []
+      const itemSubtotal = items.reduce(
+        (sum, it) =>
+          sum + (Number(it?.unit_price) || 0) * (Number(it?.quantity) || 0),
+        0
+      )
+
       if (!address?.postal_code) {
-        // Return flat rate if no address yet
-        return {
-          calculated_amount: optionData.id === "shiprocket-express" ? 15000 : 8000, // ₹150 or ₹80
-          is_calculated_price_tax_inclusive: true,
-        }
+        // No address yet — quote the flat fallback so the option still shows.
+        return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
       }
 
-      // pickup_location is Shiprocket's address *nickname* ("Primary"), not a
-      // pincode — sending it here made every lookup fail into the flat fallback.
       const pickupPincode = this.options_.pickup_pincode || "136118"
       const deliveryPincode = address.postal_code
-      const weight = this.options_.default_weight || 0.1 // 100g for jewellery
+      const weight = this.parcelWeightKg(items) || this.options_.default_weight || 0.3
 
       const result = await this.apiCall(
         `/courier/serviceability/?pickup_postcode=${pickupPincode}&delivery_postcode=${deliveryPincode}&weight=${weight}&cod=0`
       )
-
       const couriers = result?.data?.available_courier_companies || []
-
       if (!couriers.length) {
-        // Fallback flat rate
-        return {
-          calculated_amount: optionData.id === "shiprocket-express" ? 15000 : 8000,
-          is_calculated_price_tax_inclusive: true,
-        }
+        return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
       }
 
-      // Sort by rate — cheapest for standard, fastest for express
-      if (optionData.id === "shiprocket-express") {
-        couriers.sort((a: any, b: any) => a.estimated_delivery_days - b.estimated_delivery_days)
+      // Standard = cheapest courier; Express = fastest courier.
+      if (isExpress) {
+        couriers.sort(
+          (a: any, b: any) =>
+            (a.estimated_delivery_days || 99) - (b.estimated_delivery_days || 99)
+        )
       } else {
-        couriers.sort((a: any, b: any) => a.rate - b.rate)
+        couriers.sort((a: any, b: any) => (a.rate || 0) - (b.rate || 0))
       }
 
       const selected = couriers[0]
-      return {
-        calculated_amount: Math.round(selected.rate * 100), // Convert to paise
-        is_calculated_price_tax_inclusive: true,
+      const courierCost = Math.round(Number(selected?.rate) || FALLBACK) // rupees
+
+      // Apply the free-shipping rule (Standard only).
+      if (
+        !isExpress &&
+        itemSubtotal > FREE_MIN_SUBTOTAL &&
+        courierCost < FREE_MAX_COURIER
+      ) {
+        return { calculated_amount: 0, is_calculated_price_tax_inclusive: true }
       }
+
+      // Otherwise the customer pays the live courier cost.
+      return { calculated_amount: courierCost, is_calculated_price_tax_inclusive: true }
     } catch (error) {
-      // Fallback flat rate on error
-      return {
-        calculated_amount: optionData.id === "shiprocket-express" ? 15000 : 8000,
-        is_calculated_price_tax_inclusive: true,
-      }
+      return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
     }
   }
 

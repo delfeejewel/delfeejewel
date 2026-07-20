@@ -8,10 +8,11 @@ import { motion, useInView } from "framer-motion"
 import { addToCart } from "@lib/data/cart"
 import { addWishlistItem, removeWishlistItem } from "@lib/data/wishlist"
 import { loginAction } from "@lib/data/customer"
+import { checkDelivery, type DeliveryCheck } from "@lib/data/delivery"
 import { getProductPrice } from "@lib/util/get-product-price"
 import {
   Heart, Award, Truck, ShieldCheck, CheckCircle, Star,
-  Clock, Gift, RefreshCw, Package, Share2, Minus, Plus, X,
+  Clock, Gift, Package, Share2, Minus, Plus, X,
 } from "lucide-react"
 import { AnimatePresence } from "framer-motion"
 import type { ReviewSummary } from "@modules/reviews/types"
@@ -61,7 +62,25 @@ export default function ProductInfo({
   const [quantity, setQuantity] = useState(1)
   const [addError, setAddError] = useState("")
   const [pincode, setPincode] = useState("")
-  const [deliveryResult, setDeliveryResult] = useState<"available" | "unavailable" | "invalid" | null>(null)
+  const [delivery, setDelivery] = useState<(DeliveryCheck & { error?: boolean }) | null>(null)
+  const [checkingDelivery, setCheckingDelivery] = useState(false)
+
+  const runDeliveryCheck = async () => {
+    if (pincode.length !== 6) {
+      setDelivery({ serviceable: false, invalid: true })
+      return
+    }
+    setCheckingDelivery(true)
+    setDelivery(null)
+    try {
+      const result = await checkDelivery(pincode)
+      setDelivery(result)
+    } catch {
+      setDelivery({ serviceable: false, error: true })
+    } finally {
+      setCheckingDelivery(false)
+    }
+  }
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [giftWrap, setGiftWrap] = useState(false)
@@ -315,7 +334,7 @@ export default function ProductInfo({
 
       {/* Tax + stock */}
       <div className="flex items-center gap-4 mb-6">
-        <span className="text-[11px] text-[var(--color-text-muted)]">Inclusive of all taxes</span>
+        <span className="text-[11px] text-[var(--color-text-muted)]">Exclusive of GST · 3% added at checkout</span>
         {selectedVariant && inStock && (
           <span className="text-[11px] font-semibold tracking-[0.05em] flex items-center gap-1 text-green-600">
             <CheckCircle size={12} /> In Stock
@@ -408,39 +427,54 @@ export default function ProductInfo({
             <input
               type="text"
               value={pincode}
-              onChange={(e) => { setPincode(e.target.value.replace(/\D/g, "").slice(0, 6)); setDeliveryResult(null) }}
+              onChange={(e) => { setPincode(e.target.value.replace(/\D/g, "").slice(0, 6)); setDelivery(null) }}
               placeholder="Enter 6-digit pincode"
               maxLength={6}
               className="flex-1 h-10 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && pincode.length === 6) {
-                  setDeliveryResult("available")
-                }
+                if (e.key === "Enter" && !checkingDelivery) runDeliveryCheck()
               }}
             />
             <button
-              onClick={() => {
-                if (pincode.length !== 6) { setDeliveryResult("invalid"); return }
-                setDeliveryResult("available")
-              }}
-              className="px-5 h-10 rounded-lg text-xs font-semibold tracking-[0.05em] uppercase text-white bg-[var(--color-plum)] hover:bg-[var(--color-plum-deep)] transition-colors"
+              onClick={runDeliveryCheck}
+              disabled={checkingDelivery || pincode.length !== 6}
+              className="px-5 h-10 rounded-lg text-xs font-semibold tracking-[0.05em] uppercase text-white bg-[var(--color-plum)] hover:bg-[var(--color-plum-deep)] transition-colors disabled:opacity-50"
             >
-              Check
+              {checkingDelivery ? "…" : "Check"}
             </button>
           </div>
 
-          {deliveryResult === "available" && (
+          {delivery?.serviceable && (
             <div className="space-y-1.5 pt-1">
               <p className="text-[12px] flex items-center gap-1.5 text-green-600 font-medium">
-                <CheckCircle size={13} /> Delivery available to {pincode}
+                <CheckCircle size={13} /> Delivery available{delivery.city ? ` to ${delivery.city}, ${delivery.state}` : ` to ${pincode}`}
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">Standard: 3–5 business days</p>
-              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">Cash on Delivery available</p>
-              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">Free shipping on orders above ₹999</p>
+              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">
+                {delivery.etdDays
+                  ? `Estimated delivery in ${delivery.etdDays}–${delivery.etdDays + 2} business days`
+                  : "Standard: 3–5 business days"}
+              </p>
+              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">
+                {delivery.cod ? "Cash on Delivery available*" : "Prepaid only (COD not available here)"}
+              </p>
+              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">Free shipping on orders above ₹5,000</p>
+              {delivery.cod && (
+                <p className="text-[10px] text-[var(--color-text-muted)]/80 pl-5 italic">
+                  *COD is subject to courier availability at your address and may vary by order value.
+                </p>
+              )}
             </div>
           )}
-          {deliveryResult === "invalid" && (
+          {delivery && !delivery.serviceable && delivery.invalid && (
             <p className="text-[12px] text-red-500 pt-1">Please enter a valid 6-digit pincode</p>
+          )}
+          {delivery && !delivery.serviceable && !delivery.invalid && !delivery.error && (
+            <p className="text-[12px] text-amber-600 pt-1">
+              Sorry, we don&apos;t deliver to {delivery.city ? `${delivery.city}, ${delivery.state}` : `pincode ${pincode}`} yet.
+            </p>
+          )}
+          {delivery?.error && (
+            <p className="text-[12px] text-red-500 pt-1">Couldn&apos;t check right now — please try again.</p>
           )}
         </div>
 
@@ -521,14 +555,11 @@ export default function ProductInfo({
 
 
         {/* Trust badges — expanded */}
-        <div className="grid grid-cols-2 small:grid-cols-3 gap-3 pt-6 border-t border-[var(--color-lavender)]">
+        <div className="grid grid-cols-3 gap-3 pt-6 border-t border-[var(--color-lavender)]">
           {[
             { icon: Award, label: "925 Sterling" },
-            { icon: Truck, label: "Free Shipping" },
             { icon: ShieldCheck, label: "Secure Payment" },
-            { icon: RefreshCw, label: "Easy Returns" },
             { icon: Package, label: "Premium Pack" },
-            { icon: CheckCircle, label: "10K+ Trusted" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex flex-col items-center text-center gap-1.5 py-2">
               <Icon size={18} strokeWidth={1.3} className="text-[var(--color-silver)]" />

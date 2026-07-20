@@ -53,7 +53,7 @@ const CATEGORIES: { name: string; items: FaqItem[] }[] = [
       {
         question: "Do you offer free shipping?",
         answer:
-          "Yes — we offer free standard shipping on domestic orders above ₹999. A nominal fee applies to smaller orders and is shown at checkout.",
+          "Yes — we offer free standard shipping on domestic orders above ₹5,000. For orders below that, shipping is calculated by your delivery location and shown at checkout.",
       },
       {
         question: "How do I track my order?",

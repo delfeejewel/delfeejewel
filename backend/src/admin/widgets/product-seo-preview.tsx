@@ -48,7 +48,7 @@ const ProductSeoPreviewWidget = ({ data }: DetailWidgetProps) => {
   const seoDescription = noHyphens(
     data.description
       ? trimMeta(data.description)
-      : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹999.`
+      : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹5,000.`
   )
 
   const handle = data.handle || ""

@@ -1,9 +1,10 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { motion, useInView } from "framer-motion"
-import { Leaf, History, Droplets, Shield, Sparkles, HandMetal } from "lucide-react"
+import { Leaf, History, Droplets, Shield, Sparkles, HandMetal, ChevronDown, ChevronUp } from "lucide-react"
+import { isHtml, sanitizeHtml } from "@lib/util/html"
 
 type Props = {
   product: HttpTypes.StoreProduct
@@ -40,6 +41,74 @@ function SpecRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+const DESCRIPTION_FALLBACK =
+  "A beautifully handcrafted piece of jewellery designed to be treasured for a lifetime. Each detail is meticulously finished by our master silversmiths."
+
+// Description with a collapse/expand ("Show more" / "Show less") toggle.
+// The toggle only appears when the content is tall enough to need it.
+function CollapsibleDescription({ description }: { description?: string | null }) {
+  const COLLAPSED_PX = 200
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [expanded, setExpanded] = useState(false)
+  const [needsToggle, setNeedsToggle] = useState(false)
+  const [fullHeight, setFullHeight] = useState(0)
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    const measure = () => {
+      setFullHeight(el.scrollHeight)
+      setNeedsToggle(el.scrollHeight > COLLAPSED_PX + 24)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [description])
+
+  const collapsed = needsToggle && !expanded
+
+  return (
+    <div>
+      <div
+        ref={contentRef}
+        className="relative overflow-hidden transition-[max-height] duration-500 ease-in-out"
+        style={{ maxHeight: collapsed ? COLLAPSED_PX : fullHeight || undefined }}
+      >
+        {isHtml(description) ? (
+          <div
+            className="text-[16px] small:text-[18px] leading-[1.8] text-[var(--color-text-secondary)] [&_a]:text-[var(--color-plum)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--color-gold)] [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h2]:font-wittgenstein [&_h2]:text-[20px] [&_h2]:small:text-[22px] [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:text-[var(--color-text-primary)] [&_h3]:mt-4 [&_h3]:mb-2 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_p]:mb-4 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
+          />
+        ) : (
+          <p className="text-[16px] small:text-[18px] leading-[1.8] text-[var(--color-text-secondary)]">
+            {description || DESCRIPTION_FALLBACK}
+          </p>
+        )}
+        {collapsed && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[var(--color-bg-primary)] to-transparent" />
+        )}
+      </div>
+
+      {needsToggle && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold tracking-[0.02em] text-[var(--color-plum)] hover:text-[var(--color-gold)] transition-colors"
+        >
+          {expanded ? "Show less" : "Show more"}
+          {expanded ? (
+            <ChevronUp size={16} strokeWidth={2} />
+          ) : (
+            <ChevronDown size={16} strokeWidth={2} />
+          )}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function ProductDetails({ product }: Props) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: "-60px" })
@@ -48,7 +117,6 @@ export default function ProductDetails({ product }: Props) {
   const specs = [
     { label: "Material", value: product.material || meta.metal || "925 Sterling Silver" },
     { label: "Dimensions", value: meta.dimensions || "-" },
-    { label: "Weight", value: product.weight ? `${product.weight}g` : "-" },
     { label: "Finish", value: meta.finish || "High-Polish Silver" },
     { label: "Purity", value: meta.purity || "92.5%" },
     { label: "Origin", value: product.origin_country || "India" },
@@ -69,9 +137,7 @@ export default function ProductDetails({ product }: Props) {
             <h2 className="font-wittgenstein text-[24px] small:text-[26px] font-semibold text-[var(--color-text-primary)] mb-6">
               Description
             </h2>
-            <p className="text-[16px] small:text-[18px] leading-[1.8] text-[var(--color-text-secondary)]">
-              {product.description || "A beautifully handcrafted piece of jewellery designed to be treasured for a lifetime. Each detail is meticulously finished by our master silversmiths."}
-            </p>
+            <CollapsibleDescription description={product.description} />
           </section>
 
           {/* Feature cards grid */}

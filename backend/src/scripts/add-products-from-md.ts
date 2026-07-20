@@ -58,6 +58,8 @@ const CATEGORY_HANDLE: Record<string, string> = {
   Anklets: "anklets",
   Earrings: "earrings",
   Mangalsutras: "mangalsutras",
+  Rakhi: "rakhi",
+  Rakhis: "rakhi",
 }
 
 type Variant = { size: string; sku: string; price: number; weight: number }

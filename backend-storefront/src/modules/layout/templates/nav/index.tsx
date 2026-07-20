@@ -81,7 +81,7 @@ export default async function Nav() {
               announcementText
             ) : (
               <>
-                Free Shipping above <span className="font-bold">&#8377;999</span> <span className="hidden 2xsmall:inline">&bull; 925 Sterling Silver</span>
+                Free Shipping above <span className="font-bold">&#8377;5,000</span> <span className="hidden 2xsmall:inline">&bull; 925 Sterling Silver</span>
               </>
             )}
           </p>

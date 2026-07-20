@@ -28,6 +28,17 @@ function tokenMatches(provided: unknown, expected: string): boolean {
   return crypto.timingSafeEqual(a, b)
 }
 
+/**
+ * GET /hooks/shiprocket
+ * Shiprocket's dashboard "Test Webhook" / reachability check probes the address
+ * (a GET) before it POSTs. This route is otherwise POST-only, so that probe used
+ * to 404 ("address not found"). Reply 200 so the dashboard test passes. Real
+ * tracking updates always arrive as POST and are token-gated in POST below.
+ */
+export async function GET(_req: MedusaRequest, res: MedusaResponse) {
+  return res.status(200).json({ ok: true })
+}
+
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER)
 

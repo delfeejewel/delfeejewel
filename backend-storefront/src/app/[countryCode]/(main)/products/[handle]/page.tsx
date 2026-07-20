@@ -10,6 +10,7 @@ import GiftCardTemplate from "@modules/gift-card/templates"
 import { HttpTypes } from "@medusajs/types"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { getBaseURL } from "@lib/util/env"
+import { stripHtml } from "@lib/util/html"
 
 // Read per-user cookies (customer/wishlist/cart) -> must render at request time.
 // generateStaticParams returns [] when the backend is unreachable at build
@@ -110,8 +111,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     s.length <= n ? s : `${s.slice(0, s.lastIndexOf(" ", n)).trim()}…`
   const seoDescription = noHyphens(
     product.description
-      ? trimMeta(product.description)
-      : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹999.`
+      ? trimMeta(stripHtml(product.description))
+      : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹5,000.`
   )
 
   return {
@@ -186,7 +187,7 @@ function ProductJsonLd({ product, countryCode }: { product: HttpTypes.StoreProdu
     "@context": "https://schema.org",
     "@type": "Product",
     name: productTitle,
-    description: product.description || `${productTitle} from ${BRAND.name}`,
+    description: stripHtml(product.description) || `${productTitle} from ${BRAND.name}`,
     url,
     image: (product.images?.map((img) => img.url) ?? []).filter(
       (u) => !/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(u)
