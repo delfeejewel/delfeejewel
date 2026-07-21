@@ -3,6 +3,44 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { convertToLocale } from "../utils/money"
 import { signTrackToken } from "../utils/track-token"
 import EmailNotificationService from "../modules/email_notification/service"
+import { generateInvoicePDF } from "../utils/invoice-generator"
+import { buildInvoiceData, INVOICE_ORDER_FIELDS } from "../utils/build-invoice-data"
+import { getStoreInfo } from "../utils/get-store-info"
+
+/**
+ * Build the GST invoice PDF to attach to the order confirmation.
+ *
+ * Deliberately best-effort: if anything here fails (CMS store info unreachable,
+ * PDF generation error), we log and return null so the customer still gets their
+ * confirmation email. A missing attachment is recoverable — the invoice is also
+ * downloadable from the order page — but a swallowed confirmation is not.
+ */
+async function buildInvoiceAttachment(
+  query: any,
+  orderId: string,
+  logger: any
+): Promise<{ filename: string; content: Buffer }[] | undefined> {
+  try {
+    const [{ data: rows }, storeInfo] = await Promise.all([
+      query.graph({
+        entity: "order",
+        fields: INVOICE_ORDER_FIELDS,
+        filters: { id: orderId },
+      }),
+      getStoreInfo(),
+    ])
+    const fullOrder = rows?.[0]
+    if (!fullOrder) return undefined
+
+    const pdf = await generateInvoicePDF(buildInvoiceData(fullOrder, storeInfo))
+    return [{ filename: `Invoice-${fullOrder.display_id}.pdf`, content: pdf }]
+  } catch (e: any) {
+    logger.warn(
+      `Could not attach invoice PDF to order ${orderId} confirmation: ${e?.message}`
+    )
+    return undefined
+  }
+}
 
 export default async function orderPlacedHandler({
   event: { data },
@@ -109,7 +147,7 @@ export default async function orderPlacedHandler({
         ? signTrackToken({ order_id: order.id, email: order.email })
         : undefined,
       brand_name: process.env.BRAND_NAME || "Delfee",
-    })
+    }, await buildInvoiceAttachment(query, order.id, logger))
   } catch (error: any) {
     logger.error(`Order placed email failed: ${error.message}`)
   }

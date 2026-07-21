@@ -27,12 +27,19 @@ export interface TransportConfig {
 // Minimal mailer contract shared by every transport. nodemailer's Transporter
 // already satisfies this structurally; the Resend adapter implements it over
 // the HTTP API. The service only ever calls sendMail(), so this is all it needs.
+/** File attached to an outbound email (e.g. the GST invoice PDF). */
+export type MailAttachment = {
+  filename: string
+  content: Buffer
+}
+
 export interface Mailer {
   sendMail(opts: {
     from: string
     to: string
     subject: string
     html: string
+    attachments?: MailAttachment[]
   }): Promise<unknown>
 }
 
@@ -97,12 +104,23 @@ export function createTransport(config: TransportConfig): Mailer {
 function createResendMailer(apiKey: string): Mailer {
   const resend = new Resend(apiKey)
   return {
-    async sendMail({ from, to, subject, html }) {
+    async sendMail({ from, to, subject, html, attachments }) {
       const { data, error } = await resend.emails.send({
         from,
         to,
         subject,
         html,
+        // Resend takes attachment content as base64 (or a Buffer); nodemailer
+        // takes a Buffer. We normalise on Buffer in MailAttachment and convert
+        // here so callers don't care which transport is configured.
+        ...(attachments?.length
+          ? {
+              attachments: attachments.map((a) => ({
+                filename: a.filename,
+                content: a.content.toString("base64"),
+              })),
+            }
+          : {}),
       })
       if (error) {
         throw new Error(error.message || "Resend API error")

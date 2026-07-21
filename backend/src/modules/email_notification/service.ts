@@ -84,7 +84,8 @@ export default class EmailNotificationService extends MedusaService({}) {
     label: string,
     to: string | undefined,
     subject: string,
-    html: string
+    html: string,
+    attachments?: { filename: string; content: Buffer }[]
   ): Promise<void> {
     if (!to) {
       this.logger.warn(`Email skipped (${label}): no recipient`)
@@ -105,8 +106,13 @@ export default class EmailNotificationService extends MedusaService({}) {
         to,
         subject,
         html,
+        ...(attachments?.length ? { attachments } : {}),
       })
-      this.logger.info(`Email sent: ${label} to ${to}`)
+      this.logger.info(
+        `Email sent: ${label} to ${to}${
+          attachments?.length ? ` (+${attachments.length} attachment)` : ""
+        }`
+      )
     } catch (error: any) {
       this.logger.error(`Failed to send email (${label}) to ${to}: ${error.message}`)
     }
@@ -247,7 +253,8 @@ export default class EmailNotificationService extends MedusaService({}) {
 
   async sendOrderEmail(
     templateName: keyof typeof templates,
-    data: OrderEmailData
+    data: OrderEmailData,
+    attachments?: { filename: string; content: Buffer }[]
   ) {
     const template = templates[templateName]
     if (!template) {
@@ -259,7 +266,8 @@ export default class EmailNotificationService extends MedusaService({}) {
       `${templateName} #${data.order_number}`,
       data.customer_email,
       subject,
-      html
+      html,
+      attachments
     )
   }
 
