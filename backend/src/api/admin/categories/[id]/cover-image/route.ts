@@ -1,44 +1,20 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 
 /**
  * Category cover image upload.
  *
- * Stores to Cloudflare R2, NOT Supabase Storage. This route previously talked
- * to Supabase directly (bypassing the configured file provider), so when the
- * Supabase project hit its free-tier quota every category image 402'd AND
- * re-uploading was impossible — the write path pointed at the same dead bucket.
+ * Uploads through Medusa's configured file provider (Modules.FILE), which is
+ * pointed at Cloudflare R2 via the S3_* env in medusa-config.ts.
  *
- * Uses the same R2_* credentials as the product-media migration.
+ * This route used to talk to Supabase Storage directly, bypassing the file
+ * provider — so when the Supabase project hit its free-tier quota every
+ * category image 402'd AND re-uploading was impossible, because the write path
+ * pointed at the same dead bucket. It briefly used its own S3 client against
+ * R2_* env, which then failed in production because the droplet configures R2
+ * under S3_*. Going through the file provider means there is exactly one place
+ * storage is configured, and this route follows it automatically.
  */
-
-function getR2() {
-  const {
-    R2_ACCOUNT_ID,
-    R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY,
-    R2_BUCKET,
-    R2_PUBLIC_URL,
-  } = process.env
-
-  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET || !R2_PUBLIC_URL) {
-    throw new Error(
-      "Missing R2 env (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL)"
-    )
-  }
-
-  const client = new S3Client({
-    region: "auto",
-    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
-    },
-  })
-
-  return { client, bucket: R2_BUCKET, publicBase: R2_PUBLIC_URL.replace(/\/+$/, "") }
-}
 
 /** Merge into existing metadata — assigning a bare object wipes sibling keys. */
 async function patchCategoryMetadata(
@@ -58,7 +34,7 @@ async function patchCategoryMetadata(
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   try {
     const { id } = req.params
-    const { client, bucket, publicBase } = getR2()
+    const fileModuleService = req.scope.resolve(Modules.FILE)
 
     const contentType = req.headers["content-type"] || ""
     if (!contentType.includes("multipart/form-data")) {
@@ -108,20 +84,23 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       return res.status(400).json({ message: "Uploaded file was empty" })
     }
 
-    const key = `categories/${id}/${Date.now()}-${filename}`
+    // Pass a plain filename: the provider derives the final object key itself
+    // (prefix + name + ULID + ext), so any directory prefix here would be
+    // silently dropped. The ULID already makes every upload a fresh immutable
+    // object, so no timestamp of our own is needed.
+    //
+    // content MUST be base64. The provider sniffs the encoding and falls back
+    // to utf8, which corrupts binary image data without raising an error.
+    const [uploaded] = await fileModuleService.createFiles([
+      {
+        filename: `category-${id}-${filename}`,
+        mimeType: fileContentType,
+        content: fileData.toString("base64"),
+        access: "public",
+      },
+    ])
 
-    await client.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        Body: fileData,
-        ContentType: fileContentType,
-        // Key includes a timestamp, so each upload is a new immutable object.
-        CacheControl: "public, max-age=31536000, immutable",
-      })
-    )
-
-    const imageUrl = `${publicBase}/${key}`
+    const imageUrl = uploaded.url
     await patchCategoryMetadata(req, id, { cover_image: imageUrl })
 
     return res.json({

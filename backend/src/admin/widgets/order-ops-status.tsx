@@ -32,6 +32,7 @@ type ApiResponse = {
   status: OpsStatus
   history: HistoryEntry[]
   gift_wrap: boolean
+  gift_wrappers_used: number | null
 }
 
 const OrderOpsStatusWidget = ({ data }: { data: { id: string } }) => {
@@ -39,6 +40,8 @@ const OrderOpsStatusWidget = ({ data }: { data: { id: string } }) => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<OpsStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Wrapper count the packer types in before marking the order packed.
+  const [wrappers, setWrappers] = useState("1")
 
   const load = () => {
     setLoading(true)
@@ -65,7 +68,14 @@ const OrderOpsStatusWidget = ({ data }: { data: { id: string } }) => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: target }),
+        body: JSON.stringify({
+          status: target,
+          // Only sent for the packing step of a gift-wrapped order; the server
+          // rejects that step without it.
+          ...(needsWrapperCount && target === "packed"
+            ? { gift_wrappers_used: Number(wrappers) }
+            : {}),
+        }),
       })
       const body = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(body?.message || `HTTP ${r.status}`)
@@ -77,6 +87,10 @@ const OrderOpsStatusWidget = ({ data }: { data: { id: string } }) => {
       setSaving(null)
     }
   }
+
+  // Ask for the count only while it is still unrecorded — once deducted, the
+  // number is shown as a fact rather than re-collected.
+  const needsWrapperCount = !!state?.gift_wrap && state?.gift_wrappers_used == null
 
   const currentIdx = state ? STAGES.indexOf(state.status) : -1
   const nextStage =
@@ -127,7 +141,45 @@ const OrderOpsStatusWidget = ({ data }: { data: { id: string } }) => {
               fontWeight: 600,
             }}
           >
-            🎁 Gift wrap requested — apply branded packaging before sealing.
+            <div>🎁 Gift wrap requested — apply branded packaging before sealing.</div>
+
+            {needsWrapperCount ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginTop: 10,
+                  fontWeight: 500,
+                }}
+              >
+                <label htmlFor="gift-wrappers-used">Gift wrappers used</label>
+                <input
+                  id="gift-wrappers-used"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={wrappers}
+                  onChange={(e) => setWrappers(e.target.value)}
+                  style={{
+                    width: 72,
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    border: "1px solid rgba(93, 46, 70, 0.35)",
+                    fontSize: 13,
+                  }}
+                />
+                <span style={{ fontWeight: 400, opacity: 0.75 }}>
+                  deducted from wrapper stock when you mark this packed
+                </span>
+              </div>
+            ) : (
+              <div style={{ marginTop: 8, fontWeight: 400, opacity: 0.8 }}>
+                {state.gift_wrappers_used} wrapper
+                {state.gift_wrappers_used === 1 ? "" : "s"} used — already deducted from stock.
+              </div>
+            )}
           </div>
         )}
 
