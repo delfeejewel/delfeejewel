@@ -62,14 +62,19 @@ export default async function variantCreatedHandler({
       },
     ] as any)
 
-    // Set stock level at location
+    // Set stock level at location. New variants start at a usable default so a
+    // freshly created product is immediately sellable — the store runs a single
+    // location, so there is no allocation decision to make here. Override with
+    // DEFAULT_NEW_VARIANT_STOCK; staff can adjust per-variant from the product
+    // page's "Stock" card afterwards.
+    const defaultStock = Number(process.env.DEFAULT_NEW_VARIANT_STOCK ?? 10)
     await inventoryModule.createInventoryLevels([{
       inventory_item_id: inventoryItem.id,
       location_id: location.id,
-      stocked_quantity: 0,
+      stocked_quantity: Number.isFinite(defaultStock) ? defaultStock : 10,
     }])
 
-    logger.info(`Variant ${variantId} → inventory item ${inventoryItem.id} → ${location.name} (0 stock)`)
+    logger.info(`Variant ${variantId} → inventory item ${inventoryItem.id} → ${location.name} (${defaultStock} stock)`)
   } catch (error: any) {
     if (!error.message?.includes("already exists") && !error.message?.includes("duplicate")) {
       logger.warn(`Inventory setup failed: ${error.message}`)

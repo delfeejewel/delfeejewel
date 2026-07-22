@@ -47,7 +47,11 @@ export async function GET(
       "items.title",
       "items.product_id",
       "items.variant_id",
+      // `items.quantity` alone resolves to undefined — Medusa v2 computes the
+      // order item quantity off the detail relation, so it must be requested
+      // too or the sheet prints "undefined ×" and the picker has no count.
       "items.quantity",
+      "items.detail.quantity",
       "items.thumbnail",
       "items.variant_title",
       "fulfillments.id",
@@ -113,7 +117,7 @@ export async function GET(
         id: it.id,
         title: it.title,
         variantTitle: it.variant_title || "",
-        quantity: it.quantity,
+        quantity: it.detail?.quantity ?? it.quantity ?? 1,
         qrSvg,
         qrCode: qc?.code || null,
       }

@@ -257,12 +257,43 @@ async function redirectRootToAdmin(
   return next()
 }
 
+/**
+ * Default the admin product list to newest-first.
+ *
+ * Medusa's list endpoint has no inherent ordering, so the catalogue came back
+ * in an effectively arbitrary order — painful when you've just imported a batch
+ * and want to check it. We only supply a default: if the request already asks
+ * for an order (the user clicked a column header), we leave it alone.
+ *
+ * NB two gotchas, both cost time when this was written:
+ *  - the matcher MUST be "/admin/products*", not "/admin/products". Medusa's
+ *    RoutesSorter silently drops the exact form and the middleware never runs
+ *    (same class of bug as the bare "/" matcher noted above). The handler still
+ *    checks `req.path` so detail routes are untouched.
+ *  - middlewares.ts is NOT hot-reloaded — restart the server after editing.
+ */
+async function defaultProductOrder(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  if (req.path === "/admin/products" && !req.query.order) {
+    req.query.order = "-created_at"
+  }
+  return next()
+}
+
 export default defineMiddlewares({
   routes: [
     {
       matcher: "/*",
       method: ["GET"],
       middlewares: [redirectRootToAdmin],
+    },
+    {
+      matcher: "/admin/products*",
+      method: ["GET"],
+      middlewares: [defaultProductOrder],
     },
     {
       // Authenticate FIRST so requirePermission reliably sees

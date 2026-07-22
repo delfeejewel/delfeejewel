@@ -28,3 +28,4 @@ docs/
 *.sql
 
 /Products
+backend/material-backup.json
