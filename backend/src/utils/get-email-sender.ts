@@ -1,9 +1,18 @@
 import { createClient } from "@supabase/supabase-js"
+import { Pool } from "pg"
 import { TransportConfig } from "../modules/email_notification/transport"
 
 // The outbound email sender is configured in the CMS (cms_email_sender table),
-// NOT in env. This reads that single-row config via the Supabase service-role
-// key (bypasses RLS) and maps it to a nodemailer TransportConfig.
+// NOT in env.
+//
+// Read over POSTGRES first, not the Supabase REST API. Both hit the same
+// database, but they are different service paths that fail independently: when
+// the Supabase project exceeded its free-tier quota (2026-07-22) REST began
+// returning 402 while Postgres kept working — silently killing ALL store email
+// (order confirmation, OTP, password reset), because this lookup returned null
+// and every caller correctly skips sending when there is no sender. Postgres is
+// the connection Medusa already depends on, so if it is down the store is down
+// anyway. REST is retained only as a fallback.
 //
 // Returns null when:
 //   - Supabase env is missing, or
@@ -59,6 +68,60 @@ function toConfig(row: any): TransportConfig | null {
   return null
 }
 
+// One small pool for the whole process. Email sends are infrequent, so this is
+// deliberately tiny — it must never compete with Medusa's own connections.
+let pool: Pool | null = null
+function getPool(): Pool | null {
+  if (pool) return pool
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) return null
+  pool = new Pool({
+    connectionString,
+    max: 2,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 8_000,
+    // Supabase requires TLS; the pooler presents a cert we don't pin.
+    ssl: connectionString.includes("supabase.co")
+      ? { rejectUnauthorized: false }
+      : undefined,
+  })
+  pool.on("error", () => {
+    /* never let an idle-client error crash the process */
+  })
+  return pool
+}
+
+/** Primary path: read the sender row straight from Postgres. */
+async function readFromPostgres(): Promise<{ ok: boolean; row: any }> {
+  const p = getPool()
+  if (!p) return { ok: false, row: null }
+  try {
+    const { rows } = await p.query("select * from cms_email_sender limit 1")
+    return { ok: true, row: rows[0] ?? null }
+  } catch {
+    return { ok: false, row: null }
+  }
+}
+
+/** Fallback path: the Supabase REST API (subject to project quota limits). */
+async function readFromRest(): Promise<{ ok: boolean; row: any }> {
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return { ok: false, row: null }
+  try {
+    const supabase = createClient(url, key)
+    const { data, error } = await supabase
+      .from("cms_email_sender")
+      .select("*")
+      .limit(1)
+      .maybeSingle()
+    if (error) return { ok: false, row: null }
+    return { ok: true, row: data }
+  } catch {
+    return { ok: false, row: null }
+  }
+}
+
 export async function getEmailSender(
   forceRefresh = false
 ): Promise<TransportConfig | null> {
@@ -66,19 +129,14 @@ export async function getEmailSender(
     return cached
   }
 
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  // Don't cache an env-misconfiguration as a real "no sender" result.
-  if (!url || !key) return null
+  let result = await readFromPostgres()
+  if (!result.ok) result = await readFromRest()
 
-  const supabase = createClient(url, key)
-  const { data, error } = await supabase
-    .from("cms_email_sender")
-    .select("*")
-    .limit(1)
-    .maybeSingle()
+  // Don't cache an infrastructure failure as a real "no sender" answer —
+  // otherwise a transient blip mutes email for the whole cache window.
+  if (!result.ok) return cached
 
-  cached = error ? null : toConfig(data)
+  cached = toConfig(result.row)
   cacheTime = Date.now()
   hasCache = true
   return cached
