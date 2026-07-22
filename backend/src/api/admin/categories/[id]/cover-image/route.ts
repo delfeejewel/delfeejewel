@@ -1,45 +1,81 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules } from "@medusajs/framework/utils"
-import { createClient } from "@supabase/supabase-js"
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 
-const BUCKET_NAME = "category-images"
+/**
+ * Category cover image upload.
+ *
+ * Stores to Cloudflare R2, NOT Supabase Storage. This route previously talked
+ * to Supabase directly (bypassing the configured file provider), so when the
+ * Supabase project hit its free-tier quota every category image 402'd AND
+ * re-uploading was impossible — the write path pointed at the same dead bucket.
+ *
+ * Uses the same R2_* credentials as the product-media migration.
+ */
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+function getR2() {
+  const {
+    R2_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY,
+    R2_BUCKET,
+    R2_PUBLIC_URL,
+  } = process.env
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env variables")
+  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET || !R2_PUBLIC_URL) {
+    throw new Error(
+      "Missing R2 env (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL)"
+    )
   }
 
-  return createClient(supabaseUrl, supabaseKey)
+  const client = new S3Client({
+    region: "auto",
+    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY,
+    },
+  })
+
+  return { client, bucket: R2_BUCKET, publicBase: R2_PUBLIC_URL.replace(/\/+$/, "") }
+}
+
+/** Merge into existing metadata — assigning a bare object wipes sibling keys. */
+async function patchCategoryMetadata(
+  req: MedusaRequest,
+  id: string,
+  patch: Record<string, unknown>
+) {
+  const productModuleService = req.scope.resolve(Modules.PRODUCT)
+  const existing: any = await productModuleService
+    .retrieveProductCategory(id)
+    .catch(() => null)
+  await productModuleService.updateProductCategories(id, {
+    metadata: { ...((existing?.metadata as Record<string, unknown>) || {}), ...patch },
+  })
 }
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   try {
     const { id } = req.params
-    const supabase = getSupabaseClient()
+    const { client, bucket, publicBase } = getR2()
 
-    // Parse multipart form data
     const contentType = req.headers["content-type"] || ""
     if (!contentType.includes("multipart/form-data")) {
       return res.status(400).json({ message: "Content-Type must be multipart/form-data" })
     }
 
-    // Read the raw body as buffer
     const chunks: Buffer[] = []
     for await (const chunk of req as any) {
       chunks.push(Buffer.from(chunk))
     }
     const body = Buffer.concat(chunks)
 
-    // Extract boundary from content-type
     const boundary = contentType.split("boundary=")[1]
     if (!boundary) {
       return res.status(400).json({ message: "Missing boundary in Content-Type" })
     }
 
-    // Parse multipart data manually
     const boundaryBuffer = Buffer.from(`--${boundary}`)
     const parts: Buffer[] = []
     let start = body.indexOf(boundaryBuffer) + boundaryBuffer.length + 2 // skip \r\n
@@ -47,8 +83,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     while (true) {
       const nextBoundary = body.indexOf(boundaryBuffer, start)
       if (nextBoundary === -1) break
-
-      const part = body.subarray(start, nextBoundary - 2) // remove trailing \r\n
+      const part = body.subarray(start, nextBoundary - 2) // strip trailing \r\n
       parts.push(part)
       start = nextBoundary + boundaryBuffer.length + 2
     }
@@ -57,43 +92,37 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       return res.status(400).json({ message: "No file uploaded" })
     }
 
-    // Parse the first part (the file)
     const headerEnd = parts[0].indexOf("\r\n\r\n")
     const headers = parts[0].subarray(0, headerEnd).toString()
     const fileData = parts[0].subarray(headerEnd + 4)
 
-    // Extract filename and content type
     const filenameMatch = headers.match(/filename="([^"]+)"/)
     const contentTypeMatch = headers.match(/Content-Type: (.+)/)
-    const filename = filenameMatch?.[1] || "image.jpg"
+    // Strip path separators and spaces so the object key stays clean and the
+    // resulting URL needs no escaping.
+    const rawName = filenameMatch?.[1] || "image.jpg"
+    const filename = rawName.split(/[\\/]/).pop()!.replace(/\s+/g, "-")
     const fileContentType = contentTypeMatch?.[1]?.trim() || "image/jpeg"
 
-    // Upload to Supabase Storage
-    const filePath = `categories/${id}/${Date.now()}-${filename}`
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filePath, fileData, {
-        contentType: fileContentType,
-        upsert: true,
-      })
-
-    if (uploadError) {
-      return res.status(500).json({ message: "Upload failed", error: uploadError.message })
+    if (!fileData.length) {
+      return res.status(400).json({ message: "Uploaded file was empty" })
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(filePath)
+    const key = `categories/${id}/${Date.now()}-${filename}`
 
-    const imageUrl = urlData.publicUrl
+    await client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: fileData,
+        ContentType: fileContentType,
+        // Key includes a timestamp, so each upload is a new immutable object.
+        CacheControl: "public, max-age=31536000, immutable",
+      })
+    )
 
-    // Update category metadata with cover image URL
-    const productModuleService = req.scope.resolve(Modules.PRODUCT)
-    await productModuleService.updateProductCategories(id, {
-      metadata: { cover_image: imageUrl },
-    })
+    const imageUrl = `${publicBase}/${key}`
+    await patchCategoryMetadata(req, id, { cover_image: imageUrl })
 
     return res.json({
       cover_image: imageUrl,
@@ -108,13 +137,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
   try {
     const { id } = req.params
-
-    // Remove cover image from category metadata
-    const productModuleService = req.scope.resolve(Modules.PRODUCT)
-    await productModuleService.updateProductCategories(id, {
-      metadata: { cover_image: null },
-    })
-
+    // Only clear the pointer; the object is left in R2 (cheap, and keeps the
+    // image recoverable if this was a mistake).
+    await patchCategoryMetadata(req, id, { cover_image: null })
     return res.json({ message: "Cover image removed successfully" })
   } catch (error: any) {
     return res.status(500).json({ message: error.message })

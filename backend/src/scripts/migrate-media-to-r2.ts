@@ -93,6 +93,16 @@ export default async function run({ container, args }: ExecArgs) {
     logger.error("Missing R2_* env vars (ACCOUNT_ID, ACCESS_KEY_ID, SECRET_ACCESS_KEY, BUCKET, PUBLIC_URL)")
     return
   }
+  // Uploads now run in a worker pool AFTER the product loop, so a combined
+  // "apply" pass would evaluate the rewrite gate against pre-upload state and
+  // silently leave products on old URLs. Force the two-phase workflow instead.
+  if (apply && !uploadOnly && !dbOnly) {
+    logger.error(
+      "Run the two phases separately: `apply upload-only` first, then `apply db-only`."
+    )
+    return
+  }
+
   const publicBase = R2_PUBLIC_URL.replace(/\/+$/, "")
 
   const s3 = new S3Client({
@@ -132,6 +142,13 @@ export default async function run({ container, args }: ExecArgs) {
   logger.info(`R2 already holds ${inR2.size} object(s)`)
 
   const alreadyThere = (key: string, size: number) => inR2.get(key) === size
+
+  // Uploads are collected first, then run through a small worker pool. Files
+  // here average ~1.6MB, so a sequential loop spends most of its time waiting
+  // on round-trip latency to Cloudflare rather than moving bytes — measured at
+  // roughly 3h sequential for this catalogue.
+  const tasks: { key: string; abs: string; size: number }[] = []
+  const CONCURRENCY = 8
 
   for (const p of products as any[]) {
     const entry = md.get(p.handle)
@@ -196,24 +213,8 @@ export default async function run({ container, args }: ExecArgs) {
       const key = `products/${p.handle}/${f}`
 
       if (!apply || dbOnly) continue
-
       if (alreadyThere(key, size)) { skipped++; continue }
-      try {
-        await s3.send(new PutObjectCommand({
-          Bucket: R2_BUCKET,
-          Key: key,
-          Body: fs.createReadStream(abs),
-          ContentLength: size,
-          ContentType: CONTENT_TYPES[path.extname(f).toLowerCase()] || "application/octet-stream",
-          // Immutable content addressed by product + filename; cache hard at the edge.
-          CacheControl: "public, max-age=31536000, immutable",
-        }))
-        inR2.set(key, size) // so the rewrite step below sees it immediately
-        uploaded++
-      } catch (e: any) {
-        logger.error(`  upload failed ${key}: ${e.message}`)
-        failed++
-      }
+      tasks.push({ key, abs, size })
     }
 
     // Only repoint a product once every one of its files is actually in R2.
@@ -246,6 +247,44 @@ export default async function run({ container, args }: ExecArgs) {
       })
       rewritten++
     }
+  }
+
+  if (tasks.length) {
+    logger.info(`Uploading ${tasks.length} file(s) with ${CONCURRENCY} workers…`)
+    let next = 0
+    let done = 0
+    const startedAt = Date.now()
+    const worker = async () => {
+      while (true) {
+        const i = next++
+        if (i >= tasks.length) return
+        const t = tasks[i]
+        try {
+          await s3.send(new PutObjectCommand({
+            Bucket: R2_BUCKET,
+            Key: t.key,
+            Body: fs.createReadStream(t.abs),
+            ContentLength: t.size,
+            ContentType: CONTENT_TYPES[path.extname(t.key).toLowerCase()] || "application/octet-stream",
+            // Immutable: keyed by product + filename, so cache hard at the edge.
+            CacheControl: "public, max-age=31536000, immutable",
+          }))
+          inR2.set(t.key, t.size)
+          uploaded++
+        } catch (e: any) {
+          logger.error(`  upload failed ${t.key}: ${e.message}`)
+          failed++
+        }
+        done++
+        if (done % 100 === 0 || done === tasks.length) {
+          const mins = (Date.now() - startedAt) / 60000
+          const rate = done / Math.max(mins, 0.01)
+          const left = Math.round((tasks.length - done) / Math.max(rate, 0.01))
+          logger.info(`  ${done}/${tasks.length} (${rate.toFixed(0)}/min, ~${left} min left)`)
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker))
   }
 
   const GB = 1073741824
