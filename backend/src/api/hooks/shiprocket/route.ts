@@ -3,6 +3,8 @@ import crypto from "crypto"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
+import { createShipmentWorkflow } from "@medusajs/medusa/core-flows"
+
 import { processRtoRefund } from "../../../lib/process-rto-refund"
 import { issueGiftCardsForOrder } from "../../../lib/issue-gift-cards"
 
@@ -112,6 +114,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const sLowerEarly = status.toLowerCase()
     const isDelivered =
       sLowerEarly.includes("delivered") && !sLowerEarly.includes("rto")
+    const isPickedUp =
+      (sLowerEarly.includes("picked up") || sLowerEarly.includes("in transit")) &&
+      !sLowerEarly.includes("rto")
     const nowIso = new Date().toISOString()
     const courierName =
       payload?.courier_name || payload?.courier || null
@@ -168,6 +173,32 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       } catch (e: any) {
         logger.error(
           `RTO processor failed for order #${orderRef}: ${e?.message}`
+        )
+      }
+    }
+
+    // Courier actually picked up the package → stamp the real
+    // fulfillment.shipped_at, same as the Packing page's manual fallback.
+    // Best-effort: never blocks the webhook ack.
+    if (isPickedUp) {
+      try {
+        const packingQuery = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+        const { data: withFulfillments } = await packingQuery.graph({
+          entity: "order",
+          filters: { id: order.id },
+          fields: ["id", "fulfillments.id", "fulfillments.provider_id", "fulfillments.shipped_at"],
+        })
+        const shiprocketFulfillment = (
+          (withFulfillments as any[])?.[0]?.fulfillments || []
+        ).find((f: any) => (f.provider_id || "").startsWith("shiprocket"))
+        if (shiprocketFulfillment && !shiprocketFulfillment.shipped_at) {
+          await createShipmentWorkflow(req.scope).run({
+            input: { id: shiprocketFulfillment.id } as any,
+          })
+        }
+      } catch (e: any) {
+        logger.error(
+          `Shiprocket webhook: auto mark-shipped failed for #${orderRef}: ${e?.message}`
         )
       }
     }

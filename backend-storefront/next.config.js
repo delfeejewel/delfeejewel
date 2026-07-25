@@ -77,6 +77,23 @@ const nextConfig = {
         : []),
     ],
   },
+  // "Bracelets & Bangles" and "Necklaces & Pendants" were split into
+  // separate categories (Bracelets; Necklace + Pendants) — preserve any
+  // bookmarked/indexed links to the old combined category URLs.
+  async redirects() {
+    return [
+      {
+        source: "/:countryCode/categories/bracelets-bangles",
+        destination: "/:countryCode/categories/bracelets",
+        permanent: true,
+      },
+      {
+        source: "/:countryCode/categories/necklaces-pendants",
+        destination: "/:countryCode/categories/necklace",
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

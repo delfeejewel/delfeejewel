@@ -389,15 +389,34 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       weight,
     })
 
-    // Generate AWB (Air Waybill)
-    let awbData: any = {}
+    // Generate AWB (Air Waybill). Auto-assignment can fail (no courier
+    // serviceable/available) — the admin can retry manually afterwards via
+    // the "shiprocket" fulfillment route.
+    let awb: { awb_code: string | null; courier_name: string | null } = {
+      awb_code: null,
+      courier_name: null,
+    }
     if (shiprocketOrder?.order_id && shiprocketOrder?.shipment_id) {
       try {
-        awbData = await this.apiCall("/courier/assign/awb", "POST", {
-          shipment_id: shiprocketOrder.shipment_id,
-        })
+        awb = await this.assignAwb(shiprocketOrder.shipment_id)
       } catch {
         // AWB generation might fail if no courier is auto-assigned
+      }
+    }
+
+    // Fetch the real Shiprocket label (compliant PDF) once an AWB exists.
+    // Best-effort — Shiprocket occasionally lags a few seconds between AWB
+    // assignment and label availability, and a failure here must not fail
+    // the fulfillment itself; the admin can (re)generate it later.
+    let labelUrl = ""
+    if (awb.awb_code && shiprocketOrder?.shipment_id) {
+      try {
+        const doc = await this.getFulfillmentDocuments({
+          shiprocket_shipment_id: shiprocketOrder.shipment_id,
+        })
+        labelUrl = doc?.label_url || ""
+      } catch {
+        // Label can be generated later from the admin
       }
     }
 
@@ -405,18 +424,33 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       data: {
         shiprocket_order_id: shiprocketOrder?.order_id,
         shiprocket_shipment_id: shiprocketOrder?.shipment_id,
-        awb_code: awbData?.response?.data?.awb_code || null,
-        courier_name: awbData?.response?.data?.courier_name || null,
+        awb_code: awb.awb_code,
+        courier_name: awb.courier_name,
       },
-      labels: awbData?.response?.data?.awb_code
+      labels: awb.awb_code
         ? [
             {
-              tracking_number: awbData.response.data.awb_code,
-              tracking_url: `https://www.shiprocket.in/tracking/${awbData.response.data.awb_code}`,
-              label_url: "",
+              tracking_number: awb.awb_code,
+              tracking_url: `https://www.shiprocket.in/tracking/${awb.awb_code}`,
+              label_url: labelUrl,
             },
           ]
         : [],
+    }
+  }
+
+  /** Assign an AWB (courier waybill) to an existing Shiprocket shipment.
+   *  Called automatically from createFulfillment, and reusable for a manual
+   *  admin retry when auto-assignment failed or wasn't attempted. */
+  async assignAwb(
+    shipmentId: string
+  ): Promise<{ awb_code: string | null; courier_name: string | null }> {
+    const awbData = await this.apiCall("/courier/assign/awb", "POST", {
+      shipment_id: shipmentId,
+    })
+    return {
+      awb_code: awbData?.response?.data?.awb_code || null,
+      courier_name: awbData?.response?.data?.courier_name || null,
     }
   }
 

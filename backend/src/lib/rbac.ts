@@ -1,9 +1,9 @@
 import { MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
-export type Role = "developer" | "admin" | "ops" | "marketing" | "viewer"
+export type Role = "developer" | "admin" | "ops" | "marketing" | "viewer" | "employee"
 
-export const ROLES: Role[] = ["developer", "admin", "ops", "marketing", "viewer"]
+export const ROLES: Role[] = ["developer", "admin", "ops", "marketing", "viewer", "employee"]
 
 export const ROLE_LABELS: Record<Role, string> = {
   developer: "Developer",
@@ -11,6 +11,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   ops: "Operations",
   marketing: "Marketing",
   viewer: "Viewer (read-only)",
+  employee: "Employee (packing & dispatch)",
 }
 
 /**
@@ -71,6 +72,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "customers.read",
   ],
   viewer: ["analytics.read", "customers.read"],
+  // Warehouse employee: packing/dispatch only — the Packing page and the
+  // Shiprocket AWB/label actions it drives. Nothing else.
+  employee: ["shipping.write"],
 }
 
 /**
@@ -94,7 +98,8 @@ export const PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
   [/^\/admin\/fraud-review/, "orders.write"],
   // Shipping/dispatch: warehouse pick-pack stages, RTO processing, and Medusa's
   // own fulfilment endpoints on an order. "ops" holds shipping.write.
-  [/^\/admin\/orders\/.+\/(ops-status|pick-label|process-rto|fulfillments)/, "shipping.write"],
+  [/^\/admin\/orders\/.+\/(pick-label|process-rto|fulfillments)/, "shipping.write"],
+  [/^\/admin\/packing/, "shipping.write"],
   [/^\/admin\/products(\/|$)/, "products.write"],
   [/^\/admin\/categories\/.+\/cover-image/, "products.write"],
   [/^\/admin\/qr-codes/, "inventory.write"],
