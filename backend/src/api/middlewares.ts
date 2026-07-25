@@ -31,12 +31,25 @@ const RESTRICTED_ROUTES = [
   "/admin/users",
   "/admin/invites",
   "/admin/api-keys",
+  "/admin/workflows-executions",
+  "/admin/refund-reasons",
+  "/admin/return-reasons",
 ]
 
 /**
  * Coarse role-based permission check. Reads the user's role from metadata and
  * checks it against the path's required permission (lib/rbac.ts).
  * Routes that don't appear in PATH_PERMISSIONS pass through.
+ *
+ * IMPORTANT: use req.originalUrl, not req.path. This middleware is mounted on
+ * a wildcard matcher ("/admin/*"), so Express treats it like a sub-router
+ * mount — req.path inside is relative to the mount point and was always "/"
+ * here, meaning permissionForPath() silently evaluated every request as
+ * "no permission required." Routes that also carry a handler-level
+ * actorHasPermission() check (coupons, gift-cards, fraud-review, etc.) were
+ * still enforced by that second layer, but any PATH_PERMISSIONS-only entry
+ * (newsletter, analytics, flagged-carts, qr-codes, low-stock, ...) had no
+ * real enforcement at all until this fix.
  */
 async function requirePermission(
   req: MedusaRequest,
@@ -47,7 +60,8 @@ async function requirePermission(
     const actorId = (req as any).auth_context?.actor_id
     if (!actorId) return next()
 
-    const perm = permissionForPath(req.path, req.method)
+    const path = ((req as any).originalUrl as string).split("?")[0]
+    const perm = permissionForPath(path, req.method)
     if (!perm) return next()
 
     const role = await getUserRole(req.scope as any, actorId)
