@@ -162,9 +162,8 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                     <div className="px-6 py-5 border-t border-[var(--color-lavender)] space-y-4">
                       {!!locales?.length && (
                         <div
-                          className="flex justify-between items-center"
-                          onMouseEnter={languageToggleState.open}
-                          onMouseLeave={languageToggleState.close}
+                          className="flex justify-between items-center cursor-pointer"
+                          onClick={languageToggleState.toggle}
                         >
                           <LanguageSelect
                             toggleState={languageToggleState}
@@ -180,9 +179,8 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                         </div>
                       )}
                       <div
-                        className="flex justify-between items-center"
-                        onMouseEnter={countryToggleState.open}
-                        onMouseLeave={countryToggleState.close}
+                        className="flex justify-between items-center cursor-pointer"
+                        onClick={countryToggleState.toggle}
                       >
                         {regions && (
                           <CountrySelect

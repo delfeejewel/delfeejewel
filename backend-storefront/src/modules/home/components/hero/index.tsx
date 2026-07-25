@@ -17,7 +17,7 @@ type HeroSlide = {
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
     image_url: "/images/hero-signature-silver.png",
-    label: "Festive Edit 2025",
+    label: "Festive Edit 2026",
     title: "Signature Silver Collection",
     subtitle: "Handcrafted elegance that bridges generations. Discover the timeless brilliance of 925 sterling silver inspired by Indian heritage.",
     cta_text: "Shop Now",

@@ -67,6 +67,11 @@ export default async function orderPlacedHandler({
         "items.*",
         "items.product.handle",
         "shipping_address.*",
+        "customer.id",
+        "customer.has_account",
+        "customer.first_name",
+        "customer.last_name",
+        "customer.phone",
         // COD upfront token is stamped on the cart at verify time; it does NOT
         // copy to the order on completion, so we read it across the link here.
         "cart.metadata",
@@ -102,6 +107,34 @@ export default async function orderPlacedHandler({
         ])
       } catch (e: any) {
         logger.warn(`Could not patch metadata on order ${order.id}: ${e?.message}`)
+      }
+    }
+
+    // Guest checkout only ever creates the Customer record with an email
+    // (Medusa core's findOrCreateCustomerStep) — backfill name/phone from the
+    // shipping address so guest customers show up correctly in Admin.
+    const customer = (order as any).customer
+    if (customer && !customer.has_account) {
+      const address = order.shipping_address
+      const customerPatch: Record<string, any> = {}
+      if (!customer.first_name && address?.first_name) {
+        customerPatch.first_name = address.first_name
+      }
+      if (!customer.last_name && address?.last_name) {
+        customerPatch.last_name = address.last_name
+      }
+      if (!customer.phone && address?.phone) {
+        customerPatch.phone = address.phone
+      }
+      if (Object.keys(customerPatch).length > 0) {
+        try {
+          const customerModule: any = container.resolve(Modules.CUSTOMER)
+          await customerModule.updateCustomers(customer.id, customerPatch)
+        } catch (e: any) {
+          logger.warn(
+            `Could not backfill guest customer ${customer.id} details: ${e?.message}`
+          )
+        }
       }
     }
 

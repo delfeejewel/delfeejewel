@@ -147,7 +147,7 @@ const LanguageSelect = ({
             )}
           </div>
         </ListboxButton>
-        <div className="flex relative w-full min-w-[320px]">
+        <div className="flex relative w-full xsmall:min-w-[320px]">
           <Transition
             show={state}
             as={Fragment}
