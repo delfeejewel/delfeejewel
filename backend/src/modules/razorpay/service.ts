@@ -48,13 +48,31 @@ class RazorpayProviderService extends AbstractPaymentProvider<RazorpayOptions> {
   }
 
   async initiatePayment(input: any): Promise<any> {
-    const { amount, currency_code, context } = input
+    const { amount, currency_code, context, data } = input
 
     this.logger_.info(`Razorpay initiatePayment — amount received: ${amount}, currency: ${currency_code}`)
 
     // Medusa passes amount in rupees (e.g. 32097 = ₹32,097)
     // Razorpay expects amount in paise (e.g. 3209700 = ₹32,097)
     const amountInPaise = Math.round(amount * 100)
+
+    // The COD-upfront token flow (src/api/store/cod-upfront/*) creates its own
+    // Razorpay order and gets it paid+verified BEFORE this Medusa payment
+    // session exists (there's no cart-complete flow to hang a session off yet
+    // at that point). When it later registers that payment as a real Medusa
+    // Payment, it passes the already-existing razorpay_order_id through here —
+    // reuse it instead of creating a second, duplicate Razorpay order.
+    if (data?.razorpay_order_id) {
+      return {
+        data: {
+          razorpay_order_id: data.razorpay_order_id,
+          razorpay_key_id: this.options_.key_id,
+          amount: amountInPaise,
+          currency: currency_code.toUpperCase(),
+          status: "created",
+        },
+      }
+    }
 
     try {
       const order = await this.razorpay_.orders.create({

@@ -62,7 +62,19 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const { data: carts } = await query.graph({
       entity: "cart",
       filters: { id: cart_id },
-      fields: ["id", "total"],
+      fields: [
+        "id",
+        "total",
+        "currency_code",
+        "payment_collection.id",
+        "payment_collection.payments.data",
+        "payment_collection.payment_sessions.id",
+        "payment_collection.payment_sessions.amount",
+        "payment_collection.payment_sessions.provider_id",
+        "payment_collection.payment_sessions.status",
+        "payment_collection.payment_sessions.data",
+        "payment_collection.payment_sessions.currency_code",
+      ],
     })
     const cartRow = carts?.[0] as any
     if (!cartRow) {
@@ -111,6 +123,73 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       cod_upfront_paid_at: new Date().toISOString(),
     }
     await cartModule.updateCarts(cart_id, { metadata: newMetadata })
+
+    // 5. Record the token as a real Medusa Payment on the cart's payment
+    // collection (alongside the pp_cod_cod session for the remaining
+    // balance), so admin's Paid Total/Outstanding reflect what was actually
+    // collected — best-effort bookkeeping. The token was already genuinely
+    // verified + captured above (steps 1-3); a failure here must never undo
+    // that or block the customer's already-successful payment.
+    try {
+      const paymentCollectionId = cartRow?.payment_collection?.id
+      const existingPayments: any[] = cartRow?.payment_collection?.payments || []
+      const alreadyRecorded = existingPayments.some(
+        (p: any) => p?.data?.razorpay_payment_id === razorpay_payment_id
+      )
+      if (paymentCollectionId && !alreadyRecorded) {
+        const paymentModule: any = req.scope.resolve(Modules.PAYMENT)
+        const session = await paymentModule.createPaymentSession(paymentCollectionId, {
+          provider_id: "pp_razorpay_razorpay",
+          amount: paidRupees,
+          currency_code: cartRow.currency_code,
+          data: {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            amount: payment.amount, // paise — matches authorizePayment's expected-amount check
+          },
+        })
+        const authorized = await paymentModule.authorizePaymentSession(session.id, {
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+        })
+        await paymentModule.capturePayment({
+          payment_id: (authorized as any).id,
+          is_captured: true,
+        })
+      }
+    } catch (e: any) {
+      req.scope
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .error(`cod-upfront: failed to record Medusa payment for cart ${cart_id}: ${e?.message}`)
+    }
+
+    // 6. Reduce the pp_cod_cod session's amount by the token already paid,
+    // so when it's captured later (on delivery) it captures only the
+    // remaining balance instead of the full original total. This MUST run
+    // before cart-complete authorizes that session (authorizing copies the
+    // session's amount onto a real Payment row, which can't be changed
+    // after the fact) — the cart is still open at this point, so it's safe.
+    try {
+      const codSession = (cartRow?.payment_collection?.payment_sessions || []).find(
+        (s: any) => s.provider_id === "pp_cod_cod" && s.status !== "authorized"
+      )
+      if (codSession) {
+        const remaining = Number(cartRow.total || 0) - paidRupees
+        const paymentModule: any = req.scope.resolve(Modules.PAYMENT)
+        await paymentModule.updatePaymentSession({
+          id: codSession.id,
+          currency_code: codSession.currency_code || cartRow.currency_code,
+          amount: Math.max(0, remaining),
+          data: codSession.data || {},
+        })
+      }
+    } catch (e: any) {
+      req.scope
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .error(`cod-upfront: failed to reduce COD session amount for cart ${cart_id}: ${e?.message}`)
+    }
 
     return res.json({
       verified: true,
