@@ -1,9 +1,9 @@
 "use client"
 
-import { Popover, PopoverPanel, Transition } from "@headlessui/react"
+import { Popover, PopoverPanel, Portal, Transition } from "@headlessui/react"
 import { ArrowRightMini, XMark } from "@medusajs/icons"
 import { Text, clx, useToggleState } from "@medusajs/ui"
-import { Fragment } from "react"
+import { Fragment, useEffect, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CountrySelect from "../country-select"
@@ -22,6 +22,11 @@ type SideMenuProps = {
 const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps) => {
   const countryToggleState = useToggleState()
   const languageToggleState = useToggleState()
+  // The overlay renders through a Portal (to <body>), which only exists on the
+  // client. Gate it behind a mounted flag so the server and first client render
+  // both produce nothing — avoids a hydration mismatch.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <div className="h-full">
@@ -41,25 +46,34 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                 </Popover.Button>
               </div>
 
-              {open && (
-                <div
-                  className="fixed inset-0 z-[50] bg-black/30 backdrop-blur-sm pointer-events-auto"
-                  onClick={close}
-                  data-testid="side-menu-backdrop"
-                />
-              )}
+              {/* Portal to <body> so the fixed overlay escapes the header's
+                  containing block. The header uses backdrop-blur, which makes
+                  it the containing block for position:fixed descendants —
+                  without the portal the panel is trapped at header height. */}
+              {mounted && (
+              <Portal>
+                {open && (
+                  <div
+                    className="fixed inset-0 z-[50] bg-black/30 backdrop-blur-sm pointer-events-auto"
+                    onClick={close}
+                    data-testid="side-menu-backdrop"
+                  />
+                )}
 
-              <Transition
-                show={open}
-                as={Fragment}
-                enter="transition ease-out duration-200"
-                enterFrom="-translate-x-full opacity-0"
-                enterTo="translate-x-0 opacity-100"
-                leave="transition ease-in duration-150"
-                leaveFrom="translate-x-0 opacity-100"
-                leaveTo="-translate-x-full opacity-0"
-              >
-                <PopoverPanel className="fixed left-0 top-0 w-[85%] xsmall:w-[320px] h-full z-[51] font-outfit">
+                <Transition
+                  show={open}
+                  as={Fragment}
+                  enter="transition ease-out duration-200"
+                  enterFrom="-translate-x-full opacity-0"
+                  enterTo="translate-x-0 opacity-100"
+                  leave="transition ease-in duration-150"
+                  leaveFrom="translate-x-0 opacity-100"
+                  leaveTo="-translate-x-full opacity-0"
+                >
+                  <PopoverPanel
+                    static
+                    className="fixed left-0 top-0 w-[85%] xsmall:w-[320px] h-full z-[51] font-outfit"
+                  >
                   <div
                     data-testid="nav-menu-popup"
                     className="flex flex-col h-full bg-white justify-between"
@@ -203,8 +217,10 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       </Text>
                     </div>
                   </div>
-                </PopoverPanel>
-              </Transition>
+                  </PopoverPanel>
+                </Transition>
+              </Portal>
+              )}
             </>
           )}
         </Popover>
