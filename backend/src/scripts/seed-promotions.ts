@@ -13,8 +13,10 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
  *   TEST10     — 10% off the order (dev/testing)
  *   WELCOME20  — 20% off the order (dev/testing)
  *   FLAT200    — ₹200 off the order (fixed amount)
- *   FREESHIP   — free shipping (100% off shipping)
  *   SALE15     — 15% off, time-boxed campaign with a 500-use budget
+ *   SAVE10     — sitewide 10% off, unlimited uses, no expiry (no usage_limit
+ *                or campaign set — Medusa treats an omitted usage_limit as
+ *                unlimited)
  */
 
 const DEFAULT_CURRENCY = "inr"
@@ -56,16 +58,6 @@ const PROMOS: PromoSeed[] = [
     },
   },
   {
-    // Free shipping: 100% off the shipping method(s) on the cart.
-    code: "FREESHIP",
-    application_method: {
-      type: "percentage",
-      value: 100,
-      target_type: "shipping_methods",
-      allocation: "each",
-    },
-  },
-  {
     // Time-boxed sale, backed by a campaign that caps total redemptions at 500.
     // Adjust starts_at/ends_at or the budget from the admin as needed.
     code: "SALE15",
@@ -81,6 +73,17 @@ const PROMOS: PromoSeed[] = [
       starts_at: new Date(),
       ends_at: new Date(Date.now() + 30 * 86400_000),
       budget: { type: "usage", limit: 500 },
+    },
+  },
+  {
+    // Sitewide 10% off. No usage_limit, no campaign — unlimited uses, never
+    // expires.
+    code: "SAVE10",
+    application_method: {
+      type: "percentage",
+      value: 10,
+      target_type: "order",
+      allocation: "across",
     },
   },
 ]

@@ -18,7 +18,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       query.graph({
         entity: "order",
         fields: [
-          "id", "display_id", "email", "currency_code",
+          "id", "display_id", "email", "currency_code", "canceled_at",
           "total", "subtotal", "tax_total", "shipping_total", "created_at",
           "items.*", "shipping_address.*",
         ],
@@ -89,6 +89,8 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         })),
         // Shipping is part of what the customer paid — invoice it as its own
         // line (SAC 996812, courier services) so the grand total matches.
+        // Tax-exempt (0%) — shipping carries a dedicated 0% tax rate rule,
+        // set up separately from the item rate.
         ...(Number(order.shipping_total) > 0
           ? [
               {
@@ -97,13 +99,14 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
                 quantity: 1,
                 unit_price: Number(order.shipping_total),
                 line_total: Number(order.shipping_total),
-                tax_rate: defaultTaxRate,
+                tax_rate: 0,
               },
             ]
           : []),
       ],
 
       is_intra_state: isIntraState,
+      is_cancelled: !!order.canceled_at,
     }
 
     const pdfBuffer = await generateInvoicePDF(invoiceData)

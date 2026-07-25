@@ -73,7 +73,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     orderId: string
   ): Promise<{ isCod: boolean; upfrontPaid: number }> {
     try {
-      const query = this.container_.resolve(ContainerRegistrationKeys.QUERY)
+      const query = this.container_[ContainerRegistrationKeys.QUERY]
       const {
         data: [full],
       } = await query.graph({
@@ -336,7 +336,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     order: any,
     fulfillment: any
   ): Promise<any> {
-    const logger = this.container_?.resolve?.(ContainerRegistrationKeys.LOGGER)
+    const logger = this.container_[ContainerRegistrationKeys.LOGGER]
     const address = order?.shipping_address || {}
     const weight = this.parcelWeightKg(items)
     const { length, breadth, height } = this.parcelDimensions(order)
@@ -455,14 +455,24 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   }
 
   // ─── Cancel Fulfillment ──────────────────────
+  // Deliberately throws on failure (rather than swallowing) — Medusa's core
+  // fulfillment module discards whatever this method returns and only acts
+  // on whether it throws, so a silent swallow here would leave Medusa marked
+  // "cancelled" while the courier shipment is still live in Shiprocket with
+  // no way to surface that to the admin. Throwing keeps the two systems from
+  // diverging: the whole cancel fails loudly and can be retried.
   async cancelFulfillment(data: any): Promise<any> {
     if (data?.shiprocket_order_id) {
       try {
         await this.apiCall("/orders/cancel", "POST", {
           ids: [data.shiprocket_order_id],
         })
-      } catch {
-        // Ignore cancel errors
+      } catch (e: any) {
+        const logger = this.container_[ContainerRegistrationKeys.LOGGER]
+        logger?.error(
+          `Shiprocket: failed to cancel order ${data.shiprocket_order_id}: ${e?.message}`
+        )
+        throw new Error(`Could not cancel the Shiprocket shipment: ${e?.message}`)
       }
     }
     return {}

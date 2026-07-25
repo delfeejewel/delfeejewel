@@ -16,6 +16,7 @@ export const INVOICE_ORDER_FIELDS = [
   "display_id",
   "email",
   "currency_code",
+  "canceled_at",
   "total",
   "subtotal",
   "tax_total",
@@ -101,7 +102,9 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
         tax_rate: Number((item.metadata as any)?.tax_rate) || defaultTaxRate,
       })),
       // Shipping is part of what the customer paid — invoice it as its own line
-      // (SAC 996812, courier services) so the grand total matches.
+      // (SAC 996812, courier services) so the grand total matches. Tax-exempt
+      // (0%) — shipping carries a dedicated 0% tax rate rule, set up
+      // separately from the item rate.
       ...(Number(order.shipping_total) > 0
         ? [
             {
@@ -110,12 +113,13 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
               quantity: 1,
               unit_price: Number(order.shipping_total),
               line_total: Number(order.shipping_total),
-              tax_rate: defaultTaxRate,
+              tax_rate: 0,
             },
           ]
         : []),
     ],
 
     is_intra_state: isIntraState,
+    is_cancelled: !!order.canceled_at,
   }
 }

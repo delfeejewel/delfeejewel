@@ -38,6 +38,8 @@ export type InvoiceData = {
   }[]
 
   is_intra_state: boolean // true = CGST+SGST, false = IGST
+
+  is_cancelled?: boolean // stamps a CANCELLED watermark across the invoice
 }
 
 /* ─── Brand palette — mirrors the storefront design system ─── */
@@ -394,6 +396,21 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
           footerY + 38,
           { width: W, align: "center" }
         )
+
+      if (data.is_cancelled) {
+        doc.save()
+        doc.opacity(0.18)
+        doc
+          .font("Times-Bold")
+          .fontSize(90)
+          .fillColor("#B91C1C")
+          .rotate(-35, { origin: [doc.page.width / 2, doc.page.height / 2] })
+          .text("CANCELLED", 0, doc.page.height / 2 - 45, {
+            width: doc.page.width,
+            align: "center",
+          })
+        doc.restore()
+      }
 
       doc.end()
     } catch (err) {
