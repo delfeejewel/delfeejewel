@@ -362,6 +362,121 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       : { ...FALLBACK_DIMENSIONS }
   }
 
+  /**
+   * Creates the actual order+shipment in Shiprocket. Shared by createFulfillment
+   * (the normal "Start Packing" path) and retryOrderCreation (the manual
+   * recovery path when the first attempt silently didn't produce a shipment).
+   *
+   * Shiprocket can respond 200 OK with an error body (bad pickup location,
+   * invalid phone/pincode, etc.) instead of a proper HTTP error — apiCall only
+   * throws on a non-2xx status, so that case is checked explicitly here rather
+   * than left to look like a successful, but unlinked, fulfillment.
+   */
+  private async createShiprocketOrder(
+    order: any,
+    items: any[],
+    fulfillmentId: string | undefined,
+    weight: number,
+    dimensions: { length: number; breadth: number; height: number },
+    defaultHsn: string
+  ): Promise<{ order_id: string; shipment_id: string }> {
+    const logger = this.container_[ContainerRegistrationKeys.LOGGER]
+    const address = order?.shipping_address || {}
+    const { length, breadth, height } = dimensions
+
+    if (this.simulating()) {
+      return { order_id: this.simId("ORDER"), shipment_id: this.simId("SHIP") }
+    }
+
+    // Payment mode drives whether the courier collects cash on delivery, and
+    // (for the COD-with-upfront-token flow) how much: total minus the token
+    // already prepaid online. A prepaid order collects nothing.
+    const { isCod, upfrontPaid } = await this.resolvePayment(order?.id)
+    const orderTotalMajor = (order?.total || 0) / 100
+    const codCollectable = Math.max(0, orderTotalMajor - upfrontPaid)
+
+    const shiprocketOrder = await this.apiCall("/orders/create/adhoc", "POST", {
+      order_id: order?.display_id?.toString() || fulfillmentId,
+      order_date: new Date().toISOString().split("T")[0],
+      pickup_location: this.options_.pickup_location || "Primary",
+      billing_customer_name: address.first_name || "Customer",
+      billing_last_name: address.last_name || "",
+      billing_address: address.address_1 || "",
+      billing_address_2: address.address_2 || "",
+      billing_city: address.city || "",
+      billing_pincode: address.postal_code || "",
+      billing_state: address.province || address.state || "",
+      billing_country: address.country_code?.toUpperCase() || "IN",
+      billing_email: order?.email || "",
+      billing_phone: address.phone || "",
+      shipping_is_billing: true,
+      order_items: items.map((item) => ({
+        name: item.title || "Product",
+        sku: item.sku || item.id,
+        units: item.quantity || 1,
+        selling_price: (item.unit_price || 0) / 100,
+        discount: 0,
+        tax: 0,
+        hsn: item.metadata?.hsn_code || defaultHsn,
+      })),
+      payment_method: isCod ? "COD" : "Prepaid",
+      // For COD, sub_total is the amount the courier collects on delivery —
+      // the balance after any upfront token. For prepaid it's the order value.
+      sub_total: isCod ? codCollectable : orderTotalMajor,
+      length,
+      breadth,
+      height,
+      weight,
+    })
+
+    if (!shiprocketOrder?.order_id || !shiprocketOrder?.shipment_id) {
+      logger?.error(
+        `Shiprocket: order creation for #${order?.display_id} did not return a shipment. ` +
+          `Raw response: ${JSON.stringify(shiprocketOrder)}`
+      )
+      throw new Error(
+        shiprocketOrder?.message ||
+          "Shiprocket did not create a shipment for this order — check the pickup location and address details."
+      )
+    }
+
+    return { order_id: shiprocketOrder.order_id, shipment_id: shiprocketOrder.shipment_id }
+  }
+
+  /**
+   * Recovery path for a fulfillment whose initial Shiprocket order creation
+   * silently failed (see createShiprocketOrder above) — tries again with the
+   * given order/items. Called from the admin's "Assign AWB" action when no
+   * shiprocket_shipment_id exists yet.
+   *
+   * Takes order/items as arguments rather than fetching them itself: this
+   * provider's own container is the Fulfillment module's isolated one, which
+   * doesn't have the app-wide Query service registered — only a request's
+   * req.scope does. The caller (an admin route) already has that.
+   */
+  async createOrderForFulfillment(
+    order: any,
+    items: any[],
+    fulfillmentId: string
+  ): Promise<{ order_id: string; shipment_id: string }> {
+    const normalizedItems = (items || []).map((it) => ({
+      ...it,
+      quantity: it.detail?.quantity ?? it.quantity ?? 1,
+    }))
+    const weight = this.parcelWeightKg(normalizedItems)
+    const dimensions = this.parcelDimensions(order)
+    const defaultHsn = this.options_.default_hsn || "7113"
+
+    return this.createShiprocketOrder(
+      order,
+      normalizedItems,
+      fulfillmentId,
+      weight,
+      dimensions,
+      defaultHsn
+    )
+  }
+
   // ─── Create Fulfillment (Create Shipment) ────
   async createFulfillment(
     data: any,
@@ -380,49 +495,14 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         `${length}x${breadth}x${height}cm`
     )
 
-    // Payment mode drives whether the courier collects cash on delivery, and
-    // (for the COD-with-upfront-token flow) how much: total minus the token
-    // already prepaid online. A prepaid order collects nothing.
-    const { isCod, upfrontPaid } = await this.resolvePayment(order?.id)
-    const orderTotalMajor = (order?.total || 0) / 100
-    const codCollectable = Math.max(0, orderTotalMajor - upfrontPaid)
-
-    // Create order in Shiprocket — or fake the same shape in simulate mode.
-    const shiprocketOrder = this.simulating()
-      ? { order_id: this.simId("ORDER"), shipment_id: this.simId("SHIP") }
-      : await this.apiCall("/orders/create/adhoc", "POST", {
-          order_id: order?.display_id?.toString() || fulfillment.id,
-          order_date: new Date().toISOString().split("T")[0],
-          pickup_location: this.options_.pickup_location || "Primary",
-          billing_customer_name: address.first_name || "Customer",
-          billing_last_name: address.last_name || "",
-          billing_address: address.address_1 || "",
-          billing_address_2: address.address_2 || "",
-          billing_city: address.city || "",
-          billing_pincode: address.postal_code || "",
-          billing_state: address.province || address.state || "",
-          billing_country: address.country_code?.toUpperCase() || "IN",
-          billing_email: order?.email || "",
-          billing_phone: address.phone || "",
-          shipping_is_billing: true,
-          order_items: items.map((item) => ({
-            name: item.title || "Product",
-            sku: item.sku || item.id,
-            units: item.quantity || 1,
-            selling_price: (item.unit_price || 0) / 100,
-            discount: 0,
-            tax: 0,
-            hsn: item.metadata?.hsn_code || defaultHsn,
-          })),
-          payment_method: isCod ? "COD" : "Prepaid",
-          // For COD, sub_total is the amount the courier collects on delivery —
-          // the balance after any upfront token. For prepaid it's the order value.
-          sub_total: isCod ? codCollectable : orderTotalMajor,
-          length,
-          breadth,
-          height,
-          weight,
-        })
+    const shiprocketOrder = await this.createShiprocketOrder(
+      order,
+      items,
+      fulfillment?.id,
+      weight,
+      { length, breadth, height },
+      defaultHsn
+    )
 
     // Generate AWB (Air Waybill). Auto-assignment can fail (no courier
     // serviceable/available) — the admin can retry manually afterwards via

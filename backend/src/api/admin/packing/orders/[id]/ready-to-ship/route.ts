@@ -6,6 +6,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { updateFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 
 import { actorHasPermission } from "../../../../../../lib/rbac"
+import { resolveShiprocketProvider } from "../../../../../../lib/shiprocket-provider"
 
 /**
  * POST /admin/packing/orders/:id/ready-to-ship
@@ -65,7 +66,7 @@ export async function POST(
   let pickupScheduledDate: string | null = null
   if (fData.shiprocket_shipment_id) {
     try {
-      const provider: any = req.scope.resolve("fp_shiprocket_shiprocket")
+      const provider: any = resolveShiprocketProvider(req.scope)
       const pickup = await provider.requestPickup(fData.shiprocket_shipment_id)
       pickupRequested = pickup.requested
       pickupScheduledDate = pickup.pickup_scheduled_date

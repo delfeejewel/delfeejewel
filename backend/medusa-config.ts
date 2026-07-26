@@ -165,7 +165,7 @@ module.exports = defineConfig({
               password: process.env.SHIPROCKET_PASSWORD,
               // Address nickname in Shiprocket, not a pincode — the two are
               // used for different calls, so they're configured separately.
-              pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
+              pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Home",
               pickup_pincode: process.env.SHIPROCKET_PICKUP_PINCODE,
               // Variant weights are catalogued in grams; declared parcel weight
               // is summed from the items, plus packaging tare.

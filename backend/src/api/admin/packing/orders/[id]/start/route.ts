@@ -28,13 +28,29 @@ export async function POST(
   const { data: orders } = await query.graph({
     entity: "order",
     filters: { id: orderId },
-    fields: ["id", "metadata", "items.id", "items.detail.quantity", "items.quantity"],
+    fields: [
+      "id",
+      "metadata",
+      "items.id",
+      "items.detail.quantity",
+      "items.quantity",
+      "fulfillments.id",
+      "fulfillments.canceled_at",
+    ],
   })
   const order = (orders as any[])?.[0]
   if (!order) return res.status(404).json({ message: "Order not found" })
 
   const prevMeta = (order.metadata as any) || {}
-  if (prevMeta.packing?.fulfillment_id) {
+  const prevPacking = prevMeta.packing
+  const prevFulfillment = prevPacking?.fulfillment_id
+    ? ((order.fulfillments as any[]) || []).find((f) => f.id === prevPacking.fulfillment_id)
+    : null
+  // A previous attempt exists but its fulfillment was cancelled (e.g. undone
+  // because the item wasn't actually ready) — allow starting fresh rather
+  // than permanently blocking on stale state.
+  const prevAttemptCancelled = !!prevFulfillment?.canceled_at
+  if (prevPacking?.fulfillment_id && !prevAttemptCancelled) {
     return res.status(400).json({ message: "Packing already started for this order" })
   }
 
@@ -67,6 +83,15 @@ export async function POST(
   }
 
   const nowIso = new Date().toISOString()
+  const priorHistory = Array.isArray(prevPacking?.history) ? prevPacking.history : []
+  const history = [
+    ...priorHistory,
+    ...(prevAttemptCancelled
+      ? [{ step: "restarted_after_cancel", at: nowIso, actor_id: actorId, actor_email: actorEmail }]
+      : []),
+    { step: "started", at: nowIso, actor_id: actorId, actor_email: actorEmail },
+  ]
+
   const orderModule: any = req.scope.resolve(Modules.ORDER)
   await orderModule.updateOrders([
     {
@@ -78,9 +103,7 @@ export async function POST(
           packed_item_ids: [],
           started_at: nowIso,
           ready_to_ship_at: null,
-          history: [
-            { step: "started", at: nowIso, actor_id: actorId, actor_email: actorEmail },
-          ],
+          history,
         },
       },
     },

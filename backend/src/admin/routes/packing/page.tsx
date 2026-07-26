@@ -49,11 +49,11 @@ type Detail = {
   gift_wrap: boolean
   gift_wrappers_used: number | null
   items: Item[]
+  history: HistoryEntry[]
   packing: {
     fulfillment_id: string
     started_at: string
     ready_to_ship_at: string | null
-    history: HistoryEntry[]
   } | null
   fulfillment: {
     id: string
@@ -77,6 +77,8 @@ const STEP_LABELS: Record<string, string> = {
   pickup_requested: "Requested courier pickup",
   pickup_request_failed: "Tried to request pickup — Shiprocket didn't confirm",
   shipped: "Marked shipped",
+  shiprocket_order_created: "Re-created the Shiprocket order",
+  restarted_after_cancel: "Restarted packing after the previous attempt was cancelled",
 }
 
 function historyStepLabel(step: string): string {
@@ -547,8 +549,10 @@ const PackingPage = () => {
                   </div>
                 )}
 
-                {/* Activity log — who did what, and when */}
-                {!!detail.packing?.history?.length && (
+                {/* Activity log — who did what, and when. Kept even after a
+                    cancelled attempt resets the checklist above, so the record
+                    of what happened isn't lost. */}
+                {!!detail.history?.length && (
                   <div
                     style={{
                       display: "flex",
@@ -562,7 +566,7 @@ const PackingPage = () => {
                     <Text size="small" weight="plus" style={{ color: "#666" }}>
                       Activity log
                     </Text>
-                    {detail.packing.history.map((h, i) => (
+                    {detail.history.map((h, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                         <Text size="small">
                           {historyStepLabel(h.step)} — {h.actor_email || "Unknown user"}

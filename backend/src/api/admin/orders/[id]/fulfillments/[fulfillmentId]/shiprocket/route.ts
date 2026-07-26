@@ -7,6 +7,7 @@ import { updateFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 
 import { actorHasPermission } from "../../../../../../../lib/rbac"
 import { resolveActor, appendPackingHistory } from "../../../../../../../lib/packing-log"
+import { resolveShiprocketProvider } from "../../../../../../../lib/shiprocket-provider"
 
 /**
  * POST /admin/orders/:id/fulfillments/:fulfillmentId/shiprocket
@@ -47,7 +48,18 @@ export async function POST(
     filters: { id: orderId },
     fields: [
       "id",
+      "display_id",
+      "email",
+      "total",
       "metadata",
+      "shipping_address.*",
+      "items.id",
+      "items.title",
+      "items.sku",
+      "items.unit_price",
+      "items.quantity",
+      "items.detail.quantity",
+      "items.metadata",
       "fulfillments.id",
       "fulfillments.provider_id",
       "fulfillments.data",
@@ -64,7 +76,7 @@ export async function POST(
   }
 
   const data = (fulfillment.data || {}) as any
-  const provider: any = req.scope.resolve("fp_shiprocket_shiprocket")
+  const provider: any = resolveShiprocketProvider(req.scope)
 
   /** Logs this action to the order's packing audit trail, if a packing
    *  session exists — a no-op otherwise (this route is also reachable
@@ -102,9 +114,29 @@ export async function POST(
         })
       }
       if (!data.shiprocket_shipment_id) {
-        return res.status(400).json({
-          message: "No Shiprocket shipment exists for this fulfillment",
-        })
+        // The initial order creation (at "Start Packing") didn't produce a
+        // shipment — try again now rather than leaving this permanently
+        // stuck. If Shiprocket still rejects it, the real reason comes back
+        // in the error message this time instead of a generic "missing".
+        try {
+          const created = await provider.createOrderForFulfillment(
+            order,
+            order.items || [],
+            fulfillmentId
+          )
+          data.shiprocket_order_id = created.order_id
+          data.shiprocket_shipment_id = created.shipment_id
+          await updateFulfillmentWorkflow(req.scope).run({
+            input: { id: fulfillmentId, data: { ...data } } as any,
+          })
+          await logStep("shiprocket_order_created")
+        } catch (e: any) {
+          return res.status(502).json({
+            message:
+              e?.message ||
+              "Shiprocket still did not create a shipment for this order.",
+          })
+        }
       }
 
       const awb = await provider.assignAwb(data.shiprocket_shipment_id)
