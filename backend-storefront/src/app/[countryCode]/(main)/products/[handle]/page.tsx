@@ -100,20 +100,24 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const noHyphens = (s: string) =>
     s.replace(/[-‐-―−]+/g, " ").replace(/\s{2,}/g, " ").trim()
 
-  const seoTitle = noHyphens(
-    shortMaterial
-      ? `${title}, ${shortMaterial} | ${BRAND.meta.productSuffix}`
-      : `${title} | ${BRAND.meta.productSuffix}`
-  )
+  const seoTitle = meta.seo_title
+    ? String(meta.seo_title)
+    : noHyphens(
+        shortMaterial
+          ? `${title}, ${shortMaterial} | ${BRAND.meta.productSuffix}`
+          : `${title} | ${BRAND.meta.productSuffix}`
+      )
 
   // Build SEO description — trim to ~160 chars on a word boundary (no mid-word cut)
   const trimMeta = (s: string, n = 160) =>
     s.length <= n ? s : `${s.slice(0, s.lastIndexOf(" ", n)).trim()}…`
-  const seoDescription = noHyphens(
-    product.description
-      ? trimMeta(stripHtml(product.description))
-      : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹5,000.`
-  )
+  const seoDescription = meta.seo_description
+    ? String(meta.seo_description)
+    : noHyphens(
+        product.description
+          ? trimMeta(stripHtml(product.description))
+          : `Shop ${title} from ${BRAND.name}. ${BRAND.tagline}. Free shipping on orders above ₹5,000.`
+      )
 
   return {
     title: seoTitle,

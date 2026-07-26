@@ -8,6 +8,11 @@ import {
   permissionForPath,
   roleHas,
 } from "../lib/rbac"
+import {
+  PRODUCTS_PIN_COOKIE,
+  readCookie,
+  verifyUnlockToken,
+} from "../lib/products-pin"
 import { reconcileGiftCardHolds } from "../modules/gift_card/lib/holds"
 import { codTokenAmount, getCodPolicy } from "../utils/cod"
 
@@ -225,6 +230,45 @@ async function enforceCodUpfront(
   }
 }
 
+/**
+ * Gates /admin/products* (all methods, including GET) for the "employee"
+ * role behind the shared 4-digit Products PIN (lib/products-pin.ts).
+ * Employee otherwise only lacks products.write (see PATH_PERMISSIONS) — reads
+ * are normally open to any admin — so this is an ADDITIONAL, employee-only
+ * gate, not a replacement for that check. Must run AFTER the "/admin/*"
+ * authenticate+requirePermission block below so auth_context is populated,
+ * same ordering the RESTRICTED_ROUTES/requireDeveloper entries rely on.
+ *
+ * The regex excludes /admin/products-pin* (the PIN config/verify routes
+ * themselves) so an employee can actually submit the PIN to unlock.
+ */
+async function requireProductsPinForEmployee(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  try {
+    const path = ((req as any).originalUrl as string).split("?")[0]
+    if (!/^\/admin\/products(\/|$)/.test(path)) return next()
+
+    const actorId = (req as any).auth_context?.actor_id
+    if (!actorId) return next()
+
+    const role = await getUserRole(req.scope as any, actorId)
+    if (role !== "employee") return next()
+
+    const token = readCookie(req, PRODUCTS_PIN_COOKIE)
+    if (verifyUnlockToken(token, actorId)) return next()
+
+    return res.status(403).json({
+      message: "Enter the products PIN to continue.",
+      code: "PRODUCTS_PIN_REQUIRED",
+    })
+  } catch {
+    return next()
+  }
+}
+
 async function requireDeveloper(
   req: MedusaRequest,
   res: MedusaResponse,
@@ -331,6 +375,12 @@ export default defineMiddlewares({
         }),
         requirePermission,
       ],
+    },
+    {
+      // Placed after the "/admin/*" auth block above so auth_context.actor_id
+      // is already populated (see requireProductsPinForEmployee comment).
+      matcher: "/admin/products*",
+      middlewares: [requireProductsPinForEmployee],
     },
     {
       matcher: "/store/carts/*/complete",
