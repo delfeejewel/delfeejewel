@@ -19,6 +19,10 @@ export const listCategories = async (query?: Record<string, any>) => {
           fields:
             "*category_children, *products, *parent_category, *parent_category.parent_category",
           limit,
+          // Store API doesn't default-sort by rank — without this, category
+          // order (e.g. the homepage row) is arbitrary DB order, not the
+          // admin-configured rank.
+          order: "rank",
           ...query,
         },
         next,
