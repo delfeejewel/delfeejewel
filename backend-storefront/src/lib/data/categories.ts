@@ -1,14 +1,11 @@
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
 
+// Categories are a tiny, cheap-to-fetch payload that only changes via admin
+// edits. Skip the fetch cache entirely rather than tune a revalidate window —
+// always-fresh has no meaningful cost here, and it's one less place stale
+// admin edits (deleted/renamed categories) could linger in nav/homepage.
 export const listCategories = async (query?: Record<string, any>) => {
-  const next = {
-    ...(await getCacheOptions("categories")),
-    // Safety net so admin edits to categories show without waiting ~24h.
-    revalidate: 60,
-  }
-
   const limit = query?.limit || 100
 
   return sdk.client
@@ -25,8 +22,7 @@ export const listCategories = async (query?: Record<string, any>) => {
           order: "rank",
           ...query,
         },
-        next,
-        cache: "force-cache",
+        cache: "no-store",
       }
     )
     .then(({ product_categories }) => product_categories)
@@ -34,12 +30,6 @@ export const listCategories = async (query?: Record<string, any>) => {
 
 export const getCategoryByHandle = async (categoryHandle: string[]) => {
   const handle = `${categoryHandle.join("/")}`
-
-  const next = {
-    ...(await getCacheOptions("categories")),
-    // Safety net so admin edits to categories show without waiting ~24h.
-    revalidate: 60,
-  }
 
   return sdk.client
     .fetch<HttpTypes.StoreProductCategoryListResponse>(
@@ -49,8 +39,7 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
           fields: "*category_children, *products",
           handle,
         },
-        next,
-        cache: "force-cache",
+        cache: "no-store",
       }
     )
     .then(({ product_categories }) => product_categories[0])
