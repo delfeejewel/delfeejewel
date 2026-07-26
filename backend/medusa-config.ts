@@ -173,6 +173,10 @@ module.exports = defineConfig({
               default_weight: 0.1, // fallback: 100g, for variants with no weight
               packaging_weight: 0.05, // box + pouch
               default_dimensions: { length: 10, breadth: 8, height: 5 },
+              // TEMPORARY: set SHIPROCKET_SIMULATE=true in .env to test the
+              // packing flow on a real order without touching the real
+              // Shiprocket account. Forced off in production regardless.
+              simulate: process.env.SHIPROCKET_SIMULATE === "true",
             },
           },
         ],

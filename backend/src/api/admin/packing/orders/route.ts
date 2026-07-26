@@ -53,5 +53,6 @@ export async function GET(
       }
     })
 
-  return res.json({ orders: queue })
+  const provider: any = req.scope.resolve("fp_shiprocket_shiprocket")
+  return res.json({ orders: queue, simulate: !!provider?.isSimulating?.() })
 }

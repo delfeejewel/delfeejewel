@@ -61,8 +61,10 @@ export async function GET(
 
   const fData = (fulfillment?.data || {}) as any
   const label = (fulfillment?.labels || [])[0] || {}
+  const provider: any = req.scope.resolve("fp_shiprocket_shiprocket")
 
   return res.json({
+    simulate: !!provider?.isSimulating?.(),
     id: order.id,
     display_id: order.display_id,
     email: order.email,
@@ -75,6 +77,7 @@ export async function GET(
           fulfillment_id: packing.fulfillment_id,
           started_at: packing.started_at,
           ready_to_ship_at: packing.ready_to_ship_at,
+          history: Array.isArray(packing.history) ? packing.history : [],
         }
       : null,
     fulfillment: fulfillment
@@ -87,6 +90,8 @@ export async function GET(
           tracking_url: label.tracking_url || null,
           shipped_at: fulfillment.shipped_at || null,
           canceled_at: fulfillment.canceled_at || null,
+          pickup_requested_at: fData.pickup_requested_at || null,
+          pickup_scheduled_date: fData.pickup_scheduled_date || null,
         }
       : null,
   })

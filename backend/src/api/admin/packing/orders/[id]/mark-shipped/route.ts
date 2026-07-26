@@ -2,10 +2,11 @@ import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createShipmentWorkflow } from "@medusajs/medusa/core-flows"
 
 import { actorHasPermission } from "../../../../../../lib/rbac"
+import { resolveActor, appendPackingHistory } from "../../../../../../lib/packing-log"
 
 /**
  * POST /admin/packing/orders/:id/mark-shipped
@@ -31,7 +32,8 @@ export async function POST(
   const order = (orders as any[])?.[0]
   if (!order) return res.status(404).json({ message: "Order not found" })
 
-  const packing = (order.metadata as any)?.packing
+  const prevMeta = (order.metadata as any) || {}
+  const packing = prevMeta.packing
   if (!packing?.ready_to_ship_at) {
     return res.status(400).json({ message: "Mark ready to ship before marking shipped" })
   }
@@ -42,6 +44,24 @@ export async function POST(
   if (!fulfillment) {
     return res.status(404).json({ message: "Fulfillment not found" })
   }
+
+  const logShipped = async () => {
+    const actor = await resolveActor(req.scope, (req as any).auth_context)
+    const orderModule: any = req.scope.resolve(Modules.ORDER)
+    await orderModule.updateOrders([
+      {
+        id: orderId,
+        metadata: {
+          ...prevMeta,
+          packing: {
+            ...packing,
+            history: appendPackingHistory(packing, { step: "shipped", ...actor }),
+          },
+        },
+      },
+    ])
+  }
+
   if (fulfillment.shipped_at) {
     return res.json({ shipped_at: fulfillment.shipped_at })
   }
@@ -50,6 +70,7 @@ export async function POST(
     const { result } = await createShipmentWorkflow(req.scope).run({
       input: { id: fulfillment.id } as any,
     })
+    await logShipped()
     return res.json({ shipped_at: (result as any)?.shipped_at || new Date().toISOString() })
   } catch (e: any) {
     // Already shipped by a concurrent request (e.g. the webhook) — not an error.

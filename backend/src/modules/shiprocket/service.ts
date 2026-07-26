@@ -33,6 +33,16 @@ type ShiprocketOptions = {
    *  BELOW `free_ship_max_courier`. Both in rupees. Defaults: 5000 / 400. */
   free_ship_min_subtotal?: number
   free_ship_max_courier?: number
+  /** TEMPORARY testing switch: when true, every call that would create,
+   *  change, or cancel something in Shiprocket's real system (order,
+   *  AWB, label, pickup, cancellation) is faked out and returns a
+   *  realistic-looking response instead. Nothing is sent to Shiprocket, no
+   *  wallet cost, no real courier gets involved — but everything else (the
+   *  Medusa order, fulfillment, packing checklist) behaves exactly as it
+   *  would for real. Meant for walking a real order through the packing
+   *  screen without live consequences. Forced off outside dev regardless of
+   *  the env var, so it can never end up live by accident. */
+  simulate?: boolean
 }
 
 // Shiprocket API base
@@ -62,6 +72,29 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     super()
     this.container_ = container
     this.options_ = options
+    if (this.simulating()) {
+      const logger = this.container_[ContainerRegistrationKeys.LOGGER]
+      logger?.warn(
+        "Shiprocket: SIMULATE mode is ON — no real courier calls will be made. " +
+          "Unset SHIPROCKET_SIMULATE (or NODE_ENV=production) to go live again."
+      )
+    }
+  }
+
+  /** True only when explicitly enabled AND not in production — a live
+   *  deploy can never end up in simulate mode just from a stray env var. */
+  private simulating(): boolean {
+    return !!this.options_.simulate && process.env.NODE_ENV !== "production"
+  }
+
+  /** Public read of the same flag, for routes that need to tell the admin
+   *  UI "you're looking at simulated data" without duplicating the logic. */
+  isSimulating(): boolean {
+    return this.simulating()
+  }
+
+  private simId(prefix: string): string {
+    return `SIM-${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`
   }
 
   /**
@@ -354,40 +387,42 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     const orderTotalMajor = (order?.total || 0) / 100
     const codCollectable = Math.max(0, orderTotalMajor - upfrontPaid)
 
-    // Create order in Shiprocket
-    const shiprocketOrder = await this.apiCall("/orders/create/adhoc", "POST", {
-      order_id: order?.display_id?.toString() || fulfillment.id,
-      order_date: new Date().toISOString().split("T")[0],
-      pickup_location: this.options_.pickup_location || "Primary",
-      billing_customer_name: address.first_name || "Customer",
-      billing_last_name: address.last_name || "",
-      billing_address: address.address_1 || "",
-      billing_address_2: address.address_2 || "",
-      billing_city: address.city || "",
-      billing_pincode: address.postal_code || "",
-      billing_state: address.province || address.state || "",
-      billing_country: address.country_code?.toUpperCase() || "IN",
-      billing_email: order?.email || "",
-      billing_phone: address.phone || "",
-      shipping_is_billing: true,
-      order_items: items.map((item) => ({
-        name: item.title || "Product",
-        sku: item.sku || item.id,
-        units: item.quantity || 1,
-        selling_price: (item.unit_price || 0) / 100,
-        discount: 0,
-        tax: 0,
-        hsn: item.metadata?.hsn_code || defaultHsn,
-      })),
-      payment_method: isCod ? "COD" : "Prepaid",
-      // For COD, sub_total is the amount the courier collects on delivery —
-      // the balance after any upfront token. For prepaid it's the order value.
-      sub_total: isCod ? codCollectable : orderTotalMajor,
-      length,
-      breadth,
-      height,
-      weight,
-    })
+    // Create order in Shiprocket — or fake the same shape in simulate mode.
+    const shiprocketOrder = this.simulating()
+      ? { order_id: this.simId("ORDER"), shipment_id: this.simId("SHIP") }
+      : await this.apiCall("/orders/create/adhoc", "POST", {
+          order_id: order?.display_id?.toString() || fulfillment.id,
+          order_date: new Date().toISOString().split("T")[0],
+          pickup_location: this.options_.pickup_location || "Primary",
+          billing_customer_name: address.first_name || "Customer",
+          billing_last_name: address.last_name || "",
+          billing_address: address.address_1 || "",
+          billing_address_2: address.address_2 || "",
+          billing_city: address.city || "",
+          billing_pincode: address.postal_code || "",
+          billing_state: address.province || address.state || "",
+          billing_country: address.country_code?.toUpperCase() || "IN",
+          billing_email: order?.email || "",
+          billing_phone: address.phone || "",
+          shipping_is_billing: true,
+          order_items: items.map((item) => ({
+            name: item.title || "Product",
+            sku: item.sku || item.id,
+            units: item.quantity || 1,
+            selling_price: (item.unit_price || 0) / 100,
+            discount: 0,
+            tax: 0,
+            hsn: item.metadata?.hsn_code || defaultHsn,
+          })),
+          payment_method: isCod ? "COD" : "Prepaid",
+          // For COD, sub_total is the amount the courier collects on delivery —
+          // the balance after any upfront token. For prepaid it's the order value.
+          sub_total: isCod ? codCollectable : orderTotalMajor,
+          length,
+          breadth,
+          height,
+          weight,
+        })
 
     // Generate AWB (Air Waybill). Auto-assignment can fail (no courier
     // serviceable/available) — the admin can retry manually afterwards via
@@ -445,12 +480,36 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   async assignAwb(
     shipmentId: string
   ): Promise<{ awb_code: string | null; courier_name: string | null }> {
+    if (this.simulating()) {
+      return { awb_code: this.simId("AWB"), courier_name: "Simulated Courier" }
+    }
     const awbData = await this.apiCall("/courier/assign/awb", "POST", {
       shipment_id: shipmentId,
     })
     return {
       awb_code: awbData?.response?.data?.awb_code || null,
       courier_name: awbData?.response?.data?.courier_name || null,
+    }
+  }
+
+  /** Request pickup for an existing shipment — this is the call that actually
+   *  notifies Shiprocket's courier to collect from the pickup address. AWB
+   *  assignment and label generation do NOT do this on their own; without
+   *  this call, nobody's coming unless the pickup address has a standing
+   *  daily pickup schedule configured in the Shiprocket dashboard. */
+  async requestPickup(
+    shipmentId: string
+  ): Promise<{ requested: boolean; pickup_scheduled_date: string | null }> {
+    if (this.simulating()) {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      return { requested: true, pickup_scheduled_date: tomorrow.toISOString().split("T")[0] }
+    }
+    const result = await this.apiCall("/courier/generate/pickup", "POST", {
+      shipment_id: [shipmentId],
+    })
+    return {
+      requested: !!result?.pickup_status,
+      pickup_scheduled_date: result?.response?.pickup_scheduled_date || null,
     }
   }
 
@@ -462,6 +521,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   // no way to surface that to the admin. Throwing keeps the two systems from
   // diverging: the whole cancel fails loudly and can be retried.
   async cancelFulfillment(data: any): Promise<any> {
+    if (this.simulating()) return {}
     if (data?.shiprocket_order_id) {
       try {
         await this.apiCall("/orders/cancel", "POST", {
@@ -481,6 +541,10 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   // ─── Return Fulfillment ──────────────────────
   async createReturnFulfillment(fulfillment: any): Promise<any> {
     const data = fulfillment?.data || {}
+
+    if (this.simulating()) {
+      return { data: { shiprocket_return_id: this.simId("RETURN"), ...data }, labels: [] }
+    }
 
     if (data.shiprocket_order_id) {
       try {
@@ -506,6 +570,12 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
 
   // ─── Documents ───────────────────────────────
   async getFulfillmentDocuments(data: any): Promise<any> {
+    if (this.simulating()) {
+      const text =
+        `SIMULATED SHIPPING LABEL\n\nShipment: ${data?.shiprocket_shipment_id || "n/a"}\n` +
+        `Generated by SHIPROCKET_SIMULATE — no real courier was contacted.`
+      return { label_url: `data:text/plain;charset=utf-8,${encodeURIComponent(text)}` }
+    }
     if (data?.shiprocket_shipment_id) {
       try {
         const label = await this.apiCall(
@@ -535,6 +605,10 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   ): Promise<any> {
     if (documentType === "label") {
       return this.getFulfillmentDocuments(fulfillmentData)
+    }
+    if (documentType === "invoice" && this.simulating()) {
+      const text = `SIMULATED INVOICE\n\nOrder: ${fulfillmentData?.shiprocket_order_id || "n/a"}`
+      return { invoice_url: `data:text/plain;charset=utf-8,${encodeURIComponent(text)}` }
     }
     if (documentType === "invoice" && fulfillmentData?.shiprocket_shipment_id) {
       try {

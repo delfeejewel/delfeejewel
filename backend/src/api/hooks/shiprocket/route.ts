@@ -7,6 +7,7 @@ import { createShipmentWorkflow } from "@medusajs/medusa/core-flows"
 
 import { processRtoRefund } from "../../../lib/process-rto-refund"
 import { issueGiftCardsForOrder } from "../../../lib/issue-gift-cards"
+import { SYSTEM_ACTOR, appendPackingHistory } from "../../../lib/packing-log"
 
 /**
  * POST /hooks/shiprocket
@@ -195,6 +196,21 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
           await createShipmentWorkflow(req.scope).run({
             input: { id: shiprocketFulfillment.id } as any,
           })
+          const packing = (order.metadata as any)?.packing
+          if (packing) {
+            await orderModule.updateOrders(order.id, {
+              metadata: {
+                ...(order.metadata as any),
+                packing: {
+                  ...packing,
+                  history: appendPackingHistory(packing, {
+                    step: "shipped",
+                    ...SYSTEM_ACTOR,
+                  }),
+                },
+              },
+            })
+          }
         }
       } catch (e: any) {
         logger.error(

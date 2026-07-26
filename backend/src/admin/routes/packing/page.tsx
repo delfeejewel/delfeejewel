@@ -11,6 +11,7 @@ import {
   Drawer,
   Input,
   Label,
+  usePrompt,
 } from "@medusajs/ui"
 import { useEffect, useState } from "react"
 
@@ -33,6 +34,13 @@ type Item = {
   packed: boolean
 }
 
+type HistoryEntry = {
+  step: string
+  at: string
+  actor_id: string | null
+  actor_email: string | null
+}
+
 type Detail = {
   id: string
   display_id: number
@@ -41,7 +49,12 @@ type Detail = {
   gift_wrap: boolean
   gift_wrappers_used: number | null
   items: Item[]
-  packing: { fulfillment_id: string; started_at: string; ready_to_ship_at: string | null } | null
+  packing: {
+    fulfillment_id: string
+    started_at: string
+    ready_to_ship_at: string | null
+    history: HistoryEntry[]
+  } | null
   fulfillment: {
     id: string
     awb_code: string | null
@@ -49,7 +62,38 @@ type Detail = {
     label_url: string | null
     tracking_url: string | null
     shipped_at: string | null
+    pickup_requested_at: string | null
+    pickup_scheduled_date: string | null
   } | null
+}
+
+const STEP_LABELS: Record<string, string> = {
+  started: "Started packing",
+  item_packed: "Marked an item packed",
+  item_unpacked: "Unmarked an item as packed",
+  awb_assigned: "Assigned the courier (AWB)",
+  label_printed: "Printed the shipping label",
+  ready_to_ship: "Marked ready to ship",
+  pickup_requested: "Requested courier pickup",
+  pickup_request_failed: "Tried to request pickup — Shiprocket didn't confirm",
+  shipped: "Marked shipped",
+}
+
+function historyStepLabel(step: string): string {
+  if (step.startsWith("item_packed:")) return STEP_LABELS.item_packed
+  if (step.startsWith("item_unpacked:")) return STEP_LABELS.item_unpacked
+  return STEP_LABELS[step] || step
+}
+
+function formatWhen(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    })
+  } catch {
+    return iso
+  }
 }
 
 async function api(path: string, opts?: RequestInit) {
@@ -64,6 +108,7 @@ async function api(path: string, opts?: RequestInit) {
 }
 
 const PackingPage = () => {
+  const prompt = usePrompt()
   const [queue, setQueue] = useState<QueueOrder[]>([])
   const [loadingQueue, setLoadingQueue] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -72,11 +117,15 @@ const PackingPage = () => {
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [wrapperCount, setWrapperCount] = useState("1")
+  const [simulate, setSimulate] = useState(false)
 
   const loadQueue = () => {
     setLoadingQueue(true)
     api("/admin/packing/orders")
-      .then((body) => setQueue(body.orders || []))
+      .then((body) => {
+        setQueue(body.orders || [])
+        setSimulate(!!body.simulate)
+      })
       .catch((e) => setError(e?.message || "Failed to load queue"))
       .finally(() => setLoadingQueue(false))
   }
@@ -117,11 +166,21 @@ const PackingPage = () => {
     }
   }
 
-  const startPacking = () =>
+  const startPacking = async () => {
+    const confirmed = await prompt({
+      title: "Start packing this order?",
+      description:
+        "This fulfills the order and hands it to Shiprocket, which will try to auto-assign an AWB and label right away. Only confirm once you're ready to actually pack the box.",
+      confirmText: "Start Packing",
+      cancelText: "Cancel",
+    })
+    if (!confirmed) return
+
     run("start", async () => {
       await api(`/admin/packing/orders/${selectedId}/start`, { method: "POST" })
       refresh()
     })
+  }
 
   const togglePacked = (item: Item, allButThisPacked: boolean) =>
     run(`item:${item.id}`, async () => {
@@ -165,6 +224,15 @@ const PackingPage = () => {
       refresh()
     })
 
+  const requestPickup = () =>
+    run("pickup", async () => {
+      await api(
+        `/admin/orders/${selectedId}/fulfillments/${detail?.fulfillment?.id}/shiprocket`,
+        { method: "POST", body: JSON.stringify({ action: "request_pickup" }) }
+      )
+      refresh()
+    })
+
   const markShipped = () =>
     run("shipped", async () => {
       await api(`/admin/packing/orders/${selectedId}/mark-shipped`, { method: "POST" })
@@ -174,6 +242,7 @@ const PackingPage = () => {
   const allPacked = !!detail && detail.items.length > 0 && detail.items.every((i) => i.packed)
   const awbDone = !!detail?.fulfillment?.awb_code
   const labelDone = !!detail?.fulfillment?.label_url
+  const pickupDone = !!detail?.fulfillment?.pickup_requested_at
   const shipped = !!detail?.fulfillment?.shipped_at
 
   return (
@@ -184,6 +253,23 @@ const PackingPage = () => {
       <Text size="small" style={{ color: "#666", marginTop: 4 }}>
         Orders waiting to be packed and dispatched, oldest first.
       </Text>
+
+      {simulate && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: "8px 12px",
+            borderRadius: 6,
+            background: "#FEF3C7",
+            border: "1px solid #F5D48A",
+          }}
+        >
+          <Text size="small" weight="plus" style={{ color: "#92400E" }}>
+            TEST MODE — no real courier is being contacted. Every AWB, label, and pickup you see
+            here is simulated; nothing was sent to Shiprocket.
+          </Text>
+        </div>
+      )}
 
       {error && (
         <Text size="small" style={{ color: "#b91c1c", marginTop: 12 }}>
@@ -258,17 +344,33 @@ const PackingPage = () => {
                 </a>
 
                 {/* Step 1: Start packing */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Checkbox checked={!!detail.packing} disabled />
-                  <Text size="small" weight="plus">
-                    Start packing
-                  </Text>
-                  {!detail.packing && (
+                {detail.packing ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <Checkbox checked disabled />
+                    <Text size="small" weight="plus">
+                      Start packing
+                    </Text>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 8,
+                      textAlign: "center",
+                    }}
+                  >
                     <Button size="small" disabled={busy === "start"} onClick={startPacking}>
-                      {busy === "start" ? "Starting…" : "Start"}
+                      {busy === "start" ? "Starting…" : "Start Packing"}
                     </Button>
-                  )}
-                </div>
+                    <Text size="small" style={{ color: "#666" }}>
+                      This fulfills the order and hands it to Shiprocket, which will try to
+                      auto-assign an AWB and label right away — do this only once you're ready
+                      to actually pack the box.
+                    </Text>
+                  </div>
+                )}
 
                 {/* Step 2: Per-item packed checkboxes */}
                 {detail.packing && (
@@ -315,12 +417,15 @@ const PackingPage = () => {
                 {detail.packing && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <Checkbox checked={awbDone} disabled />
-                      <Text size="small" weight="plus">
-                        AWB generated
-                        {detail.fulfillment?.awb_code ? ` — ${detail.fulfillment.awb_code}` : ""}
-                      </Text>
-                      {!awbDone && (
+                      {awbDone ? (
+                        <>
+                          <Checkbox checked disabled />
+                          <Text size="small" weight="plus">
+                            AWB generated
+                            {detail.fulfillment?.awb_code ? ` — ${detail.fulfillment.awb_code}` : ""}
+                          </Text>
+                        </>
+                      ) : (
                         <Button
                           size="small"
                           disabled={!allPacked || busy === "awb"}
@@ -332,19 +437,21 @@ const PackingPage = () => {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <Checkbox checked={labelDone} disabled />
-                      <Text size="small" weight="plus">
-                        Label printed
-                      </Text>
                       {labelDone ? (
-                        <a
-                          href={detail.fulfillment?.label_url || "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ fontSize: 12, color: "#5D2E46", fontWeight: 600 }}
-                        >
-                          Reprint →
-                        </a>
+                        <>
+                          <Checkbox checked disabled />
+                          <Text size="small" weight="plus">
+                            Label printed
+                          </Text>
+                          <a
+                            href={detail.fulfillment?.label_url || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontSize: 12, color: "#5D2E46", fontWeight: 600 }}
+                          >
+                            Reprint →
+                          </a>
+                        </>
                       ) : (
                         <Button
                           size="small"
@@ -360,19 +467,64 @@ const PackingPage = () => {
 
                 {/* Step 5: Ready to ship */}
                 {detail.packing && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <Checkbox checked={!!detail.packing.ready_to_ship_at} disabled />
-                    <Text size="small" weight="plus">
-                      Ready to ship
-                    </Text>
-                    {!detail.packing.ready_to_ship_at && (
-                      <Button
-                        size="small"
-                        disabled={!labelDone || busy === "ready"}
-                        onClick={readyToShip}
-                      >
-                        {busy === "ready" ? "Marking…" : "Mark as Ready to Ship"}
-                      </Button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {detail.packing.ready_to_ship_at ? (
+                        <>
+                          <Checkbox checked disabled />
+                          <Text size="small" weight="plus">
+                            Ready to ship
+                          </Text>
+                        </>
+                      ) : (
+                        <Button
+                          size="small"
+                          disabled={!labelDone || busy === "ready"}
+                          onClick={readyToShip}
+                        >
+                          {busy === "ready" ? "Marking…" : "Mark as Ready to Ship"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Marking ready-to-ship auto-requests pickup; surface it separately
+                        since the request itself can fail even though ready-to-ship succeeded. */}
+                    {detail.packing.ready_to_ship_at && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: 26 }}>
+                        {pickupDone ? (
+                          <>
+                            <Checkbox checked disabled />
+                            <Text size="small" weight="plus">
+                              Pickup requested
+                              {detail.fulfillment?.pickup_scheduled_date
+                                ? ` — courier due ${detail.fulfillment.pickup_scheduled_date}`
+                                : ""}
+                            </Text>
+                            <Button
+                              size="small"
+                              variant="transparent"
+                              disabled={busy === "pickup"}
+                              onClick={requestPickup}
+                            >
+                              {busy === "pickup" ? "Requesting…" : "Request again"}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Text size="small" style={{ color: "#b91c1c" }}>
+                              Shiprocket didn't confirm the pickup request.
+                            </Text>
+                            <Button
+                              size="small"
+                              variant="secondary"
+                              disabled={busy === "pickup"}
+                              onClick={requestPickup}
+                            >
+                              {busy === "pickup" ? "Requesting…" : "Request Pickup"}
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
@@ -380,15 +532,46 @@ const PackingPage = () => {
                 {/* Step 6: Shipped */}
                 {detail.packing?.ready_to_ship_at && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <Checkbox checked={shipped} disabled />
-                    <Text size="small" weight="plus">
-                      Shipped
-                    </Text>
-                    {!shipped && (
+                    {shipped ? (
+                      <>
+                        <Checkbox checked disabled />
+                        <Text size="small" weight="plus">
+                          Shipped
+                        </Text>
+                      </>
+                    ) : (
                       <Button size="small" disabled={busy === "shipped"} onClick={markShipped}>
                         {busy === "shipped" ? "Marking…" : "Mark as Shipped"}
                       </Button>
                     )}
+                  </div>
+                )}
+
+                {/* Activity log — who did what, and when */}
+                {!!detail.packing?.history?.length && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      marginTop: 8,
+                      paddingTop: 12,
+                      borderTop: "1px solid #e5e5e5",
+                    }}
+                  >
+                    <Text size="small" weight="plus" style={{ color: "#666" }}>
+                      Activity log
+                    </Text>
+                    {detail.packing.history.map((h, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                        <Text size="small">
+                          {historyStepLabel(h.step)} — {h.actor_email || "Unknown user"}
+                        </Text>
+                        <Text size="small" style={{ color: "#999", whiteSpace: "nowrap" }}>
+                          {formatWhen(h.at)}
+                        </Text>
+                      </div>
+                    ))}
                   </div>
                 )}
               </>

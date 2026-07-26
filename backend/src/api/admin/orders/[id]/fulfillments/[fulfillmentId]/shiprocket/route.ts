@@ -2,18 +2,22 @@ import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { updateFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 
 import { actorHasPermission } from "../../../../../../../lib/rbac"
+import { resolveActor, appendPackingHistory } from "../../../../../../../lib/packing-log"
 
 /**
  * POST /admin/orders/:id/fulfillments/:fulfillmentId/shiprocket
- * Body: { action: "assign_awb" | "generate_label" }
+ * Body: { action: "assign_awb" | "generate_label" | "request_pickup" }
  *
  * Manual controls for the Shiprocket fulfillment provider: retry AWB
  * (courier waybill) assignment when the automatic attempt on fulfillment
- * creation failed, and (re)fetch the courier-compliant Shiprocket label PDF.
+ * creation failed, (re)fetch the courier-compliant Shiprocket label PDF, and
+ * request/re-request pickup. Every successful action here is also logged to
+ * the order's packing audit trail (who, what, when) if a packing session
+ * exists for this order.
  */
 export async function POST(
   req: AuthenticatedMedusaRequest,
@@ -29,10 +33,10 @@ export async function POST(
   const fulfillmentId = req.params.fulfillmentId
   const { action } = (req.body || {}) as { action?: string }
 
-  if (action !== "assign_awb" && action !== "generate_label") {
-    return res
-      .status(400)
-      .json({ message: 'action must be "assign_awb" or "generate_label"' })
+  if (action !== "assign_awb" && action !== "generate_label" && action !== "request_pickup") {
+    return res.status(400).json({
+      message: 'action must be "assign_awb", "generate_label", or "request_pickup"',
+    })
   }
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
@@ -43,6 +47,7 @@ export async function POST(
     filters: { id: orderId },
     fields: [
       "id",
+      "metadata",
       "fulfillments.id",
       "fulfillments.provider_id",
       "fulfillments.data",
@@ -60,6 +65,33 @@ export async function POST(
 
   const data = (fulfillment.data || {}) as any
   const provider: any = req.scope.resolve("fp_shiprocket_shiprocket")
+
+  /** Logs this action to the order's packing audit trail, if a packing
+   *  session exists — a no-op otherwise (this route is also reachable
+   *  outside the packing checklist). Best-effort: never fails the request. */
+  const logStep = async (step: string, extra: Record<string, any> = {}) => {
+    try {
+      const prevMeta = (order.metadata as any) || {}
+      const packing = prevMeta.packing
+      if (!packing) return
+      const actor = await resolveActor(req.scope, (req as any).auth_context)
+      const orderModule: any = req.scope.resolve(Modules.ORDER)
+      await orderModule.updateOrders([
+        {
+          id: orderId,
+          metadata: {
+            ...prevMeta,
+            packing: {
+              ...packing,
+              history: appendPackingHistory(packing, { step, ...actor, ...extra }),
+            },
+          },
+        },
+      ])
+    } catch {
+      // Audit trail is best-effort — never block the actual courier action on it.
+    }
+  }
 
   try {
     if (action === "assign_awb") {
@@ -89,41 +121,75 @@ export async function POST(
           data: { ...data, awb_code: awb.awb_code, courier_name: awb.courier_name },
         } as any,
       })
+      await logStep("awb_assigned", { awb_code: awb.awb_code })
 
       return res.json(awb)
     }
 
-    // action === "generate_label"
-    if (!data.awb_code) {
-      return res
-        .status(400)
-        .json({ message: "Assign AWB before generating a label" })
+    if (action === "generate_label") {
+      if (!data.awb_code) {
+        return res
+          .status(400)
+          .json({ message: "Assign AWB before generating a label" })
+      }
+
+      const doc = await provider.getFulfillmentDocuments({
+        shiprocket_shipment_id: data.shiprocket_shipment_id,
+      })
+      if (!doc?.label_url) {
+        return res
+          .status(502)
+          .json({ message: "Shiprocket did not return a label" })
+      }
+
+      const trackingUrl = `https://www.shiprocket.in/tracking/${data.awb_code}`
+      await updateFulfillmentWorkflow(req.scope).run({
+        input: {
+          id: fulfillmentId,
+          labels: [
+            {
+              tracking_number: data.awb_code,
+              tracking_url: trackingUrl,
+              label_url: doc.label_url,
+            },
+          ],
+        } as any,
+      })
+      await logStep("label_printed")
+
+      return res.json({ label_url: doc.label_url, tracking_url: trackingUrl })
     }
 
-    const doc = await provider.getFulfillmentDocuments({
-      shiprocket_shipment_id: data.shiprocket_shipment_id,
-    })
-    if (!doc?.label_url) {
-      return res
-        .status(502)
-        .json({ message: "Shiprocket did not return a label" })
+    // action === "request_pickup"
+    if (!data.shiprocket_shipment_id) {
+      return res.status(400).json({
+        message: "No Shiprocket shipment exists for this fulfillment",
+      })
     }
 
-    const trackingUrl = `https://www.shiprocket.in/tracking/${data.awb_code}`
+    const pickup = await provider.requestPickup(data.shiprocket_shipment_id)
+    if (!pickup.requested) {
+      await logStep("pickup_request_failed")
+      return res.status(502).json({
+        message: "Shiprocket did not confirm the pickup request — try again shortly.",
+      })
+    }
+
     await updateFulfillmentWorkflow(req.scope).run({
       input: {
         id: fulfillmentId,
-        labels: [
-          {
-            tracking_number: data.awb_code,
-            tracking_url: trackingUrl,
-            label_url: doc.label_url,
-          },
-        ],
+        data: {
+          ...data,
+          pickup_requested_at: new Date().toISOString(),
+          pickup_scheduled_date: pickup.pickup_scheduled_date,
+        },
       } as any,
     })
+    await logStep("pickup_requested", {
+      pickup_scheduled_date: pickup.pickup_scheduled_date,
+    })
 
-    return res.json({ label_url: doc.label_url, tracking_url: trackingUrl })
+    return res.json(pickup)
   } catch (e: any) {
     return res.status(500).json({ message: e?.message || "Shiprocket request failed" })
   }
