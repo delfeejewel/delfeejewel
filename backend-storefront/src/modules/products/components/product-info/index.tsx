@@ -12,7 +12,7 @@ import { checkDelivery, type DeliveryCheck } from "@lib/data/delivery"
 import { getProductPrice } from "@lib/util/get-product-price"
 import {
   Heart, Award, Truck, ShieldCheck, CheckCircle, Star,
-  Clock, Gift, Package, Share2, Minus, Plus, X,
+  Clock, Gift, Package, Share2, Minus, Plus, X, Tag,
 } from "lucide-react"
 import { AnimatePresence } from "framer-motion"
 import type { ReviewSummary } from "@modules/reviews/types"
@@ -84,6 +84,9 @@ export default function ProductInfo({
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [giftWrap, setGiftWrap] = useState(false)
+  const [promoOpen, setPromoOpen] = useState(false)
+  const [promoCode, setPromoCode] = useState("")
+  const [promoError, setPromoError] = useState("")
 
   // Per-product flag set in the admin (metadata.gift_ready). Controls the
   // "Gift Ready" badge and the gift-wrap option below — both hidden unless on.
@@ -141,11 +144,21 @@ export default function ProductInfo({
     if (!selectedVariant?.id) return
     setIsAdding(true)
     setAddError("")
+    setPromoError("")
     try {
       // `giftWrap` (the "Wrap it for ₹50" checkbox) turns on the cart's gift-wrap
       // add-on as part of the same add. Only adds when checked; removing a wrap is
-      // managed on the cart page.
-      await addToCart({ variantId: selectedVariant.id, quantity, countryCode, giftWrap })
+      // managed on the cart page. `promoCode` (the "Have a coupon code?" field) is
+      // applied against the same cart right after the item is added — an invalid
+      // code never blocks the add, it just comes back as `promoError`.
+      const result = await addToCart({
+        variantId: selectedVariant.id,
+        quantity,
+        countryCode,
+        giftWrap,
+        promoCode: promoCode || undefined,
+      })
+      if (result?.promoError) setPromoError(result.promoError)
     } catch (e: any) {
       setAddError(
         e?.message || "Couldn't add to your bag. Please try again."
@@ -158,11 +171,26 @@ export default function ProductInfo({
   const handleBuyNow = async () => {
     if (!selectedVariant?.id) return
     setIsBuying(true)
+    setPromoError("")
     try {
       // Must finish adding the line item (and revalidating the cart) BEFORE
       // navigating — otherwise checkout loads against an empty cart (₹0.00, no
       // product). A fixed setTimeout raced the server action and lost.
-      await addToCart({ variantId: selectedVariant.id, quantity, countryCode, giftWrap })
+      const result = await addToCart({
+        variantId: selectedVariant.id,
+        quantity,
+        countryCode,
+        giftWrap,
+        promoCode: promoCode || undefined,
+      })
+      // A bad coupon code shouldn't silently get dropped on the way to
+      // checkout — surface it and let the shopper fix/clear it before we
+      // navigate away from the page where the input lives.
+      if (result?.promoError) {
+        setPromoError(result.promoError)
+        setIsBuying(false)
+        return
+      }
       router.push(`/${countryCode}/checkout?step=address`)
     } catch (e) {
       setIsBuying(false)
@@ -492,6 +520,55 @@ export default function ProductInfo({
             </span>
           </label>
         )}
+
+        {/* Coupon code — entered here, applied when Add to Cart / Buy Now runs */}
+        <div className="flex flex-col gap-2">
+          {!promoOpen ? (
+            <button
+              type="button"
+              onClick={() => setPromoOpen(true)}
+              className="self-start inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
+            >
+              <Tag size={13} />
+              Have a coupon code?
+            </button>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value.toUpperCase())
+                    setPromoError("")
+                  }}
+                  placeholder="ENTER CODE"
+                  className="flex-1 h-11 px-4 rounded-lg text-[13px] uppercase tracking-wider outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPromoCode("")
+                    setPromoOpen(false)
+                    setPromoError("")
+                  }}
+                  aria-label="Remove coupon code"
+                  className="w-11 h-11 shrink-0 rounded-lg border border-[var(--color-lavender)] flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors"
+                >
+                  <X size={16} className="text-[var(--color-text-secondary)]" />
+                </button>
+              </div>
+              <p className="text-[11px] text-[var(--color-text-muted)]">
+                Applied when you add this to your bag.
+              </p>
+            </>
+          )}
+          {promoError && (
+            <p className="text-[12px] text-red-500" role="alert">
+              {promoError}
+            </p>
+          )}
+        </div>
 
         {/* Quantity + Add to Cart + Wishlist — all on one line */}
         <div className="pt-2 space-y-3">

@@ -81,11 +81,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const photoImages = (product.images?.map((img) => img.url) ?? []).filter(
     (u) => !VIDEO_RE.test(u)
   )
-  const images = photoImages.length
-    ? photoImages
-    : product.thumbnail
-      ? [product.thumbnail]
-      : []
+  const images = meta.seo_image
+    ? [String(meta.seo_image)]
+    : photoImages.length
+      ? photoImages
+      : product.thumbnail
+        ? [product.thumbnail]
+        : []
 
   // Build SEO-rich title: "Product Title, Metal | Brand" (short, readable, no hyphens)
   const capitalize = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase())

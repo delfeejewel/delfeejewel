@@ -230,13 +230,15 @@ export async function addToCart({
   countryCode,
   metadata,
   giftWrap,
+  promoCode,
 }: {
   variantId: string
   quantity: number
   countryCode: string
   metadata?: Record<string, unknown>
   giftWrap?: boolean
-}) {
+  promoCode?: string
+}): Promise<{ promoError?: string } | undefined> {
   if (!variantId) {
     throw new Error("Missing variant ID when adding to cart")
   }
@@ -250,6 +252,8 @@ export async function addToCart({
   const headers = {
     ...(await getAuthHeaders()),
   }
+
+  let promoError: string | undefined
 
   await sdk.store.cart
     .createLineItem(
@@ -280,6 +284,26 @@ export async function addToCart({
         }
       }
       await recomputeGiftCards(cart.id)
+
+      // Optional coupon code entered on the PDP. Applied against THIS
+      // resolved cart.id so it shares one server action with the add — an
+      // invalid/expired code never blocks the item from being added, the
+      // failure is just surfaced back to the caller via `promoError`.
+      if (promoCode?.trim()) {
+        const code = promoCode.trim()
+        try {
+          const existing = await retrieveCart(cart.id, "id,*promotions")
+          const existingCodes = ((existing?.promotions as any[]) || [])
+            .map((p) => p?.code)
+            .filter(Boolean) as string[]
+          if (!existingCodes.some((c) => c.toUpperCase() === code.toUpperCase())) {
+            await applyPromotions([...existingCodes, code])
+          }
+        } catch (e: any) {
+          promoError = e?.message || "That coupon code isn't valid."
+        }
+      }
+
       const [cartCacheTag, fulfillmentCacheTag] = await Promise.all([
         getCacheTag("carts"),
         getCacheTag("fulfillment"),
@@ -288,6 +312,8 @@ export async function addToCart({
       revalidateTag(fulfillmentCacheTag)
     })
     .catch(medusaError)
+
+  return promoError ? { promoError } : undefined
 }
 
 export async function updateLineItem({
