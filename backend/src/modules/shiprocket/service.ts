@@ -52,12 +52,16 @@ const API_BASE = "https://apiv2.shiprocket.in/v1/external"
 const MIN_WEIGHT_KG = 0.05
 const FALLBACK_DIMENSIONS = { length: 10, breadth: 8, height: 5 }
 
-/** A COD/manual payment provider carries no online prepayment (mirrors the
- *  detection in lib/fraud-context.ts). Anything else (e.g. Razorpay) is
+/** The only real COD provider is the custom `cod` module (registered in
+ *  medusa-config.ts as provider id "cod", giving payment id `pp_cod_cod`).
+ *  Mirrors the detection in lib/fraud-context.ts. The old broad "manual" /
+ *  "system" substring match also caught `pp_system_default` — Medusa's
+ *  built-in test/manual provider, which is still attached to the India
+ *  region (leftover from seed.ts) even though the storefront hides it from
+ *  checkout. Anything that isn't the real COD provider (e.g. Razorpay) is
  *  treated as prepaid. */
 function isCodProvider(providerId?: string | null): boolean {
-  const id = (providerId || "").toLowerCase()
-  return id.includes("cod") || id.includes("manual") || id.includes("system")
+  return (providerId || "").toLowerCase().includes("cod")
 }
 
 export default class ShiprocketFulfillmentService extends AbstractFulfillmentProviderService {
@@ -363,6 +367,71 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   }
 
   /**
+   * Builds the `order_items` payload Shiprocket expects, resolved from the
+   * REAL order line item rather than trusting the `items` array as given.
+   *
+   * `items` here is usually a Fulfillment's own FulfillmentItem records
+   * (title/sku/barcode/quantity/line_item_id — see the `fulfillment_item`
+   * table), which carry NO price or metadata at all. Trusting
+   * `item.unit_price` directly (as this used to) silently sent
+   * `selling_price: 0` for every item on the normal "Start Packing" path —
+   * the wrong price only became visible once the recovery path
+   * (createOrderForFulfillment) started passing real order items instead.
+   *
+   * Also computes a real per-line `discount` instead of hardcoding 0: the
+   * line's authoritative post-discount value is `orderItem.total` (already
+   * GST-inclusive, same as unit_price), so any promotion applied to that
+   * item now shows up on the label instead of silently disappearing.
+   */
+  private resolveOrderItemsPayload(
+    items: any[],
+    order: any,
+    defaultHsn: string
+  ): Array<{
+    name: string
+    sku: string
+    units: number
+    selling_price: number
+    discount: number
+    tax: number
+    hsn: string
+  }> {
+    const orderItemsById = new Map(
+      ((order?.items as any[]) || []).map((oi) => [oi.id, oi])
+    )
+
+    return items.map((item) => {
+      const orderItem = orderItemsById.get(item.line_item_id || item.id) || item
+      const quantity = Number(item.detail?.quantity ?? item.quantity) || 1
+      const unitPrice = Number(orderItem?.unit_price ?? item.unit_price) || 0
+
+      // Per-unit price after any promotion, derived from the order item's
+      // authoritative (post-discount) line total — falls back to the plain
+      // unit price when totals weren't loaded on `order`.
+      const orderItemQty = Number(orderItem?.quantity) || quantity
+      const postDiscountUnit =
+        orderItem?.total != null
+          ? Number(orderItem.total) / orderItemQty
+          : unitPrice
+      const discount =
+        Math.max(0, Math.round((unitPrice - postDiscountUnit) * quantity * 100)) / 100
+
+      return {
+        name: orderItem?.title || item.title || "Product",
+        sku: orderItem?.sku || orderItem?.variant_sku || item.sku || item.id,
+        units: quantity,
+        selling_price: unitPrice,
+        discount,
+        tax: 0,
+        hsn:
+          (orderItem?.metadata as any)?.hsn_code ||
+          (item.metadata as any)?.hsn_code ||
+          defaultHsn,
+      }
+    })
+  }
+
+  /**
    * Creates the actual order+shipment in Shiprocket. Shared by createFulfillment
    * (the normal "Start Packing" path) and retryOrderCreation (the manual
    * recovery path when the first attempt silently didn't produce a shipment).
@@ -393,7 +462,9 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     // (for the COD-with-upfront-token flow) how much: total minus the token
     // already prepaid online. A prepaid order collects nothing.
     const { isCod, upfrontPaid } = await this.resolvePayment(order?.id)
-    const orderTotalMajor = (order?.total || 0) / 100
+    // order.total is already in rupees (major unit) — see the note atop
+    // calculatePrice above. No /100 conversion here.
+    const orderTotalMajor = order?.total || 0
     const codCollectable = Math.max(0, orderTotalMajor - upfrontPaid)
 
     const shiprocketOrder = await this.apiCall("/orders/create/adhoc", "POST", {
@@ -417,15 +488,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       billing_email: order?.email || "",
       billing_phone: address.phone || "",
       shipping_is_billing: true,
-      order_items: items.map((item) => ({
-        name: item.title || "Product",
-        sku: item.sku || item.id,
-        units: item.quantity || 1,
-        selling_price: (item.unit_price || 0) / 100,
-        discount: 0,
-        tax: 0,
-        hsn: item.metadata?.hsn_code || defaultHsn,
-      })),
+      order_items: this.resolveOrderItemsPayload(items, order, defaultHsn),
       payment_method: isCod ? "COD" : "Prepaid",
       // For COD, sub_total is the amount the courier collects on delivery —
       // the balance after any upfront token. For prepaid it's the order value.

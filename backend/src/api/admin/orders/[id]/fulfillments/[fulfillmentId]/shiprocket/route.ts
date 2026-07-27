@@ -11,14 +11,15 @@ import { resolveShiprocketProvider } from "../../../../../../../lib/shiprocket-p
 
 /**
  * POST /admin/orders/:id/fulfillments/:fulfillmentId/shiprocket
- * Body: { action: "assign_awb" | "generate_label" | "request_pickup" }
+ * Body: { action: "assign_awb" | "generate_label" | "request_pickup" | "reset_shipment" }
  *
  * Manual controls for the Shiprocket fulfillment provider: retry AWB
  * (courier waybill) assignment when the automatic attempt on fulfillment
- * creation failed, (re)fetch the courier-compliant Shiprocket label PDF, and
- * request/re-request pickup. Every successful action here is also logged to
- * the order's packing audit trail (who, what, when) if a packing session
- * exists for this order.
+ * creation failed, (re)fetch the courier-compliant Shiprocket label PDF,
+ * request/re-request pickup, and undo a mistaken AWB/ready-to-ship (before
+ * it's actually shipped) without cancelling the whole order. Every
+ * successful action here is also logged to the order's packing audit trail
+ * (who, what, when) if a packing session exists for this order.
  */
 export async function POST(
   req: AuthenticatedMedusaRequest,
@@ -34,9 +35,10 @@ export async function POST(
   const fulfillmentId = req.params.fulfillmentId
   const { action } = (req.body || {}) as { action?: string }
 
-  if (action !== "assign_awb" && action !== "generate_label" && action !== "request_pickup") {
+  const VALID_ACTIONS = ["assign_awb", "generate_label", "request_pickup", "reset_shipment"]
+  if (!action || !VALID_ACTIONS.includes(action)) {
     return res.status(400).json({
-      message: 'action must be "assign_awb", "generate_label", or "request_pickup"',
+      message: 'action must be "assign_awb", "generate_label", "request_pickup", or "reset_shipment"',
     })
   }
 
@@ -53,16 +55,15 @@ export async function POST(
       "total",
       "metadata",
       "shipping_address.*",
-      "items.id",
-      "items.title",
-      "items.sku",
-      "items.unit_price",
-      "items.quantity",
+      // "items.*" (not a narrow field subset) — Medusa only computes
+      // per-item `total` (needed below for the real post-discount price)
+      // when the full item graph is loaded; see utils/order-lookup.ts.
+      "items.*",
       "items.detail.quantity",
-      "items.metadata",
       "fulfillments.id",
       "fulfillments.provider_id",
       "fulfillments.data",
+      "fulfillments.shipped_at",
     ],
   })
   const order = (orders as any[])?.[0]
@@ -108,15 +109,19 @@ export async function POST(
   /** Creates a brand-new Shiprocket order + shipment for this fulfillment
    *  and persists the new identifiers, replacing whatever stale ones were
    *  stored before (e.g. a shipment whose AWB was cancelled — Shiprocket
-   *  refuses to assign a new AWB to that same shipment_id). */
-  const createFreshShipment = async (forceNewOrderId?: boolean) => {
-    // Shiprocket keys new-order creation off order_id as our merchant
-    // reference — reusing the same display_id just hands back the existing
-    // (still-cancelled) order/shipment instead of making a new one. Force a
-    // distinct order_id when recovering from that specific case.
-    const orderIdOverride = forceNewOrderId
-      ? `${order.display_id}-R${Date.now()}`
-      : undefined
+   *  refuses to assign a new AWB to that same shipment_id).
+   *
+   *  Shiprocket keys new-order creation off order_id as OUR merchant
+   *  reference — resending the same one just hands back the existing
+   *  (possibly cancelled) order/shipment instead of making a new one. So
+   *  every creation attempt for this fulfillment is numbered via a counter
+   *  persisted on its own data (survives resets): attempt 1 uses the plain
+   *  order display_id (unchanged, common-case behaviour); attempt 2+ (a
+   *  retry after a cancellation, self-heal, or explicit reset) appends
+   *  `-R<n>` so Shiprocket is guaranteed to see a fresh reference. */
+  const createFreshShipment = async () => {
+    const attempt = (data.shiprocket_attempt || 0) + 1
+    const orderIdOverride = attempt > 1 ? `${order.display_id}-R${attempt}` : undefined
     const created = await provider.createOrderForFulfillment(
       order,
       order.items || [],
@@ -125,12 +130,13 @@ export async function POST(
     )
     data.shiprocket_order_id = created.order_id
     data.shiprocket_shipment_id = created.shipment_id
+    data.shiprocket_attempt = attempt
     delete data.awb_code
     delete data.courier_name
     await updateFulfillmentWorkflow(req.scope).run({
       input: { id: fulfillmentId, data: { ...data } } as any,
     })
-    await logStep("shiprocket_order_created")
+    await logStep("shiprocket_order_created", { attempt })
   }
 
   try {
@@ -171,7 +177,7 @@ export async function POST(
           throw e
         }
         try {
-          await createFreshShipment(true)
+          await createFreshShipment()
         } catch (createErr: any) {
           return res.status(502).json({
             message:
@@ -233,36 +239,109 @@ export async function POST(
       return res.json({ label_url: doc.label_url, tracking_url: trackingUrl })
     }
 
-    // action === "request_pickup"
-    if (!data.shiprocket_shipment_id) {
+    if (action === "request_pickup") {
+      if (!data.shiprocket_shipment_id) {
+        return res.status(400).json({
+          message: "No Shiprocket shipment exists for this fulfillment",
+        })
+      }
+
+      const pickup = await provider.requestPickup(data.shiprocket_shipment_id)
+      if (!pickup.requested) {
+        await logStep("pickup_request_failed")
+        return res.status(502).json({
+          message: "Shiprocket did not confirm the pickup request — try again shortly.",
+        })
+      }
+
+      await updateFulfillmentWorkflow(req.scope).run({
+        input: {
+          id: fulfillmentId,
+          data: {
+            ...data,
+            pickup_requested_at: new Date().toISOString(),
+            pickup_scheduled_date: pickup.pickup_scheduled_date,
+          },
+        } as any,
+      })
+      await logStep("pickup_requested", {
+        pickup_scheduled_date: pickup.pickup_scheduled_date,
+      })
+
+      return res.json(pickup)
+    }
+
+    // action === "reset_shipment"
+    // Undo a mistaken AWB assignment / "ready to ship" mark — voids the
+    // Shiprocket shipment and clears everything back to a clean packing
+    // state, WITHOUT touching the Medusa order/fulfillment itself or any
+    // payment (unlike "Cancel Order"). Only safe before the parcel has
+    // actually been marked shipped.
+    if (fulfillment.shipped_at) {
       return res.status(400).json({
-        message: "No Shiprocket shipment exists for this fulfillment",
+        message: "This fulfillment has already shipped — it can't be reset here.",
       })
     }
 
-    const pickup = await provider.requestPickup(data.shiprocket_shipment_id)
-    if (!pickup.requested) {
-      await logStep("pickup_request_failed")
-      return res.status(502).json({
-        message: "Shiprocket did not confirm the pickup request — try again shortly.",
-      })
+    const previousAwbCode = data.awb_code || null
+    const previousShiprocketOrderId = data.shiprocket_order_id || null
+
+    if (data.shiprocket_order_id) {
+      try {
+        await provider.cancelFulfillment(data)
+      } catch (e: any) {
+        return res.status(502).json({
+          message:
+            e?.message ||
+            "Shiprocket did not cancel this shipment — it may already be in transit.",
+        })
+      }
     }
+
+    delete data.shiprocket_order_id
+    delete data.shiprocket_shipment_id
+    delete data.awb_code
+    delete data.courier_name
+    delete data.pickup_requested_at
+    delete data.pickup_scheduled_date
+    // shiprocket_attempt is intentionally kept — it's what keeps the next
+    // createFreshShipment() call from getting handed back this same
+    // (now-cancelled) Shiprocket order again.
 
     await updateFulfillmentWorkflow(req.scope).run({
-      input: {
-        id: fulfillmentId,
-        data: {
-          ...data,
-          pickup_requested_at: new Date().toISOString(),
-          pickup_scheduled_date: pickup.pickup_scheduled_date,
-        },
-      } as any,
-    })
-    await logStep("pickup_requested", {
-      pickup_scheduled_date: pickup.pickup_scheduled_date,
+      input: { id: fulfillmentId, data: { ...data }, labels: [] } as any,
     })
 
-    return res.json(pickup)
+    try {
+      const prevMeta = (order.metadata as any) || {}
+      const packing = prevMeta.packing
+      if (packing) {
+        const actor = await resolveActor(req.scope, (req as any).auth_context)
+        const orderModule: any = req.scope.resolve(Modules.ORDER)
+        await orderModule.updateOrders([
+          {
+            id: orderId,
+            metadata: {
+              ...prevMeta,
+              packing: {
+                ...packing,
+                ready_to_ship_at: null,
+                history: appendPackingHistory(packing, {
+                  step: "shipment_reset",
+                  ...actor,
+                  previous_awb_code: previousAwbCode,
+                  previous_shiprocket_order_id: previousShiprocketOrderId,
+                }),
+              },
+            },
+          },
+        ])
+      }
+    } catch {
+      // Audit trail is best-effort — the actual reset above already succeeded.
+    }
+
+    return res.json({ reset: true })
   } catch (e: any) {
     return res.status(500).json({ message: e?.message || "Shiprocket request failed" })
   }

@@ -3,10 +3,11 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { FraudContext, getFraudConfig } from "./fraud"
 
-/** A COD/manual provider carries no online payment commitment. */
+/** The only real COD provider is the custom `cod` module (`pp_cod_cod`).
+ *  Mirrors the detection in modules/shiprocket/service.ts — see that file's
+ *  comment for why the old "manual"/"system" substrings were dropped. */
 function isCodProvider(providerId?: string | null): boolean {
-  const id = (providerId || "").toLowerCase()
-  return id.includes("cod") || id.includes("manual") || id.includes("system")
+  return (providerId || "").toLowerCase().includes("cod")
 }
 
 /**

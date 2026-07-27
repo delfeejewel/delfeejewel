@@ -79,6 +79,7 @@ const STEP_LABELS: Record<string, string> = {
   shipped: "Marked shipped",
   shiprocket_order_created: "Re-created the Shiprocket order",
   restarted_after_cancel: "Restarted packing after the previous attempt was cancelled",
+  shipment_reset: "Reset the shipment (undid AWB / ready-to-ship)",
 }
 
 function historyStepLabel(step: string): string {
@@ -240,6 +241,25 @@ const PackingPage = () => {
       await api(`/admin/packing/orders/${selectedId}/mark-shipped`, { method: "POST" })
       refresh()
     })
+
+  const resetShipment = async () => {
+    const confirmed = await prompt({
+      title: "Reset this shipment?",
+      description:
+        "Voids the AWB/courier assignment at Shiprocket and clears the AWB, label, and ready-to-ship state on this order so packing can be redone properly. The order itself is NOT cancelled and nothing is refunded. Only do this if it hasn't actually been picked up by the courier yet.",
+      confirmText: "Reset Shipment",
+      cancelText: "Cancel",
+    })
+    if (!confirmed) return
+
+    run("reset", async () => {
+      await api(
+        `/admin/orders/${selectedId}/fulfillments/${detail?.fulfillment?.id}/shiprocket`,
+        { method: "POST", body: JSON.stringify({ action: "reset_shipment" }) }
+      )
+      refresh()
+    })
+  }
 
   const allPacked = !!detail && detail.items.length > 0 && detail.items.every((i) => i.packed)
   const awbDone = !!detail?.fulfillment?.awb_code
@@ -546,6 +566,34 @@ const PackingPage = () => {
                         {busy === "shipped" ? "Marking…" : "Mark as Shipped"}
                       </Button>
                     )}
+                  </div>
+                )}
+
+                {/* Escape hatch: undo a mistaken AWB/ready-to-ship mark, without
+                    cancelling the order or touching payment. Only relevant once
+                    something's actually been done, and only before it's shipped. */}
+                {detail.packing && (awbDone || detail.packing.ready_to_ship_at) && !shipped && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: 6,
+                      marginTop: 4,
+                    }}
+                  >
+                    <Button
+                      size="small"
+                      variant="danger"
+                      disabled={busy === "reset"}
+                      onClick={resetShipment}
+                    >
+                      {busy === "reset" ? "Resetting…" : "Reset Shipment"}
+                    </Button>
+                    <Text size="small" style={{ color: "#666" }}>
+                      Made a mistake — AWB generated or marked ready to ship too soon? This voids
+                      it at Shiprocket and lets you redo AWB/label/ready-to-ship for this order.
+                    </Text>
                   </div>
                 )}
 
