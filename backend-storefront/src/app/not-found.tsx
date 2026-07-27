@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-6 font-outfit"
+      className="min-h-screen flex items-center  justify-center px-6 font-outfit"
       style={{ background: "var(--color-bg-primary)" }}
     >
       <div className="text-center flex flex-col items-center max-w-md">
