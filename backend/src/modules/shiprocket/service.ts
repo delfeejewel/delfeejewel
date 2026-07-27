@@ -105,39 +105,78 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
    * Resolve the payment mode for an order: whether it is Cash-on-Delivery and,
    * for the store's COD-with-upfront-token flow, how much was already prepaid
    * (in major units / ₹). The courier must collect only the balance.
+   *
+   * Deliberately uses the raw pg connection instead of Query
+   * (ContainerRegistrationKeys.QUERY) — this provider only ever runs inside
+   * the Fulfillment module's own isolated container (see
+   * lib/shiprocket-provider.ts), which has no `query` service registered,
+   * only `logger` and the pg connection. Calling query.graph() here threw
+   * on every single invocation, silently swallowed by the catch below —
+   * which meant EVERY order, COD or not, was reported to Shiprocket as
+   * fully Prepaid with nothing to collect. Discovered by tracing why a real
+   * COD order's regenerated label still printed "PREPAID" / "Collectable:
+   * ₹0" after the pricing fix above. The pg connection pattern mirrors the
+   * one already used in cancelFulfillment below for the same reason.
    */
   private async resolvePayment(
     orderId: string
   ): Promise<{ isCod: boolean; upfrontPaid: number }> {
     try {
-      const query = this.container_[ContainerRegistrationKeys.QUERY]
-      const {
-        data: [full],
-      } = await query.graph({
-        entity: "order",
-        fields: [
-          "metadata",
-          "payment_collections.payments.provider_id",
-          "payment_collections.payment_sessions.provider_id",
-          "cart.metadata",
-        ],
-        filters: { id: orderId },
-      })
-      const providerIds: string[] = (full?.payment_collections || []).flatMap(
-        (pc: any) => [
-          ...((pc.payments || []).map((p: any) => p.provider_id)),
-          ...((pc.payment_sessions || []).map((s: any) => s.provider_id)),
-        ]
-      )
+      const knex = this.container_[ContainerRegistrationKeys.PG_CONNECTION]
+
+      const [order] = await knex("order")
+        .where({ id: orderId })
+        .whereNull("deleted_at")
+        .select("metadata")
+
+      const providerRows = await knex("order_payment_collection as opc")
+        .join("payment_collection as pc", function () {
+          this.on("pc.id", "=", "opc.payment_collection_id").andOnNull(
+            "pc.deleted_at"
+          )
+        })
+        .leftJoin("payment as p", function () {
+          this.on("p.payment_collection_id", "=", "pc.id").andOnNull(
+            "p.deleted_at"
+          )
+        })
+        .leftJoin("payment_session as ps", function () {
+          this.on("ps.payment_collection_id", "=", "pc.id").andOnNull(
+            "ps.deleted_at"
+          )
+        })
+        .where({ "opc.order_id": orderId })
+        .whereNull("opc.deleted_at")
+        .select("p.provider_id as payment_provider_id", "ps.provider_id as session_provider_id")
+
+      const providerIds: string[] = providerRows.flatMap((row: any) => [
+        row.payment_provider_id,
+        row.session_provider_id,
+      ])
       const isCod = providerIds.some(isCodProvider)
-      const upfrontPaid =
-        Number((full?.metadata as any)?.cod_upfront_amount) ||
-        Number((full?.cart?.metadata as any)?.cod_upfront_amount) ||
-        0
+
+      let upfrontPaid = Number((order?.metadata as any)?.cod_upfront_amount) || 0
+      if (!upfrontPaid) {
+        const [cartRow] = await knex("order_cart as oc")
+          .join("cart as c", function () {
+            this.on("c.id", "=", "oc.cart_id").andOnNull("c.deleted_at")
+          })
+          .where({ "oc.order_id": orderId })
+          .whereNull("oc.deleted_at")
+          .select("c.metadata")
+        upfrontPaid = Number((cartRow?.metadata as any)?.cod_upfront_amount) || 0
+      }
+
       return { isCod, upfrontPaid }
-    } catch {
-      // If payment info can't be resolved, fall back to Prepaid — safe, since
-      // it collects no cash rather than risking a wrong COD amount.
+    } catch (e: any) {
+      const logger = this.container_[ContainerRegistrationKeys.LOGGER]
+      logger?.error(
+        `Shiprocket: could not resolve payment mode for order ${orderId}, ` +
+          `defaulting to Prepaid/₹0 collectable: ${e?.message}`
+      )
+      // If payment info truly can't be resolved, fall back to Prepaid —
+      // safer than guessing a COD amount, but this now only triggers on a
+      // genuine DB error, not on every call.
       return { isCod: false, upfrontPaid: 0 }
     }
   }
