@@ -54,6 +54,8 @@ type Detail = {
     fulfillment_id: string
     started_at: string
     ready_to_ship_at: string | null
+    invoice_printed_at: string | null
+    invoice_added_at: string | null
   } | null
   fulfillment: {
     id: string
@@ -74,6 +76,9 @@ const STEP_LABELS: Record<string, string> = {
   awb_assigned: "Assigned the courier (AWB)",
   label_printed: "Printed the shipping label",
   ready_to_ship: "Marked ready to ship",
+  invoice_printed: "Printed the invoice",
+  invoice_added: "Added the invoice to the box",
+  invoice_unadded: "Unmarked the invoice as added to the box",
   pickup_requested: "Requested courier pickup",
   pickup_request_failed: "Tried to request pickup — Shiprocket didn't confirm",
   shipped: "Marked shipped",
@@ -218,6 +223,25 @@ const PackingPage = () => {
         { method: "POST", body: JSON.stringify({ action: "generate_label" }) }
       )
       if (body?.label_url) window.open(body.label_url, "_blank", "noopener,noreferrer")
+      refresh()
+    })
+
+  const printInvoice = () =>
+    run("invoice_print", async () => {
+      window.open(`/admin/orders/${selectedId}/invoice`, "_blank", "noopener,noreferrer")
+      await api(`/admin/packing/orders/${selectedId}/invoice`, {
+        method: "POST",
+        body: JSON.stringify({ action: "mark_printed" }),
+      })
+      refresh()
+    })
+
+  const toggleInvoiceAdded = (added: boolean) =>
+    run("invoice_added", async () => {
+      await api(`/admin/packing/orders/${selectedId}/invoice`, {
+        method: "POST",
+        body: JSON.stringify({ action: "toggle_added", added }),
+      })
       refresh()
     })
 
@@ -484,6 +508,42 @@ const PackingPage = () => {
                         </Button>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* Step 4.5: Invoice — print it, then confirm it physically went in the box */}
+                {detail.packing && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <Button
+                        size="small"
+                        variant={detail.packing.invoice_printed_at ? "secondary" : "primary"}
+                        disabled={busy === "invoice_print"}
+                        onClick={printInvoice}
+                      >
+                        {busy === "invoice_print"
+                          ? "Printing…"
+                          : detail.packing.invoice_printed_at
+                          ? "Reprint Invoice"
+                          : "Print Invoice"}
+                      </Button>
+                      {detail.packing.invoice_printed_at && (
+                        <Text size="small" style={{ color: "#666" }}>
+                          Printed
+                        </Text>
+                      )}
+                    </div>
+
+                    {detail.packing.invoice_printed_at && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Checkbox
+                          checked={!!detail.packing.invoice_added_at}
+                          disabled={busy === "invoice_added"}
+                          onCheckedChange={(checked) => toggleInvoiceAdded(!!checked)}
+                        />
+                        <Text size="small">Invoice added to box</Text>
+                      </div>
+                    )}
                   </div>
                 )}
 

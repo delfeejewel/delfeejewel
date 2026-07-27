@@ -407,12 +407,15 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
    * the wrong price only became visible once the recovery path
    * (createOrderForFulfillment) started passing real order items instead.
    *
-   * Also sends the item's REAL discount and tax instead of hardcoding both
-   * to 0, using `orderItem.discount_total`/`orderItem.tax_total` directly
-   * rather than deriving them from `orderItem.total` — this store's tax is
-   * NOT inclusive (a 3% GST rate is added on top at checkout), so `total`
-   * already has tax baked in and back-deriving discount from it would
-   * silently understate any real discount by roughly the tax rate.
+   * `tax` is a RATE PERCENTAGE (e.g. 3, meaning 3%), not a rupee amount —
+   * proven by a real label: sending the rupee tax total (38.97) was read as
+   * "38.97%" and Shiprocket back-calculated Taxable Value = 1299/1.3897 ≈
+   * 934.73, corrupting the whole row. `selling_price` is therefore the
+   * GROSS, tax-inclusive, POST-discount per-unit total (Shiprocket derives
+   * Taxable Value = selling_price / (1 + tax/100) itself) — so `discount`
+   * is always sent as 0 here (it's already baked into selling_price); the
+   * real order-level discount still reaches the footer via `total_discount`
+   * on the top-level payload below.
    */
   private resolveOrderItemsPayload(
     items: any[],
@@ -434,23 +437,25 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     return items.map((item) => {
       const orderItem = orderItemsById.get(item.line_item_id || item.id) || item
       const quantity = Number(item.detail?.quantity ?? item.quantity) || 1
-      const orderItemQty = Number(orderItem?.quantity) || quantity
-      // discount_total/tax_total are computed for the item's FULL ordered
-      // quantity — prorate to whatever quantity this fulfillment covers.
-      const proration = orderItemQty ? quantity / orderItemQty : 1
+      const orderItemQty = Number(orderItem?.quantity) || quantity || 1
 
-      const unitPrice = Number(orderItem?.unit_price ?? item.unit_price) || 0
-      const discount =
-        Math.round((Number(orderItem?.discount_total) || 0) * proration * 100) / 100
-      const tax = Math.round((Number(orderItem?.tax_total) || 0) * proration * 100) / 100
+      // orderItem.total is the authoritative gross (post-discount, post-tax)
+      // line total for its FULL ordered quantity — divide by that quantity
+      // (not the possibly-partial fulfillment quantity) to get a real
+      // per-unit price.
+      const grossUnitPrice =
+        orderItem?.total != null
+          ? Number(orderItem.total) / orderItemQty
+          : Number(orderItem?.unit_price ?? item.unit_price) || 0
+      const taxRate = Number(orderItem?.tax_lines?.[0]?.rate) || 0
 
       return {
         name: orderItem?.title || item.title || "Product",
         sku: orderItem?.sku || orderItem?.variant_sku || item.sku || item.id,
         units: quantity,
-        selling_price: unitPrice,
-        discount,
-        tax,
+        selling_price: Math.round(grossUnitPrice * 100) / 100,
+        discount: 0,
+        tax: taxRate,
         hsn:
           (orderItem?.metadata as any)?.hsn_code ||
           (item.metadata as any)?.hsn_code ||
@@ -493,6 +498,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     // order.total is already in rupees (major unit) — see the note atop
     // calculatePrice above. No /100 conversion here.
     const orderTotalMajor = order?.total || 0
+    const shippingChargesMajor = Number(order?.shipping_total) || 0
     const codCollectable = Math.max(0, orderTotalMajor - upfrontPaid)
 
     const shiprocketOrder = await this.apiCall("/orders/create/adhoc", "POST", {
@@ -518,18 +524,25 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       shipping_is_billing: true,
       order_items: this.resolveOrderItemsPayload(items, order, defaultHsn),
       payment_method: isCod ? "COD" : "Prepaid",
-      // For COD, sub_total is the amount the courier collects on delivery —
-      // the balance after any upfront token. For prepaid it's the order value.
-      // NOTE: Shiprocket's own label template has no field for "amount
-      // already paid online" — for a COD-with-upfront-token order, both its
-      // "Order Total" and "Collectable Amount" print whatever sub_total is,
-      // so a partly-prepaid order's label reads as if the (lower) balance
-      // were the whole order value. That breakdown only exists on our own
-      // invoice PDF (build-invoice-data.ts), which we fully control.
-      sub_total: isCod ? codCollectable : orderTotalMajor,
-      // Real shipping/discount instead of leaving Shiprocket's own
-      // "Shipping Charges"/"Discount" footer fields hardcoded at ₹0.
-      shipping_charges: Number(order?.shipping_total) || 0,
+      // Shiprocket's own "Order Total"/"Collectable Amount" fields are BOTH
+      // computed as sub_total + shipping_charges (proven by a real label —
+      // sending shipping_charges on top of an already shipping-inclusive
+      // sub_total double-counted it: ₹1236.97 + ₹99 printed as ₹1335.97).
+      // So sub_total here must be net of shipping, letting Shiprocket add
+      // shipping_charges back to land on the right final figure.
+      //
+      // For COD, that final figure is the balance the courier collects —
+      // the order total minus any upfront token — NOT the gross order
+      // value; Shiprocket has no field for "already paid online" (both
+      // "Order Total" and "Collectable Amount" print the same number), so
+      // showing the gross value here would tell the courier to collect the
+      // upfront-paid amount a second time. That fuller breakdown only
+      // exists on our own invoice PDF (build-invoice-data.ts).
+      sub_total: Math.max(
+        0,
+        (isCod ? codCollectable : orderTotalMajor) - shippingChargesMajor
+      ),
+      shipping_charges: shippingChargesMajor,
       total_discount: Number(order?.discount_total) || 0,
       length,
       breadth,

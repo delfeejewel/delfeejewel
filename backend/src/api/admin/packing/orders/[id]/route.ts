@@ -97,6 +97,8 @@ export async function GET(
           fulfillment_id: activePacking.fulfillment_id,
           started_at: activePacking.started_at,
           ready_to_ship_at: activePacking.ready_to_ship_at,
+          invoice_printed_at: activePacking.invoice_printed_at || null,
+          invoice_added_at: activePacking.invoice_added_at || null,
         }
       : null,
     fulfillment:
