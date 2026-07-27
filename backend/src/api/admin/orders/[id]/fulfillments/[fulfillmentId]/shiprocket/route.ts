@@ -105,6 +105,26 @@ export async function POST(
     }
   }
 
+  /** Creates a brand-new Shiprocket order + shipment for this fulfillment
+   *  and persists the new identifiers, replacing whatever stale ones were
+   *  stored before (e.g. a shipment whose AWB was cancelled — Shiprocket
+   *  refuses to assign a new AWB to that same shipment_id). */
+  const createFreshShipment = async () => {
+    const created = await provider.createOrderForFulfillment(
+      order,
+      order.items || [],
+      fulfillmentId
+    )
+    data.shiprocket_order_id = created.order_id
+    data.shiprocket_shipment_id = created.shipment_id
+    delete data.awb_code
+    delete data.courier_name
+    await updateFulfillmentWorkflow(req.scope).run({
+      input: { id: fulfillmentId, data: { ...data } } as any,
+    })
+    await logStep("shiprocket_order_created")
+  }
+
   try {
     if (action === "assign_awb") {
       if (data.awb_code) {
@@ -119,17 +139,7 @@ export async function POST(
         // stuck. If Shiprocket still rejects it, the real reason comes back
         // in the error message this time instead of a generic "missing".
         try {
-          const created = await provider.createOrderForFulfillment(
-            order,
-            order.items || [],
-            fulfillmentId
-          )
-          data.shiprocket_order_id = created.order_id
-          data.shiprocket_shipment_id = created.shipment_id
-          await updateFulfillmentWorkflow(req.scope).run({
-            input: { id: fulfillmentId, data: { ...data } } as any,
-          })
-          await logStep("shiprocket_order_created")
+          await createFreshShipment()
         } catch (e: any) {
           return res.status(502).json({
             message:
@@ -139,7 +149,30 @@ export async function POST(
         }
       }
 
-      const awb = await provider.assignAwb(data.shiprocket_shipment_id)
+      let awb: { awb_code: string | null; courier_name: string | null }
+      try {
+        awb = await provider.assignAwb(data.shiprocket_shipment_id)
+      } catch (e: any) {
+        // The stored shipment_id can be left over from a shipment whose AWB
+        // was since cancelled (e.g. cancelling the order/label voids the
+        // Shiprocket shipment, but never clears these ids off the
+        // fulfillment) — Shiprocket then refuses to assign a fresh AWB to
+        // that same shipment_id. Self-heal by creating a new shipment and
+        // retrying once, same as the "no shipment yet" branch above.
+        if (!/already assigned/i.test(e?.message || "")) {
+          throw e
+        }
+        try {
+          await createFreshShipment()
+        } catch (createErr: any) {
+          return res.status(502).json({
+            message:
+              createErr?.message ||
+              "Shiprocket still did not create a shipment for this order.",
+          })
+        }
+        awb = await provider.assignAwb(data.shiprocket_shipment_id)
+      }
       if (!awb.awb_code) {
         return res.status(502).json({
           message:

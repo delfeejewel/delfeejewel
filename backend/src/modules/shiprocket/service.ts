@@ -614,6 +614,43 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         )
         throw new Error(`Could not cancel the Shiprocket shipment: ${e?.message}`)
       }
+
+      // Medusa core discards whatever this method returns and only stamps
+      // canceled_at on the fulfillment — it never clears our stale
+      // shiprocket_shipment_id/awb_code out of Fulfillment.data. Left in
+      // place, a later "Assign AWB" retry on this fulfillment would reuse
+      // the now-voided shipment_id and get rejected by Shiprocket ("AWB is
+      // already assigned ... CANCELLED"). We don't have the fulfillment id
+      // here (only its data blob), so patch the jsonb column directly via a
+      // raw query keyed on shiprocket_order_id — same pattern already used
+      // elsewhere in this project for jsonb lookups (see flagged-carts route).
+      try {
+        const knex = this.container_[ContainerRegistrationKeys.PG_CONNECTION]
+        const rows = await knex("fulfillment")
+          .whereRaw("data->>'shiprocket_order_id' = ?", [
+            String(data.shiprocket_order_id),
+          ])
+          .whereNull("deleted_at")
+          .select("id", "data")
+
+        for (const row of rows) {
+          const newData = { ...(row.data || {}) }
+          delete newData.shiprocket_shipment_id
+          delete newData.awb_code
+          delete newData.courier_name
+          await knex("fulfillment")
+            .where({ id: row.id })
+            .update({ data: JSON.stringify(newData), updated_at: new Date() })
+        }
+      } catch (e: any) {
+        // Best-effort cleanup — the Shiprocket cancel above already
+        // succeeded, and the assign_awb route self-heals on retry anyway if
+        // this doesn't clear cleanly.
+        const logger = this.container_[ContainerRegistrationKeys.LOGGER]
+        logger?.error(
+          `Shiprocket: cancelled order ${data.shiprocket_order_id} but failed to clear stale fulfillment.data: ${e?.message}`
+        )
+      }
     }
     return {}
   }
