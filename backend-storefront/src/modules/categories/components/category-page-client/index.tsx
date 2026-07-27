@@ -11,6 +11,7 @@ import QuickChips from "@modules/categories/components/quick-chips"
 import SortBar, { type SortOption } from "@modules/categories/components/sort-bar"
 import ProductCard from "@modules/categories/components/product-card"
 import TrustBadges from "@modules/categories/components/trust-badges"
+import CategoryFaq from "@modules/categories/components/category-faq"
 
 const PRODUCTS_PER_PAGE = 12
 // Pages of this size are fetched client-side to load the full category (see the
@@ -22,6 +23,7 @@ type Props = {
   initialCount: number
   categoryId: string
   categoryHandle: string
+  categoryName: string
   countryCode: string
   limit: number
   region: HttpTypes.StoreRegion
@@ -32,6 +34,7 @@ export default function CategoryPageClient({
   initialCount,
   categoryId,
   categoryHandle,
+  categoryName,
   countryCode,
   limit,
   region,
@@ -286,6 +289,9 @@ export default function CategoryPageClient({
 
       {/* Trust badges — full width below filters + products */}
       <TrustBadges />
+
+      {/* Category-specific FAQs */}
+      <CategoryFaq categoryHandle={categoryHandle} categoryName={categoryName} />
     </>
   )
 }

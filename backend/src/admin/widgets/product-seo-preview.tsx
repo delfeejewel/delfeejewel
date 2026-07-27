@@ -157,7 +157,7 @@ const ProductSeoPreviewWidget = ({ data }: DetailWidgetProps) => {
   }
 
   const handle = data.handle || ""
-  const imageCount = data.images?.length ?? 0
+  const hasThumbnail = Boolean(data.thumbnail)
   const tagCount = data.tags?.length ?? 0
   const categoryCount = (data as any).categories?.length ?? 0
   const descLen = (data.description || "").trim().length
@@ -185,12 +185,12 @@ const ProductSeoPreviewWidget = ({ data }: DetailWidgetProps) => {
     },
     {
       label: "Meta image",
-      status: seoImage ? "good" : imageCount >= 1 ? "warn" : "bad",
+      status: seoImage ? "good" : hasThumbnail ? "warn" : "bad",
       hint: seoImage
         ? "Custom image set"
-        : imageCount >= 1
-          ? "Falls back to product photo"
-          : "Missing — add product images or a meta image",
+        : hasThumbnail
+          ? "Falls back to product thumbnail"
+          : "Missing — add a thumbnail or a meta image",
     },
     {
       label: "Product description",
@@ -338,7 +338,7 @@ const ProductSeoPreviewWidget = ({ data }: DetailWidgetProps) => {
           />
         </div>
         <Text size="xsmall" className="text-ui-fg-muted">
-          Falls back to the first product photo when not set.
+          Falls back to the product thumbnail when not set.
         </Text>
       </div>
 

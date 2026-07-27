@@ -76,17 +76,18 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const meta = (product.metadata || {}) as Record<string, any>
   const category = (product as any).categories?.[0]
   const url = `${baseUrl}/${params.countryCode}/products/${params.handle}`
-  // OG/social images: photos only — never a video file
+  // OG/social image: always the product thumbnail (falls back to the first
+  // gallery photo, never a video file) unless an explicit seo_image override is set.
   const VIDEO_RE = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i
   const photoImages = (product.images?.map((img) => img.url) ?? []).filter(
     (u) => !VIDEO_RE.test(u)
   )
   const images = meta.seo_image
     ? [String(meta.seo_image)]
-    : photoImages.length
-      ? photoImages
-      : product.thumbnail
-        ? [product.thumbnail]
+    : product.thumbnail
+      ? [product.thumbnail]
+      : photoImages.length
+        ? photoImages
         : []
 
   // Build SEO-rich title: "Product Title, Metal | Brand" (short, readable, no hyphens)

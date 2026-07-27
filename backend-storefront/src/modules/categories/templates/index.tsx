@@ -66,6 +66,7 @@ export default async function CategoryTemplate({
           initialCount={response.count}
           categoryId={category.id}
           categoryHandle={category.handle}
+          categoryName={category.name}
           countryCode={countryCode}
           limit={PRODUCT_LIMIT}
           region={region}

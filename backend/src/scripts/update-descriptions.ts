@@ -41,6 +41,7 @@ const SECTIONS: { key: string; match: RegExp; tag: "h2" | "h3" }[] = [
   { key: "Product Details:", match: /^product details:?$/i, tag: "h2" },
   { key: "Why You'll Love It:", match: /^why you[''’]?ll love it:?$/i, tag: "h2" },
   { key: "Styling Tip:", match: /^styling tips?:?$/i, tag: "h3" },
+  { key: "Style Tip:", match: /^style tips?:?$/i, tag: "h3" },
 ]
 
 const META_TITLE = /^meta title:\s*(.+)$/i
