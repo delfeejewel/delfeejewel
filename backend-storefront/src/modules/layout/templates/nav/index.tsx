@@ -29,7 +29,7 @@ export default async function Nav() {
   const topLevelCategories = categories?.filter((c) => !c.parent_category) || []
 
   const email = storeInfo?.email || "enquire@delfee.in"
-  const phone = storeInfo?.phone || "+91 98765 43210"
+  const phone = storeInfo?.phone || "+91 9877686053"
 
   const showContact = headerSettings?.show_topbar_contact ?? true
   const showEmail = headerSettings?.show_topbar_email ?? true

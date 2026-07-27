@@ -70,6 +70,11 @@ export default async function CategoryTemplate({
           countryCode={countryCode}
           limit={PRODUCT_LIMIT}
           region={region}
+          faqs={
+            Array.isArray((category.metadata as any)?.faqs)
+              ? (category.metadata as any).faqs
+              : undefined
+          }
         />
       </div>
     </div>

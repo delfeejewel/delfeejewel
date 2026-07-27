@@ -1,14 +1,17 @@
-import FaqAccordion from "@modules/content/components/faq-accordion"
+import FaqAccordion, { type FaqItem } from "@modules/content/components/faq-accordion"
 import { CATEGORY_FAQS, GENERIC_FAQS } from "./faq-data"
 
 export default function CategoryFaq({
   categoryHandle,
   categoryName,
+  faqs,
 }: {
   categoryHandle: string
   categoryName: string
+  faqs?: FaqItem[]
 }) {
-  const items = CATEGORY_FAQS[categoryHandle] || GENERIC_FAQS
+  const items =
+    faqs && faqs.length > 0 ? faqs : CATEGORY_FAQS[categoryHandle] || GENERIC_FAQS
 
   return (
     <div className="max-w-[820px] mx-auto py-10 small:py-12">

@@ -12,6 +12,7 @@ import SortBar, { type SortOption } from "@modules/categories/components/sort-ba
 import ProductCard from "@modules/categories/components/product-card"
 import TrustBadges from "@modules/categories/components/trust-badges"
 import CategoryFaq from "@modules/categories/components/category-faq"
+import type { FaqItem } from "@modules/content/components/faq-accordion"
 
 const PRODUCTS_PER_PAGE = 12
 // Pages of this size are fetched client-side to load the full category (see the
@@ -27,6 +28,7 @@ type Props = {
   countryCode: string
   limit: number
   region: HttpTypes.StoreRegion
+  faqs?: FaqItem[]
 }
 
 export default function CategoryPageClient({
@@ -35,6 +37,7 @@ export default function CategoryPageClient({
   categoryId,
   categoryHandle,
   categoryName,
+  faqs,
   countryCode,
   limit,
   region,
@@ -291,7 +294,7 @@ export default function CategoryPageClient({
       <TrustBadges />
 
       {/* Category-specific FAQs */}
-      <CategoryFaq categoryHandle={categoryHandle} categoryName={categoryName} />
+      <CategoryFaq categoryHandle={categoryHandle} categoryName={categoryName} faqs={faqs} />
     </>
   )
 }

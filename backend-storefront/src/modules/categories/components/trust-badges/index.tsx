@@ -1,12 +1,12 @@
 "use client"
 
-import { ShieldCheck, Truck, RotateCcw, Award } from "lucide-react"
+import { ShieldCheck, Gem, Lock, Award } from "lucide-react"
 import { motion } from "framer-motion"
 
 const badges = [
   { icon: ShieldCheck, label: "925 Certified Silver" },
-  { icon: Truck, label: "Free Shipping" },
-  { icon: RotateCcw, label: "Easy Returns" },
+  { icon: Gem, label: "Handcrafted Detail" },
+  { icon: Lock, label: "Secure Payments" },
   { icon: Award, label: "Quality Assured" },
 ]
 
