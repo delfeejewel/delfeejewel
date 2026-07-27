@@ -109,11 +109,19 @@ export async function POST(
    *  and persists the new identifiers, replacing whatever stale ones were
    *  stored before (e.g. a shipment whose AWB was cancelled — Shiprocket
    *  refuses to assign a new AWB to that same shipment_id). */
-  const createFreshShipment = async () => {
+  const createFreshShipment = async (forceNewOrderId?: boolean) => {
+    // Shiprocket keys new-order creation off order_id as our merchant
+    // reference — reusing the same display_id just hands back the existing
+    // (still-cancelled) order/shipment instead of making a new one. Force a
+    // distinct order_id when recovering from that specific case.
+    const orderIdOverride = forceNewOrderId
+      ? `${order.display_id}-R${Date.now()}`
+      : undefined
     const created = await provider.createOrderForFulfillment(
       order,
       order.items || [],
-      fulfillmentId
+      fulfillmentId,
+      orderIdOverride
     )
     data.shiprocket_order_id = created.order_id
     data.shiprocket_shipment_id = created.shipment_id
@@ -163,7 +171,7 @@ export async function POST(
           throw e
         }
         try {
-          await createFreshShipment()
+          await createFreshShipment(true)
         } catch (createErr: any) {
           return res.status(502).json({
             message:

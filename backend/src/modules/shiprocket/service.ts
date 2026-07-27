@@ -378,7 +378,8 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     fulfillmentId: string | undefined,
     weight: number,
     dimensions: { length: number; breadth: number; height: number },
-    defaultHsn: string
+    defaultHsn: string,
+    orderIdOverride?: string
   ): Promise<{ order_id: string; shipment_id: string }> {
     const logger = this.container_[ContainerRegistrationKeys.LOGGER]
     const address = order?.shipping_address || {}
@@ -396,7 +397,13 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     const codCollectable = Math.max(0, orderTotalMajor - upfrontPaid)
 
     const shiprocketOrder = await this.apiCall("/orders/create/adhoc", "POST", {
-      order_id: order?.display_id?.toString() || fulfillmentId,
+      // Shiprocket keys off order_id as OUR unique order reference: sending
+      // the same value it's seen before hands back the existing (possibly
+      // cancelled) order/shipment instead of creating a new one. The normal
+      // first-time creation reuses the Medusa display_id so retries before
+      // any shipment exists stay idempotent; orderIdOverride busts that when
+      // we specifically need a brand-new shipment (see createOrderForFulfillment).
+      order_id: orderIdOverride || order?.display_id?.toString() || fulfillmentId,
       order_date: new Date().toISOString().split("T")[0],
       pickup_location: this.options_.pickup_location || "Primary",
       billing_customer_name: address.first_name || "Customer",
@@ -457,7 +464,8 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   async createOrderForFulfillment(
     order: any,
     items: any[],
-    fulfillmentId: string
+    fulfillmentId: string,
+    orderIdOverride?: string
   ): Promise<{ order_id: string; shipment_id: string }> {
     const normalizedItems = (items || []).map((it) => ({
       ...it,
@@ -473,7 +481,8 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       fulfillmentId,
       weight,
       dimensions,
-      defaultHsn
+      defaultHsn,
+      orderIdOverride
     )
   }
 
