@@ -83,6 +83,7 @@ const STEP_LABELS: Record<string, string> = {
   pickup_request_failed: "Tried to request pickup — Shiprocket didn't confirm",
   shipped: "Marked shipped",
   shiprocket_order_created: "Re-created the Shiprocket order",
+  awb_changed: "Courier reassigned by Shiprocket — AWB changed, label needs reprinting",
   restarted_after_cancel: "Restarted packing after the previous attempt was cancelled",
   shipment_reset: "Reset the shipment (undid AWB / ready-to-ship)",
 }

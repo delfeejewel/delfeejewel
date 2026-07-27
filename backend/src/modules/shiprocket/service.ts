@@ -636,7 +636,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     }
     if (shiprocketOrder?.order_id && shiprocketOrder?.shipment_id) {
       try {
-        awb = await this.assignAwb(shiprocketOrder.shipment_id)
+        awb = await this.assignAwb(shiprocketOrder.shipment_id, { order, weight })
       } catch {
         // AWB generation might fail if no courier is auto-assigned
       }
@@ -677,15 +677,102 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     }
   }
 
-  /** Assign an AWB (courier waybill) to an existing Shiprocket shipment.
-   *  Called automatically from createFulfillment, and reusable for a manual
-   *  admin retry when auto-assignment failed or wasn't attempted. */
+  /**
+   * Ranks serviceable couriers for this order by reliability rather than
+   * price — `pickup_performance` is weighted double, since a pickup failure
+   * (a courier/service not actually provisioned on this account — the exact
+   * failure that prompted this) is the specific thing being guarded against
+   * here, not delivery speed. `delivery_performance`/`tracking_performance`/
+   * `rating` (all 0–5 scores Shiprocket returns per courier) break ties.
+   * Blocked couriers are excluded. Returns [] (never throws) on any failure —
+   * callers must fall back to Shiprocket's own auto-pick.
+   */
+  private async rankCouriers(
+    order: any,
+    weight: number
+  ): Promise<Array<{ courier_id: number; courier_name: string; score: number }>> {
+    try {
+      const address = order?.shipping_address || {}
+      const deliveryPincode = address.postal_code
+      if (!deliveryPincode) return []
+
+      const pickupPincode = this.options_.pickup_pincode || "136118"
+      const { isCod } = await this.resolvePayment(order?.id)
+      const result = await this.apiCall(
+        `/courier/serviceability/?pickup_postcode=${pickupPincode}&delivery_postcode=${deliveryPincode}&weight=${weight || 0.3}&cod=${isCod ? 1 : 0}`
+      )
+      const couriers: any[] = result?.data?.available_courier_companies || []
+
+      return couriers
+        .filter((c) => Number(c.blocked) !== 1)
+        .map((c) => ({
+          courier_id: Number(c.courier_company_id),
+          courier_name: c.courier_name,
+          score:
+            (Number(c.pickup_performance) || 0) * 2 +
+            (Number(c.delivery_performance) || 0) +
+            (Number(c.tracking_performance) || 0) +
+            (Number(c.rating) || 0),
+        }))
+        .filter((c) => Number.isFinite(c.courier_id))
+        .sort((a, b) => b.score - a.score)
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * Assign an AWB (courier waybill) to an existing Shiprocket shipment.
+   * Called automatically from createFulfillment, and reusable for a manual
+   * admin retry when auto-assignment failed or wasn't attempted.
+   *
+   * When `context.order` is supplied, explicitly requests the most reliable
+   * serviceable courier (via `courier_id`) instead of leaving the choice to
+   * Shiprocket's own black-box auto-assign — this is what caused a real
+   * pickup failure (a courier/service not actually provisioned on this
+   * account). Falls back to plain auto-assign — unchanged from the previous
+   * behaviour — if that explicit attempt fails, errors, or no context is
+   * given at all. Bounded at exactly one explicit attempt before the
+   * fallback (not a loop through several) since each call to this endpoint
+   * can debit the Shiprocket wallet even on failure.
+   */
   async assignAwb(
-    shipmentId: string
+    shipmentId: string,
+    context?: { order?: any; weight?: number }
   ): Promise<{ awb_code: string | null; courier_name: string | null }> {
     if (this.simulating()) {
       return { awb_code: this.simId("AWB"), courier_name: "Simulated Courier" }
     }
+    const logger = this.container_[ContainerRegistrationKeys.LOGGER]
+
+    if (context?.order) {
+      const [best] = await this.rankCouriers(context.order, context.weight || 0.3)
+      if (best) {
+        try {
+          const awbData = await this.apiCall("/courier/assign/awb", "POST", {
+            shipment_id: shipmentId,
+            courier_id: best.courier_id,
+          })
+          const awb_code = awbData?.response?.data?.awb_code || null
+          if (awb_code) {
+            return {
+              awb_code,
+              courier_name: awbData?.response?.data?.courier_name || best.courier_name,
+            }
+          }
+          logger?.warn(
+            `Shiprocket: explicit assignment to ${best.courier_name} (id ${best.courier_id}) ` +
+              `for shipment ${shipmentId} returned no AWB — falling back to auto-assign`
+          )
+        } catch (e: any) {
+          logger?.warn(
+            `Shiprocket: explicit assignment to ${best.courier_name} (id ${best.courier_id}) ` +
+              `for shipment ${shipmentId} failed — falling back to auto-assign: ${e?.message}`
+          )
+        }
+      }
+    }
+
     const awbData = await this.apiCall("/courier/assign/awb", "POST", {
       shipment_id: shipmentId,
     })

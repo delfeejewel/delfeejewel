@@ -170,7 +170,7 @@ export async function POST(
 
       let awb: { awb_code: string | null; courier_name: string | null }
       try {
-        awb = await provider.assignAwb(data.shiprocket_shipment_id)
+        awb = await provider.assignAwb(data.shiprocket_shipment_id, { order })
       } catch (e: any) {
         // The stored shipment_id can be left over from a shipment whose AWB
         // was since cancelled (e.g. cancelling the order/label voids the
@@ -190,7 +190,7 @@ export async function POST(
               "Shiprocket still did not create a shipment for this order.",
           })
         }
-        awb = await provider.assignAwb(data.shiprocket_shipment_id)
+        awb = await provider.assignAwb(data.shiprocket_shipment_id, { order })
       }
       if (!awb.awb_code) {
         return res.status(502).json({

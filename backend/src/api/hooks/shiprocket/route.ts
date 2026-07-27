@@ -3,7 +3,10 @@ import crypto from "crypto"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
-import { createShipmentWorkflow } from "@medusajs/medusa/core-flows"
+import {
+  createShipmentWorkflow,
+  updateFulfillmentWorkflow,
+} from "@medusajs/medusa/core-flows"
 
 import { processRtoRefund } from "../../../lib/process-rto-refund"
 import { issueGiftCardsForOrder } from "../../../lib/issue-gift-cards"
@@ -118,6 +121,20 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const isPickedUp =
       (sLowerEarly.includes("picked up") || sLowerEarly.includes("in transit")) &&
       !sLowerEarly.includes("rto")
+    // Pickup can get scheduled OUTSIDE our own "Request Pickup" button — e.g.
+    // an admin reassigns the courier directly on Shiprocket's dashboard after
+    // a pickup error, which schedules a fresh pickup without ever calling our
+    // requestPickup(). The Packing widget's "Pickup requested" checkbox only
+    // reflects OUR own API call, so without this it stays stuck showing
+    // "Shiprocket didn't confirm the pickup request" even once Shiprocket has
+    // genuinely scheduled one. Exclude error/exception/cancelled variants —
+    // those are the opposite of a real schedule.
+    const isPickupScheduled =
+      sLowerEarly.includes("pickup") &&
+      (sLowerEarly.includes("scheduled") || sLowerEarly.includes("generated")) &&
+      !sLowerEarly.includes("error") &&
+      !sLowerEarly.includes("exception") &&
+      !sLowerEarly.includes("cancel")
     const nowIso = new Date().toISOString()
     const courierName =
       payload?.courier_name || payload?.courier || null
@@ -178,43 +195,114 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       }
     }
 
-    // Courier actually picked up the package → stamp the real
-    // fulfillment.shipped_at, same as the Packing page's manual fallback.
-    // Best-effort: never blocks the webhook ack.
-    if (isPickedUp) {
+    // Pickup-scheduled sync, AWB-change sync, and auto mark-shipped all need
+    // the same fresh fulfillment snapshot — one query instead of three, and
+    // guarantees all three see a consistent view instead of racing separate
+    // reads. Best-effort throughout: never blocks the webhook ack.
+    if (isPickupScheduled || isPickedUp || (awb && !isDelivered)) {
       try {
         const packingQuery = req.scope.resolve(ContainerRegistrationKeys.QUERY)
         const { data: withFulfillments } = await packingQuery.graph({
           entity: "order",
           filters: { id: order.id },
-          fields: ["id", "fulfillments.id", "fulfillments.provider_id", "fulfillments.shipped_at"],
+          fields: [
+            "id",
+            "metadata",
+            "fulfillments.id",
+            "fulfillments.provider_id",
+            "fulfillments.data",
+            "fulfillments.shipped_at",
+          ],
         })
+        const freshOrder = (withFulfillments as any[])?.[0]
         const shiprocketFulfillment = (
-          (withFulfillments as any[])?.[0]?.fulfillments || []
+          (freshOrder?.fulfillments as any[]) || []
         ).find((f: any) => (f.provider_id || "").startsWith("shiprocket"))
-        if (shiprocketFulfillment && !shiprocketFulfillment.shipped_at) {
-          await createShipmentWorkflow(req.scope).run({
-            input: { id: shiprocketFulfillment.id } as any,
-          })
-          const packing = (order.metadata as any)?.packing
-          if (packing) {
-            await orderModule.updateOrders(order.id, {
-              metadata: {
-                ...(order.metadata as any),
-                packing: {
-                  ...packing,
-                  history: appendPackingHistory(packing, {
-                    step: "shipped",
-                    ...SYSTEM_ACTOR,
-                  }),
-                },
+        const fData = (shiprocketFulfillment?.data || {}) as any
+        const packing = (freshOrder?.metadata as any)?.packing
+
+        const logPackingStep = async (step: string, extra: Record<string, any> = {}) => {
+          if (!packing) return
+          await orderModule.updateOrders(order.id, {
+            metadata: {
+              ...(freshOrder.metadata as any),
+              packing: {
+                ...packing,
+                history: appendPackingHistory(packing, {
+                  step,
+                  ...SYSTEM_ACTOR,
+                  ...extra,
+                }),
               },
+            },
+          })
+        }
+
+        if (shiprocketFulfillment) {
+          // Courier reassignment changes the AWB itself (proven: a real
+          // reassignment moved 7D136602671 → 371238957771) — the label PDF
+          // we have on file was generated for the OLD AWB and is now
+          // invalid. Clear it so the Packing widget shows "Print label"
+          // again instead of a stale "Reprint" link; awb_code/courier_name
+          // are updated to match reality either way. Re-generating the PDF
+          // automatically isn't safe here — Shiprocket's label API needs the
+          // shipment_id, which this webhook payload doesn't carry, and that
+          // may have changed too — so this only clears the stale one rather
+          // than guessing at a replacement.
+          const awbChanged = !!(awb && fData.awb_code && awb !== fData.awb_code)
+          if (awbChanged) {
+            await updateFulfillmentWorkflow(req.scope).run({
+              input: {
+                id: shiprocketFulfillment.id,
+                data: { ...fData, awb_code: awb, courier_name: courierName || fData.courier_name },
+                labels: [],
+              } as any,
             })
+            await logPackingStep("awb_changed", {
+              previous_awb_code: fData.awb_code,
+              new_awb_code: awb,
+            })
+            logger.warn(
+              `Shiprocket webhook: order #${orderRef} AWB changed ${fData.awb_code} → ${awb} ` +
+                `(courier reassigned) — cleared the now-invalid label, reprint required`
+            )
+          }
+
+          // Shiprocket confirmed a pickup schedule (however it got
+          // triggered) → sync the Packing widget's local flag so it stops
+          // claiming the request was never confirmed.
+          if (isPickupScheduled && !fData.pickup_requested_at) {
+            await updateFulfillmentWorkflow(req.scope).run({
+              input: {
+                id: shiprocketFulfillment.id,
+                data: {
+                  ...fData,
+                  awb_code: awbChanged ? awb : fData.awb_code,
+                  courier_name: awbChanged ? courierName || fData.courier_name : fData.courier_name,
+                  pickup_requested_at: nowIso,
+                  pickup_scheduled_date:
+                    payload?.pickup_scheduled_date ||
+                    payload?.etd ||
+                    fData.pickup_scheduled_date ||
+                    null,
+                },
+              } as any,
+            })
+            await logPackingStep("pickup_requested")
+          }
+
+          // Courier actually picked up the package → stamp the real
+          // fulfillment.shipped_at, same as the Packing page's manual fallback.
+          if (isPickedUp && !shiprocketFulfillment.shipped_at) {
+            await createShipmentWorkflow(req.scope).run({
+              input: { id: shiprocketFulfillment.id } as any,
+            })
+            await logPackingStep("shipped")
           }
         }
       } catch (e: any) {
         logger.error(
-          `Shiprocket webhook: auto mark-shipped failed for #${orderRef}: ${e?.message}`
+          `Shiprocket webhook: fulfillment sync failed for #${orderRef}: ${e?.message}`
         )
       }
     }
