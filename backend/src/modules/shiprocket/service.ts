@@ -3,6 +3,8 @@ import {
   ContainerRegistrationKeys,
 } from "@medusajs/framework/utils"
 
+import { isCodProvider } from "../../lib/is-cod-provider"
+
 type ShiprocketOptions = {
   email: string
   password: string
@@ -51,18 +53,6 @@ const API_BASE = "https://apiv2.shiprocket.in/v1/external"
 /** Shiprocket rejects a shipment with zero/absent weight or dimensions. */
 const MIN_WEIGHT_KG = 0.05
 const FALLBACK_DIMENSIONS = { length: 10, breadth: 8, height: 5 }
-
-/** The only real COD provider is the custom `cod` module (registered in
- *  medusa-config.ts as provider id "cod", giving payment id `pp_cod_cod`).
- *  Mirrors the detection in lib/fraud-context.ts. The old broad "manual" /
- *  "system" substring match also caught `pp_system_default` — Medusa's
- *  built-in test/manual provider, which is still attached to the India
- *  region (leftover from seed.ts) even though the storefront hides it from
- *  checkout. Anything that isn't the real COD provider (e.g. Razorpay) is
- *  treated as prepaid. */
-function isCodProvider(providerId?: string | null): boolean {
-  return (providerId || "").toLowerCase().includes("cod")
-}
 
 export default class ShiprocketFulfillmentService extends AbstractFulfillmentProviderService {
   static identifier = "shiprocket"
@@ -417,10 +407,12 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
    * the wrong price only became visible once the recovery path
    * (createOrderForFulfillment) started passing real order items instead.
    *
-   * Also computes a real per-line `discount` instead of hardcoding 0: the
-   * line's authoritative post-discount value is `orderItem.total` (already
-   * GST-inclusive, same as unit_price), so any promotion applied to that
-   * item now shows up on the label instead of silently disappearing.
+   * Also sends the item's REAL discount and tax instead of hardcoding both
+   * to 0, using `orderItem.discount_total`/`orderItem.tax_total` directly
+   * rather than deriving them from `orderItem.total` — this store's tax is
+   * NOT inclusive (a 3% GST rate is added on top at checkout), so `total`
+   * already has tax baked in and back-deriving discount from it would
+   * silently understate any real discount by roughly the tax rate.
    */
   private resolveOrderItemsPayload(
     items: any[],
@@ -442,18 +434,15 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     return items.map((item) => {
       const orderItem = orderItemsById.get(item.line_item_id || item.id) || item
       const quantity = Number(item.detail?.quantity ?? item.quantity) || 1
-      const unitPrice = Number(orderItem?.unit_price ?? item.unit_price) || 0
-
-      // Per-unit price after any promotion, derived from the order item's
-      // authoritative (post-discount) line total — falls back to the plain
-      // unit price when totals weren't loaded on `order`.
       const orderItemQty = Number(orderItem?.quantity) || quantity
-      const postDiscountUnit =
-        orderItem?.total != null
-          ? Number(orderItem.total) / orderItemQty
-          : unitPrice
+      // discount_total/tax_total are computed for the item's FULL ordered
+      // quantity — prorate to whatever quantity this fulfillment covers.
+      const proration = orderItemQty ? quantity / orderItemQty : 1
+
+      const unitPrice = Number(orderItem?.unit_price ?? item.unit_price) || 0
       const discount =
-        Math.max(0, Math.round((unitPrice - postDiscountUnit) * quantity * 100)) / 100
+        Math.round((Number(orderItem?.discount_total) || 0) * proration * 100) / 100
+      const tax = Math.round((Number(orderItem?.tax_total) || 0) * proration * 100) / 100
 
       return {
         name: orderItem?.title || item.title || "Product",
@@ -461,7 +450,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         units: quantity,
         selling_price: unitPrice,
         discount,
-        tax: 0,
+        tax,
         hsn:
           (orderItem?.metadata as any)?.hsn_code ||
           (item.metadata as any)?.hsn_code ||
@@ -531,7 +520,17 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       payment_method: isCod ? "COD" : "Prepaid",
       // For COD, sub_total is the amount the courier collects on delivery —
       // the balance after any upfront token. For prepaid it's the order value.
+      // NOTE: Shiprocket's own label template has no field for "amount
+      // already paid online" — for a COD-with-upfront-token order, both its
+      // "Order Total" and "Collectable Amount" print whatever sub_total is,
+      // so a partly-prepaid order's label reads as if the (lower) balance
+      // were the whole order value. That breakdown only exists on our own
+      // invoice PDF (build-invoice-data.ts), which we fully control.
       sub_total: isCod ? codCollectable : orderTotalMajor,
+      // Real shipping/discount instead of leaving Shiprocket's own
+      // "Shipping Charges"/"Discount" footer fields hardcoded at ₹0.
+      shipping_charges: Number(order?.shipping_total) || 0,
+      total_discount: Number(order?.discount_total) || 0,
       length,
       breadth,
       height,

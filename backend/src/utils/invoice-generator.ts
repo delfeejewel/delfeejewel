@@ -40,6 +40,15 @@ export type InvoiceData = {
   is_intra_state: boolean // true = CGST+SGST, false = IGST
 
   is_cancelled?: boolean // stamps a CANCELLED watermark across the invoice
+
+  // Grand Total − Paid Online = Balance Due. Only rendered when balance_due
+  // is > 0 (a COD order, full or partially prepaid via an upfront token) —
+  // a fully prepaid order has nothing left to show here.
+  payment_summary?: {
+    is_cod: boolean
+    amount_paid_online: number
+    balance_due: number
+  }
 }
 
 /* ─── Brand palette — mirrors the storefront design system ─── */
@@ -360,6 +369,30 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
           width: valW + 14,
           align: "right",
         })
+
+      /* ═══ PAYMENT SUMMARY ═══════════════════════════════
+       * Grand Total − Paid Online = Balance Due — only when something is
+       * actually due (a COD order, full or partially prepaid via an
+       * upfront token). A fully prepaid order has nothing left to show. */
+      let paymentY = boxY + boxH
+      if (data.payment_summary && data.payment_summary.balance_due > 0) {
+        const { amount_paid_online, balance_due } = data.payment_summary
+        paymentY += 10
+        const payRow = (label: string, value: string, bold = false) => {
+          doc
+            .font(bold ? "Helvetica-Bold" : "Helvetica")
+            .fontSize(9)
+            .fillColor(bold ? C.plum : C.textSecondary)
+            .text(label, labelX, paymentY, { width: labelW, align: "right" })
+          doc
+            .font(bold ? "Helvetica-Bold" : "Helvetica")
+            .fillColor(bold ? C.plum : C.textSecondary)
+            .text(value, valX, paymentY, { width: valW, align: "right" })
+          paymentY += 15
+        }
+        payRow("Paid Online", `- ${sym}${formatAmount(amount_paid_online)}`)
+        payRow("Balance Due (COD)", `${sym}${formatAmount(balance_due)}`, true)
+      }
 
       /* ═══ FOOTER ════════════════════════════════════════ */
       const footerY = doc.page.height - 96

@@ -2,13 +2,7 @@ import { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { FraudContext, getFraudConfig } from "./fraud"
-
-/** The only real COD provider is the custom `cod` module (`pp_cod_cod`).
- *  Mirrors the detection in modules/shiprocket/service.ts — see that file's
- *  comment for why the old "manual"/"system" substrings were dropped. */
-function isCodProvider(providerId?: string | null): boolean {
-  return (providerId || "").toLowerCase().includes("cod")
-}
+import { isCodProvider } from "./is-cod-provider"
 
 /**
  * Payment-session statuses that mean a payment attempt genuinely FAILED.

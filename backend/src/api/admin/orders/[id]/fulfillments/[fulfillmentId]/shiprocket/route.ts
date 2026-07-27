@@ -53,12 +53,17 @@ export async function POST(
       "display_id",
       "email",
       "total",
+      "shipping_total",
+      "discount_total",
       "metadata",
       "shipping_address.*",
       // "items.*" (not a narrow field subset) — Medusa only computes
-      // per-item `total` (needed below for the real post-discount price)
-      // when the full item graph is loaded; see utils/order-lookup.ts.
+      // per-item totals (discount_total, tax_total — needed below for the
+      // real per-line discount/tax) when the full item graph is loaded;
+      // see utils/order-lookup.ts. items.tax_lines.rate is what makes
+      // tax_total compute at all, same as core's create-fulfillment workflow.
       "items.*",
+      "items.tax_lines.rate",
       "items.detail.quantity",
       "fulfillments.id",
       "fulfillments.provider_id",

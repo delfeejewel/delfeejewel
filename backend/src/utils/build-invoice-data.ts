@@ -1,5 +1,6 @@
 import { InvoiceData } from "./invoice-generator"
 import { getStateCode } from "./get-store-info"
+import { isCodProvider } from "../lib/is-cod-provider"
 
 /**
  * Shared GST-invoice construction.
@@ -22,8 +23,11 @@ export const INVOICE_ORDER_FIELDS = [
   "tax_total",
   "shipping_total",
   "created_at",
+  "metadata",
   "items.*",
   "shipping_address.*",
+  "payment_collections.payments.provider_id",
+  "payment_collections.payment_sessions.provider_id",
 ]
 
 const fmtDate = (d: any) =>
@@ -48,6 +52,23 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
       : buyerState.trim().toLowerCase() === sellerState.trim().toLowerCase()
 
   const defaultTaxRate = Number(storeInfo.gst_rate) || 3
+
+  // Payment breakdown: Shiprocket's own shipping label has no field for
+  // "amount already paid online" (see modules/shiprocket/service.ts), so
+  // this invoice — which we fully control — is the one place that can show
+  // Grand Total − Paid Online = Balance Due for a COD-with-upfront-token
+  // order. isCodProvider mirrors the same detection used for the courier.
+  const providerIds: string[] = ((order.payment_collections as any[]) || []).flatMap(
+    (pc: any) => [
+      ...((pc.payments || []).map((p: any) => p.provider_id)),
+      ...((pc.payment_sessions || []).map((s: any) => s.provider_id)),
+    ]
+  )
+  const isCod = providerIds.some(isCodProvider)
+  const grandTotal = Number(order.total) || 0
+  const upfrontPaid = Number((order.metadata as any)?.cod_upfront_amount) || 0
+  const amountPaidOnline = isCod ? upfrontPaid : grandTotal
+  const balanceDue = Math.max(0, grandTotal - amountPaidOnline)
   const sellerAddress = [
     storeInfo.address,
     storeInfo.city,
@@ -121,5 +142,6 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
 
     is_intra_state: isIntraState,
     is_cancelled: !!order.canceled_at,
+    payment_summary: { is_cod: isCod, amount_paid_online: amountPaidOnline, balance_due: balanceDue },
   }
 }
