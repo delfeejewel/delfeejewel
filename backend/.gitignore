@@ -34,3 +34,4 @@ static/*.webm
 static/*.mov
 static/*.m4v
 static/*.ogv
+.env.bak*
