@@ -15,7 +15,7 @@ export default function PromoGrid() {
               className="object-cover group-hover:scale-110 transition-transform duration-1000"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 [background:linear-gradient(to_top,var(--color-plum-deep)/90%,var(--color-plum-deep)/20%,transparent)] p-8 small:p-10 flex flex-col justify-end">
+            <div className="promo-scrim-plum absolute inset-0 p-8 small:p-10 flex flex-col justify-end">
               <h3 className="font-wittgenstein text-2xl small:text-3xl text-white mb-2">
                 Personalized Gifts
               </h3>
@@ -41,7 +41,7 @@ export default function PromoGrid() {
               className="object-cover group-hover:scale-110 transition-transform duration-1000"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 [background:linear-gradient(to_top,var(--color-gold)/90%,var(--color-gold)/20%,transparent)] p-8 small:p-10 flex flex-col justify-end">
+            <div className="promo-scrim-gold absolute inset-0 p-8 small:p-10 flex flex-col justify-end">
               <h3 className="font-wittgenstein text-2xl small:text-3xl text-[var(--color-plum-deep)] mb-2">
                 Daily Wear Silver
               </h3>

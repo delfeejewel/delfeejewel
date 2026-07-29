@@ -36,7 +36,7 @@ const DEFAULT_SIGNALS: ExperienceFeature[] = [
     icon_name: "HandMetal",
     title: "Handcrafted in India",
     description:
-      "Every piece is meticulously crafted by skilled Indian artisans preserving century-old techniques.",
+      "Every piece is meticulously crafted by skilled Indian artisans preserving century old techniques.",
   },
   // Replaces the previous "Free Shipping" and "Easy Returns" badges, both of
   // which overstated the actual policies: shipping is only free above ₹5,000
@@ -48,7 +48,7 @@ const DEFAULT_SIGNALS: ExperienceFeature[] = [
     icon_name: "Gem",
     title: "925 Sterling Silver",
     description:
-      "Every piece is 92.5% pure sterling silver, alloyed for strength — the international standard for fine silver.",
+      "Every piece is 92.5% pure sterling silver, alloyed for strength, the international standard for fine silver.",
   },
   {
     icon_name: "Package",

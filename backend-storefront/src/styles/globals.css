@@ -63,6 +63,97 @@
 }
 
 @layer utilities {
+  /*
+   * Scrims for text laid over a photo (homepage promo cards).
+   *
+   * These were previously written inline as
+   *   linear-gradient(to top, var(--color-plum-deep)/90%, …)
+   * but the `/90%` alpha shorthand is a Tailwind COLOR-UTILITY feature, not
+   * CSS — inside a raw linear-gradient() the browser rejects the whole
+   * declaration, so no scrim rendered at all and the copy sat directly on the
+   * image. Written out properly here, with an rgba() fallback ahead of the
+   * color-mix() version so the tokens stay the source of truth on browsers
+   * that support it (Chrome 111+, Safari 16.2+, Firefox 113+).
+   *
+   * The gradient stays strong to roughly the vertical midpoint because the
+   * heading — not just the body copy — sits above the card's lower third.
+   */
+  .promo-scrim-plum {
+    background: linear-gradient(
+      to top,
+      rgba(67, 24, 48, 0.92) 0%,
+      rgba(67, 24, 48, 0.72) 38%,
+      rgba(67, 24, 48, 0.28) 68%,
+      rgba(67, 24, 48, 0) 100%
+    );
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-plum-deep) 92%, transparent) 0%,
+      color-mix(in srgb, var(--color-plum-deep) 72%, transparent) 38%,
+      color-mix(in srgb, var(--color-plum-deep) 28%, transparent) 68%,
+      transparent 100%
+    );
+  }
+
+  .promo-scrim-gold {
+    background: linear-gradient(
+      to top,
+      rgba(212, 175, 55, 0.94) 0%,
+      rgba(212, 175, 55, 0.78) 38%,
+      rgba(212, 175, 55, 0.3) 68%,
+      rgba(212, 175, 55, 0) 100%
+    );
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-gold) 94%, transparent) 0%,
+      color-mix(in srgb, var(--color-gold) 78%, transparent) 38%,
+      color-mix(in srgb, var(--color-gold) 30%, transparent) 68%,
+      transparent 100%
+    );
+  }
+
+  /* Same fix, for the promo-banners tiles. */
+  .banner-scrim-plum-diag {
+    background: linear-gradient(
+      135deg,
+      rgba(93, 46, 70, 0.8) 0%,
+      rgba(93, 46, 70, 0.35) 100%
+    );
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-plum) 80%, transparent) 0%,
+      color-mix(in srgb, var(--color-plum) 35%, transparent) 100%
+    );
+  }
+
+  .banner-scrim-lavender-diag {
+    background: linear-gradient(
+      135deg,
+      rgba(230, 226, 238, 0.88) 0%,
+      rgba(245, 225, 255, 0.55) 100%
+    );
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-lavender) 88%, transparent) 0%,
+      color-mix(in srgb, var(--color-lavender-soft) 55%, transparent) 100%
+    );
+  }
+
+  .banner-scrim-plum-bottom {
+    background: linear-gradient(
+      to top,
+      rgba(67, 24, 48, 0.88) 0%,
+      rgba(67, 24, 48, 0.45) 45%,
+      rgba(67, 24, 48, 0) 78%
+    );
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-plum-deep) 88%, transparent) 0%,
+      color-mix(in srgb, var(--color-plum-deep) 45%, transparent) 45%,
+      transparent 78%
+    );
+  }
+
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;

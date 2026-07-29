@@ -85,7 +85,7 @@ export default function PromoBanners({
                 className="object-cover group-hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              <div className="absolute inset-0 [background:linear-gradient(135deg,var(--color-plum)/75%,var(--color-plum)/20%)]" />
+              <div className="banner-scrim-plum-diag absolute inset-0" />
               <div className="relative h-full flex flex-col justify-center p-8">
                 <h3 className="font-wittgenstein text-[28px] small:text-[34px] font-bold text-white leading-[1.1] mb-4">
                   {BANNERS.topLeft.title}
@@ -108,7 +108,7 @@ export default function PromoBanners({
                 className="object-cover group-hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              <div className="absolute inset-0 [background:linear-gradient(135deg,var(--color-lavender)/80%,var(--color-lavender-soft)/40%)]" />
+              <div className="banner-scrim-lavender-diag absolute inset-0" />
               <div className="relative h-full flex flex-col justify-center p-8">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--color-plum)]/60 mb-1">
                   {BANNERS.bottomLeft.subtitle}
@@ -135,7 +135,7 @@ export default function PromoBanners({
               className="object-cover group-hover:scale-105 transition-transform duration-700"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 [background:linear-gradient(to_top,var(--color-plum-deep)/60%,transparent_60%)]" />
+            <div className="banner-scrim-plum-bottom absolute inset-0" />
             <div className="relative h-full flex flex-col justify-end p-8 small:p-10">
               <h3 className="font-wittgenstein text-[36px] small:text-[44px] font-bold text-white leading-[1.1] mb-2">
                 {BANNERS.right.title}

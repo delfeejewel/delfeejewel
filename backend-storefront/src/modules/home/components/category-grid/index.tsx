@@ -4,24 +4,10 @@ import { useRef, useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-const STARTING_PRICES: Record<string, string> = {
-  rings: "₹999",
-  earrings: "₹799",
-  bracelets: "₹1,299",
-  necklace: "₹1,499",
-  pendants: "₹1,499",
-  mangalsutras: "₹2,499",
-  solitaires: "₹3,999",
-  gifting: "₹999",
-  collections: "₹999",
-  anklets: "₹799",
-}
-
 type Category = {
   name: string
   handle: string
   cover_image?: string | null
-  startingPrice?: string
 }
 
 export default function CategoryGrid({ categories }: { categories: Category[] }) {
@@ -88,7 +74,7 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
               <LocalizedClientLink
                 key={cat.handle}
                 href={`/categories/${cat.handle}`}
-                className="group shrink-0 w-[160px] small:w-[200px] medium:w-[220px] flex flex-col items-center cursor-pointer"
+                className="group shrink-0 w-[128px] small:w-[160px] medium:w-[176px] flex flex-col items-center cursor-pointer"
               >
                 {/* Circle */}
                 <div className="w-full aspect-square rounded-full overflow-hidden bg-[var(--color-bg-secondary)] shadow-md group-hover:shadow-2xl group-hover:-translate-y-2 transition-all duration-500 ease-out">
@@ -106,11 +92,6 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
                   <p className="font-semibold text-[14px] small:text-[15px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-plum)] transition-colors">
                     {cat.name}
                   </p>
-                  {(cat.startingPrice || STARTING_PRICES[cat.handle]) && (
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                      From {cat.startingPrice || STARTING_PRICES[cat.handle]}
-                    </p>
-                  )}
                 </div>
               </LocalizedClientLink>
             ))}

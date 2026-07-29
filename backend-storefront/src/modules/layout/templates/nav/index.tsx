@@ -188,12 +188,12 @@ export default async function Nav() {
       {topLevelCategories.length > 0 && (
         <div className="hidden small:block w-full bg-[var(--color-bg-primary)] border-b border-[var(--color-lavender)]">
           <div className="content-container">
-            <ul className="flex items-center justify-center gap-x-8 h-10 overflow-x-auto no-scrollbar">
+            <ul className="flex items-center justify-center gap-x-9 h-12 overflow-x-auto no-scrollbar">
               {topLevelCategories.map((category) => (
                 <li key={category.id}>
                   <LocalizedClientLink
                     href={`/categories/${category.handle}`}
-                    className="text-[12px] font-medium tracking-wide whitespace-nowrap text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] transition-colors duration-300"
+                    className="text-[13px] font-medium tracking-wide whitespace-nowrap text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] transition-colors duration-300"
                   >
                     {category.name}
                   </LocalizedClientLink>

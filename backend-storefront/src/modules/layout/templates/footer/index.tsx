@@ -17,15 +17,15 @@ const footerLinks = {
     { name: "Track Your Order", href: "/track-order" },
     { name: "Book an Appointment", href: "/book-appointment" },
     { name: "Returns & Exchange", href: "/returns-and-exchange" },
-    { name: "Shipping Policy", href: "/shipping-policy" },
-    { name: "Contact Us", href: "/contact" },
   ],
-  "About Us": [
-    { name: "Our Story", href: "/about" },
-    { name: "Privacy Policy", href: "/privacy-policy" },
-    { name: "Terms & Conditions", href: "/terms-and-conditions" },
-  ],
+  "About Us": [{ name: "Our Story", href: "/about" }],
 }
+
+// The policy strip at the bottom of the footer carries Privacy, Terms, Refund &
+// Cancellation, Shipping and Contact. That is the exact set Razorpay checks for
+// during merchant verification, so those five links live THERE and are
+// deliberately not repeated in the columns above — keep it that way when adding
+// links here.
 
 /* Social icons keyed by store_info field — href comes from the CMS at runtime */
 const SOCIAL_ICONS: Record<string, React.ReactNode> = {
