@@ -69,7 +69,13 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
 
         {/* Scroll track */}
         <div ref={scrollRef} className="overflow-x-auto no-scrollbar">
-          <div className="flex flex-row gap-5 small:gap-8 px-6 small:px-10 pt-4 pb-4">
+          {/*
+            w-max + mx-auto rather than justify-center: when the tiles are
+            narrower than the viewport they centre, and when they overflow the
+            row still scrolls from the first tile. justify-center would make the
+            overflowing start unreachable.
+          */}
+          <div className="flex flex-row gap-5 small:gap-8 px-6 small:px-10 pt-4 pb-4 w-max mx-auto">
             {categories.map((cat) => (
               <LocalizedClientLink
                 key={cat.handle}

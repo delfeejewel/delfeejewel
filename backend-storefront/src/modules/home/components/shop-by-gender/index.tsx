@@ -8,7 +8,7 @@ const GENDERS = [
     image: "/images/shop-by-gender_for-her.png",
     cta: "Shop Women",
     link: "/store",
-    overlay: "from-[var(--color-plum-deep)]/80 via-[var(--color-plum-deep)]/30 to-transparent",
+    overlay: "gender-scrim-her",
     textColor: "text-white",
     btnClass: "bg-white text-[var(--color-plum-deep)] hover:[background:var(--color-gold)] hover:text-white",
   },
@@ -18,7 +18,7 @@ const GENDERS = [
     image: "/images/shop-by-gender_for-him.png",
     cta: "Shop Men",
     link: "/store",
-    overlay: "from-[var(--color-plum)]/80 via-[var(--color-plum)]/30 to-transparent",
+    overlay: "gender-scrim-him",
     textColor: "text-white",
     btnClass: "[background:var(--color-gold)] text-[var(--color-plum-deep)] hover:bg-white hover:text-[var(--color-plum)]",
   },
@@ -52,7 +52,7 @@ export default function ShopByGender() {
                 className="object-cover group-hover:scale-105 transition-transform duration-1000"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              <div className={`absolute inset-0 bg-gradient-to-t ${item.overlay} p-8 small:p-12 flex flex-col justify-end`}>
+              <div className={`absolute inset-0 ${item.overlay} p-8 small:p-12 flex flex-col justify-end`}>
                 {/* Tag */}
                 <span className="inline-block self-start px-3 py-1 rounded-full border border-[var(--color-gold)]/40 text-[var(--color-gold)] text-[10px] font-bold uppercase tracking-[0.15em] mb-4">
                   {item.label}
