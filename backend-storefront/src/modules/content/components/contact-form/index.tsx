@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast, Toaster } from "@medusajs/ui"
 
 import { sendContactMessage } from "@lib/data/contact"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const DEFAULT_SUBJECTS = [
   "General Enquiry",
@@ -31,8 +32,8 @@ const labelCls =
 export default function ContactForm({
   subjects,
   submitLabel = "Send Message",
-  successTitle = "Message Sent",
-  successMessage = "Thank you for reaching out. Our team will get back to you within 24–48 business hours.",
+  successTitle = "Thank you for writing to us",
+  successMessage = "Your message is with our team and we'll reply to the email address you gave us, usually within 24 - 48 business hours (Mon - Sat).",
 }: ContactFormProps = {}) {
   const SUBJECTS = subjects?.length ? subjects : DEFAULT_SUBJECTS
   const emptyForm = {
@@ -45,6 +46,8 @@ export default function ContactForm({
   const [form, setForm] = useState(emptyForm)
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle")
   const [invalid, setInvalid] = useState<Record<string, boolean>>({})
+  // Kept separately from `form`, which is cleared on success.
+  const [sentTo, setSentTo] = useState("")
 
   const set =
     (key: keyof typeof form) =>
@@ -79,6 +82,7 @@ export default function ContactForm({
     setStatus("sending")
     const res = await sendContactMessage(form)
     if (res.success) {
+      setSentTo(form.email.trim())
       setStatus("sent")
     } else {
       setStatus("idle")
@@ -116,19 +120,38 @@ export default function ContactForm({
             >
               <CheckCircle2 className="w-7 h-7 text-green-600" />
             </motion.div>
-            <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+            <h3 className="font-wittgenstein text-[20px] small:text-[22px] font-semibold text-[var(--color-plum)]">
               {successTitle}
             </h3>
-            <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm">
+            <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm leading-relaxed">
               {successMessage}
             </p>
-            <button
-              type="button"
-              onClick={reset}
-              className="mt-2 text-[13px] font-semibold text-[var(--color-plum)] underline underline-offset-4 hover:text-[var(--color-gold)] transition-colors"
-            >
-              Send another message
-            </button>
+
+            {/* Echo the address back so a typo is obvious while it's still fixable. */}
+            {sentTo && (
+              <p className="text-[13px] text-[var(--color-text-secondary)]">
+                Sent as{" "}
+                <span className="font-semibold text-[var(--color-plum)]">
+                  {sentTo}
+                </span>
+              </p>
+            )}
+
+            <div className="mt-2 flex flex-col xsmall:flex-row items-center gap-3">
+              <LocalizedClientLink
+                href="/store"
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
+              >
+                Continue Shopping
+              </LocalizedClientLink>
+              <button
+                type="button"
+                onClick={reset}
+                className="text-[13px] font-semibold text-[var(--color-plum)] underline underline-offset-4 hover:text-[var(--color-gold)] transition-colors"
+              >
+                Send another message
+              </button>
+            </div>
           </motion.div>
         ) : (
           <motion.form

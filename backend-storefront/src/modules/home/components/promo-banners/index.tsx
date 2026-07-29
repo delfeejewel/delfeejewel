@@ -85,7 +85,7 @@ export default function PromoBanners({
                 className="object-cover group-hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              <div className="banner-scrim-plum-diag absolute inset-0" />
+              <div className="banner-scrim-left-plum absolute inset-0" />
               <div className="relative h-full flex flex-col justify-center p-8">
                 <h3 className="font-wittgenstein text-[28px] small:text-[34px] font-bold text-white leading-[1.1] mb-4">
                   {BANNERS.topLeft.title}
@@ -108,15 +108,21 @@ export default function PromoBanners({
                 className="object-cover group-hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
-              <div className="banner-scrim-lavender-diag absolute inset-0" />
+              <div className="banner-scrim-left-lavender absolute inset-0" />
               <div className="relative h-full flex flex-col justify-center p-8">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--color-plum)]/60 mb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[rgba(93,46,70,0.65)] mb-1">
                   {BANNERS.bottomLeft.subtitle}
                 </p>
                 <h3 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] leading-tight mb-4">
                   {BANNERS.bottomLeft.title}
                 </h3>
-                <span className="inline-block self-start px-5 py-2 rounded-full bg-[var(--color-plum)]/10 text-[var(--color-plum)] text-[12px] font-semibold border border-[var(--color-plum)]/20 group-hover:bg-[var(--color-plum)] group-hover:text-white transition-all duration-300">
+                {/*
+                  Literal rgba, not bg-[var(--color-plum)]/10 — Tailwind cannot
+                  apply an opacity modifier to an arbitrary CSS variable and
+                  silently emits nothing, which left this pill with no fill or
+                  border at all.
+                */}
+                <span className="inline-block self-start px-5 py-2 rounded-full bg-[rgba(93,46,70,0.10)] text-[var(--color-plum)] text-[12px] font-semibold border border-[rgba(93,46,70,0.22)] group-hover:bg-[var(--color-plum)] group-hover:text-white group-hover:border-[var(--color-plum)] transition-all duration-300">
                   {BANNERS.bottomLeft.cta}
                 </span>
               </div>
@@ -135,7 +141,7 @@ export default function PromoBanners({
               className="object-cover group-hover:scale-105 transition-transform duration-700"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="banner-scrim-plum-bottom absolute inset-0" />
+            <div className="banner-scrim-bottom-plum absolute inset-0" />
             <div className="relative h-full flex flex-col justify-end p-8 small:p-10">
               <h3 className="font-wittgenstein text-[36px] small:text-[44px] font-bold text-white leading-[1.1] mb-2">
                 {BANNERS.right.title}

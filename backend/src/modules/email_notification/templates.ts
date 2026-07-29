@@ -123,7 +123,14 @@ export function passwordResetTemplate(data: PasswordResetEmailData) {
 
 const BRAND_NAME = process.env.BRAND_NAME || "Delfee"
 
-function baseLayout(content: string): string {
+/**
+ * @param internal  Set for mail sent to our OWN team rather than a customer
+ *                  (e.g. the Contact Us notification). Drops the "Need help?"
+ *                  support line, which is noise on an email the team is already
+ *                  receiving — and which would invite them to write to
+ *                  themselves. Customer-facing mail keeps it.
+ */
+function baseLayout(content: string, internal = false): string {
   const year = new Date().getFullYear()
   return `<!DOCTYPE html>
 <html lang="en">
@@ -158,8 +165,12 @@ function baseLayout(content: string): string {
           ${content}
         </td></tr>
         <tr><td class="px" style="padding:26px 34px;background:#faf8f5;text-align:center;border-top:1px solid #ece8e2;">
-          <p style="margin:0 0 6px;font-size:12px;color:#8a8a8a;line-height:1.6;">Need help? Email us at <a href="mailto:enquire@delfee.in" style="color:#5D2E46;text-decoration:none;">enquire@delfee.in</a></p>
-          <p style="margin:0;font-size:11px;color:#b3b0ab;line-height:1.6;">&copy; ${year} ${BRAND_NAME}. All rights reserved.<br>This is an automated message — please don't reply directly.</p>
+          ${
+            internal
+              ? ""
+              : `<p style="margin:0 0 6px;font-size:12px;color:#8a8a8a;line-height:1.6;">Need help? Email us at <a href="mailto:enquire@delfee.in" style="color:#5D2E46;text-decoration:none;">enquire@delfee.in</a></p>`
+          }
+          <p style="margin:0;font-size:11px;color:#b3b0ab;line-height:1.6;">&copy; ${year} ${BRAND_NAME}. All rights reserved.<br>This is an automated message, please don't reply directly.</p>
         </td></tr>
       </table>
     </td></tr>
@@ -723,8 +734,7 @@ export function contactNotificationTemplate(data: ContactNotificationData) {
       <div style="text-align:center;margin-top:28px;">
         <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject || "Your message")}" class="btn">Reply to ${data.name}</a>
       </div>
-      <p style="font-size:12px;color:#999;margin-top:20px;">Manage all submissions in the CMS → Forms → Submissions.</p>
-    `),
+    `, true /* internal — goes to our team, not the customer */),
   }
 }
 

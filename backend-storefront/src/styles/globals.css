@@ -157,45 +157,66 @@
     );
   }
 
-  /* Same fix, for the promo-banners tiles. */
-  .banner-scrim-plum-diag {
+  /*
+   * promo-banners tiles.
+   *
+   * Directional, not full-tile: each gradient is anchored to the edge the copy
+   * actually sits against, and fades out well before the far edge so the
+   * photography still reads. A flat wash across the whole tile protects the
+   * text but flattens the product shot, which is the thing being sold.
+   *
+   * Both left tiles centre their copy vertically and align it LEFT, so they get
+   * a left-to-right ramp. The tall right tile aligns its copy to the BOTTOM, so
+   * it gets a bottom-up ramp kept tight to the lower third.
+   */
+  .banner-scrim-left-plum {
     background: linear-gradient(
-      135deg,
-      rgba(93, 46, 70, 0.8) 0%,
-      rgba(93, 46, 70, 0.35) 100%
+      to right,
+      rgba(93, 46, 70, 0.9) 0%,
+      rgba(93, 46, 70, 0.72) 30%,
+      rgba(93, 46, 70, 0.3) 60%,
+      rgba(93, 46, 70, 0) 88%
     );
     background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-plum) 80%, transparent) 0%,
-      color-mix(in srgb, var(--color-plum) 35%, transparent) 100%
+      to right,
+      color-mix(in srgb, var(--color-plum) 90%, transparent) 0%,
+      color-mix(in srgb, var(--color-plum) 72%, transparent) 30%,
+      color-mix(in srgb, var(--color-plum) 30%, transparent) 60%,
+      transparent 88%
     );
   }
 
-  .banner-scrim-lavender-diag {
+  .banner-scrim-left-lavender {
     background: linear-gradient(
-      135deg,
-      rgba(230, 226, 238, 0.88) 0%,
-      rgba(245, 225, 255, 0.55) 100%
+      to right,
+      rgba(230, 226, 238, 0.96) 0%,
+      rgba(230, 226, 238, 0.82) 32%,
+      rgba(245, 225, 255, 0.36) 62%,
+      rgba(245, 225, 255, 0) 88%
     );
     background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-lavender) 88%, transparent) 0%,
-      color-mix(in srgb, var(--color-lavender-soft) 55%, transparent) 100%
+      to right,
+      color-mix(in srgb, var(--color-lavender) 96%, transparent) 0%,
+      color-mix(in srgb, var(--color-lavender) 82%, transparent) 32%,
+      color-mix(in srgb, var(--color-lavender-soft) 36%, transparent) 62%,
+      transparent 88%
     );
   }
 
-  .banner-scrim-plum-bottom {
+  .banner-scrim-bottom-plum {
     background: linear-gradient(
       to top,
-      rgba(67, 24, 48, 0.88) 0%,
-      rgba(67, 24, 48, 0.45) 45%,
-      rgba(67, 24, 48, 0) 78%
+      rgba(67, 24, 48, 0.92) 0%,
+      rgba(67, 24, 48, 0.6) 30%,
+      rgba(67, 24, 48, 0.18) 58%,
+      rgba(67, 24, 48, 0) 80%
     );
     background: linear-gradient(
       to top,
-      color-mix(in srgb, var(--color-plum-deep) 88%, transparent) 0%,
-      color-mix(in srgb, var(--color-plum-deep) 45%, transparent) 45%,
-      transparent 78%
+      color-mix(in srgb, var(--color-plum-deep) 92%, transparent) 0%,
+      color-mix(in srgb, var(--color-plum-deep) 60%, transparent) 30%,
+      color-mix(in srgb, var(--color-plum-deep) 18%, transparent) 58%,
+      transparent 80%
     );
   }
 
