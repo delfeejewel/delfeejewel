@@ -38,17 +38,23 @@ const DEFAULT_SIGNALS: ExperienceFeature[] = [
     description:
       "Every piece is meticulously crafted by skilled Indian artisans preserving century-old techniques.",
   },
+  // Replaces the previous "Free Shipping" and "Easy Returns" badges, both of
+  // which overstated the actual policies: shipping is only free above ₹5,000
+  // (see shipping-policy), and the return window is 7 days, not 15 (see
+  // returns-and-exchange). These two make no promise the store doesn't keep —
+  // the purity claim mirrors the Authenticity page, and every Shiprocket
+  // fulfilment carries an AWB that /track-order can look up.
   {
-    icon_name: "Truck",
-    title: "Free Shipping",
+    icon_name: "Gem",
+    title: "925 Sterling Silver",
     description:
-      "Complimentary insured delivery on all orders across India and select international cities.",
+      "Every piece is 92.5% pure sterling silver, alloyed for strength — the international standard for fine silver.",
   },
   {
-    icon_name: "ShieldCheck",
-    title: "Easy Returns",
+    icon_name: "Package",
+    title: "Tracked Delivery",
     description:
-      "Hassle-free 15-day return policy. Your satisfaction is our highest priority.",
+      "Orders ship with a tracking number, so you can follow your parcel from dispatch to your door.",
   },
 ]
 

@@ -12,6 +12,12 @@
 #
 # NEXT_PUBLIC_* are baked into the storefront image at BUILD time in CI, so they
 # are NOT needed on the droplet. Server-only runtime vars still come from .env.
+#
+# `appnet` is declared with a fixed name (not compose's default project-derived
+# name) so that docker-compose.staging.yml — a completely separate stack, kept
+# out of THIS file on purpose so a staging deploy/rebuild can never touch or
+# restart prod containers — can join it as an external network and let Caddy
+# reverse-proxy to the staging containers by service name.
 
 services:
   backend:
@@ -22,6 +28,8 @@ services:
       PORT: "9000"
     expose:
       - "9000"
+    networks:
+      - appnet
 
   storefront:
     image: ghcr.io/delfeejewel/delfee-storefront:latest
@@ -31,6 +39,8 @@ services:
       - "8000"
     depends_on:
       - backend
+    networks:
+      - appnet
 
   caddy:
     image: caddy:2
@@ -45,6 +55,12 @@ services:
     depends_on:
       - storefront
       - backend
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    name: delfee_appnet
 
 volumes:
   caddy_data:

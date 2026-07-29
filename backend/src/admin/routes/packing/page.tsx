@@ -303,6 +303,7 @@ const PackingPage = () => {
 
       {simulate && (
         <div
+          data-testid="packing-simulate-banner"
           style={{
             marginTop: 12,
             padding: "8px 12px",
@@ -346,6 +347,8 @@ const PackingPage = () => {
               {queue.map((o) => (
                 <Table.Row
                   key={o.id}
+                  data-testid="packing-queue-row"
+                  data-display-id={o.display_id}
                   style={{ cursor: "pointer" }}
                   onClick={() => setSelectedId(o.id)}
                 >
@@ -372,7 +375,7 @@ const PackingPage = () => {
       <Drawer open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
         <Drawer.Content>
           <Drawer.Header>
-            <Drawer.Title>
+            <Drawer.Title data-testid="packing-drawer-title" data-display-id={detail?.display_id}>
               {detail ? `Order #${detail.display_id}` : "Order"}
             </Drawer.Title>
           </Drawer.Header>
@@ -408,7 +411,12 @@ const PackingPage = () => {
                       textAlign: "center",
                     }}
                   >
-                    <Button size="small" disabled={busy === "start"} onClick={startPacking}>
+                    <Button
+                      size="small"
+                      data-testid="packing-start-button"
+                      disabled={busy === "start"}
+                      onClick={startPacking}
+                    >
                       {busy === "start" ? "Starting…" : "Start Packing"}
                     </Button>
                     <Text size="small" style={{ color: "#666" }}>
@@ -429,6 +437,7 @@ const PackingPage = () => {
                       return (
                         <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <Checkbox
+                            data-testid="packing-item-checkbox"
                             checked={item.packed}
                             disabled={busy === `item:${item.id}`}
                             onCheckedChange={() => togglePacked(item, allButThisPacked)}
@@ -475,6 +484,7 @@ const PackingPage = () => {
                       ) : (
                         <Button
                           size="small"
+                          data-testid="packing-assign-awb-button"
                           disabled={!allPacked || busy === "awb"}
                           onClick={assignAwb}
                         >
@@ -502,6 +512,7 @@ const PackingPage = () => {
                       ) : (
                         <Button
                           size="small"
+                          data-testid="packing-print-label-button"
                           disabled={!awbDone || busy === "label"}
                           onClick={generateLabel}
                         >
@@ -518,6 +529,7 @@ const PackingPage = () => {
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <Button
                         size="small"
+                        data-testid="packing-print-invoice-button"
                         variant={detail.packing.invoice_printed_at ? "secondary" : "primary"}
                         disabled={busy === "invoice_print"}
                         onClick={printInvoice}
@@ -538,6 +550,7 @@ const PackingPage = () => {
                     {detail.packing.invoice_printed_at && (
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <Checkbox
+                          data-testid="packing-invoice-added-checkbox"
                           checked={!!detail.packing.invoice_added_at}
                           disabled={busy === "invoice_added"}
                           onCheckedChange={(checked) => toggleInvoiceAdded(!!checked)}
@@ -562,6 +575,7 @@ const PackingPage = () => {
                       ) : (
                         <Button
                           size="small"
+                          data-testid="packing-ready-to-ship-button"
                           disabled={!labelDone || busy === "ready"}
                           onClick={readyToShip}
                         >
@@ -623,7 +637,12 @@ const PackingPage = () => {
                         </Text>
                       </>
                     ) : (
-                      <Button size="small" disabled={busy === "shipped"} onClick={markShipped}>
+                      <Button
+                        size="small"
+                        data-testid="packing-mark-shipped-button"
+                        disabled={busy === "shipped"}
+                        onClick={markShipped}
+                      >
                         {busy === "shipped" ? "Marking…" : "Mark as Shipped"}
                       </Button>
                     )}

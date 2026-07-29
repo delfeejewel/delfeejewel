@@ -1,0 +1,73 @@
+# Staging stack: same droplet as prod, completely separate containers, network,
+# and env files. Deployed independently by .github/workflows/deploy-staging.yml
+# (manual dispatch / push to `staging` branch only) — never touched by the prod
+# deploy workflow, so a staging redeploy or a bad staging env can never affect
+# the live store.
+#
+# Joins the `delfee_appnet` external network (declared with a fixed name in
+# docker-compose.yml) so Caddy — which belongs to the PROD stack — can reverse
+# proxy to these containers by service name. No public ports are opened here;
+# Caddy is still the only thing listening on 80/443.
+#
+# No separate Supabase project for staging — core Medusa data (orders, carts,
+# products) lives in its own `postgres-staging` container instead, fully
+# isolated from prod and disposable at will (`docker compose -f
+# docker-compose.staging.yml down -v` wipes it clean). CMS-only reads
+# (store info, email sender settings) still point at the SAME prod Supabase
+# CMS project — see backend-staging.env.template — since that's read-only
+# store metadata, not test order data.
+#
+# Layout on the droplet (/opt/delfee):
+#   docker-compose.staging.yml   (this file)
+#   backend-staging.env          (staging Medusa runtime secrets — test-mode
+#                                  Razorpay keys, SHIPROCKET_SIMULATE=true,
+#                                  NODE_ENV=staging; DATABASE_URL defaults to
+#                                  the postgres-staging container below)
+#   staging.env                  (staging storefront runtime vars)
+
+services:
+  postgres-staging:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: medusa
+      POSTGRES_PASSWORD: medusa
+      POSTGRES_DB: medusa-staging
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    networks:
+      - appnet
+
+  backend-staging:
+    image: ghcr.io/delfeejewel/delfee-backend:staging
+    restart: unless-stopped
+    env_file: backend-staging.env
+    environment:
+      PORT: "9000"
+    expose:
+      - "9000"
+    depends_on:
+      - postgres-staging
+    networks:
+      - appnet
+
+  storefront-staging:
+    image: ghcr.io/delfeejewel/delfee-storefront:staging
+    restart: unless-stopped
+    env_file: staging.env
+    expose:
+      - "8000"
+    depends_on:
+      - backend-staging
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    name: delfee_appnet
+    external: true
+
+volumes:
+  postgres_staging_data:

@@ -1,0 +1,55 @@
+name: Weekly live smoke test
+
+# Runs e2e/live-weekly-smoke.ts against the REAL production store: places a
+# real order for the dedicated ₹1 test product, pays it via a pre-saved
+# Razorpay token (server-side, no card data here or in the script), assigns
+# a REAL Shiprocket AWB then immediately voids it (no courier is ever
+# dispatched — see live-weekly-smoke.ts step 5), then cancels the order,
+# which auto-refunds the ₹1 charge. The script itself verifies the refund
+# went through and fails loudly if not.
+#
+# This workflow is deliberately narrow in scope: weekly cron + manual
+# dispatch only. Do NOT add push/PR triggers here — every run is a real
+# charge against the live Razorpay/Shiprocket accounts.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Monday 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run — stop before charging (no money moves)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: live-weekly-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install e2e deps
+        working-directory: e2e
+        run: npm install
+      - name: Run live smoke test
+        working-directory: e2e
+        env:
+          # Manual dispatch defaults to a dry run (opt in to a real charge by
+          # unticking the box). The weekly cron sends no inputs, so it always
+          # does the real thing.
+          LIVE_SMOKE_DRY_RUN: ${{ inputs.dry_run }}
+          LIVE_STOREFRONT_URL: https://delfee.in
+          LIVE_ADMIN_URL: https://api.delfee.in
+          LIVE_PUBLISHABLE_KEY: ${{ secrets.LIVE_SMOKE_PUBLISHABLE_KEY }}
+          LIVE_SMOKE_TEST_VARIANT_ID: ${{ secrets.LIVE_SMOKE_TEST_VARIANT_ID }}
+          LIVE_SMOKE_TEST_EMAIL: ${{ secrets.LIVE_SMOKE_TEST_EMAIL }}
+          LIVE_SMOKE_ADMIN_EMAIL: ${{ secrets.LIVE_SMOKE_ADMIN_EMAIL }}
+          LIVE_SMOKE_ADMIN_PASSWORD: ${{ secrets.LIVE_SMOKE_ADMIN_PASSWORD }}
+        run: npm run live-smoke

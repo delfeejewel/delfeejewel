@@ -409,6 +409,8 @@ export default function ProductInfo({
                       return (
                         <button
                           key={val.id}
+                          data-testid="product-option-value"
+                          data-option-value={val.value}
                           onClick={() => setOptions((p) => ({ ...p, [option.id]: val.value }))}
                           className={`w-11 h-11 rounded-full shadow-inner transition-all duration-200 ${
                             isSelected ? "ring-2 ring-[var(--color-gold)] ring-offset-2" : "hover:ring-2 hover:ring-[var(--color-lavender)]"
@@ -426,6 +428,8 @@ export default function ProductInfo({
                       return (
                         <button
                           key={val.id}
+                          data-testid="product-option-value"
+                          data-option-value={val.value}
                           onClick={() => setOptions((p) => ({ ...p, [option.id]: val.value }))}
                           className={`px-6 py-2.5 rounded-lg text-sm font-semibold tracking-[0.03em] transition-all duration-200 ${
                             isSelected
@@ -578,6 +582,8 @@ export default function ProductInfo({
               <button
                 className="w-10 h-full flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors rounded-l-lg"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                aria-label="Decrease quantity"
+                data-testid="product-qty-decrease"
               >
                 <Minus size={14} className="text-[var(--color-text-secondary)]" />
               </button>
@@ -586,6 +592,8 @@ export default function ProductInfo({
                 className="w-10 h-full flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors rounded-r-lg disabled:opacity-40"
                 onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
                 disabled={quantity >= maxQty}
+                aria-label="Increase quantity"
+                data-testid="product-qty-increase"
               >
                 <Plus size={14} className="text-[var(--color-text-secondary)]" />
               </button>

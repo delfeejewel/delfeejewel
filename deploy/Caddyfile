@@ -12,3 +12,16 @@ api.delfee.in {
 	encode zstd gzip
 	reverse_proxy backend:9000
 }
+
+# Staging — separate containers on the delfee_appnet network (see
+# docker-compose.staging.yml). Not deployed by the prod workflow; DNS for
+# these two names must point at this droplet before certs will issue.
+staging.delfee.in {
+	encode zstd gzip
+	reverse_proxy storefront-staging:8000
+}
+
+api-staging.delfee.in {
+	encode zstd gzip
+	reverse_proxy backend-staging:9000
+}

@@ -32,6 +32,7 @@ import {
   updateProductsWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { createClient } from "@supabase/supabase-js"
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import { promises as fs } from "fs"
 import path from "path"
 
@@ -49,12 +50,16 @@ const CONTENT_TYPES: Record<string, string> = {
 }
 
 // md "Category:" value -> backend category handle
+// NOTE: these must match the handles that actually exist in the store — see
+// GET /store/product-categories. They are `necklace` / `bracelets` / `pendants`,
+// NOT the plural-compound names used in the md headings. An unmatched handle is
+// only a warning, so a stale entry here silently produces uncategorised products.
 const CATEGORY_HANDLE: Record<string, string> = {
   Rings: "rings",
-  Necklaces: "necklaces-pendants",
-  "Necklaces & Pendants": "necklaces-pendants",
-  Bracelets: "bracelets-bangles",
-  "Bracelets & Bangles": "bracelets-bangles",
+  Necklaces: "necklace",
+  "Necklaces & Pendants": "necklace",
+  Bracelets: "bracelets",
+  "Bracelets & Bangles": "bracelets",
   Anklets: "anklets",
   Earrings: "earrings",
   Mangalsutras: "mangalsutras",
@@ -195,6 +200,22 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Media goes to S3-compatible object storage when S3_ENDPOINT is set (R2),
+  // otherwise it falls back to the Supabase Storage bucket. Same addressing
+  // style the file module uses, so admin uploads and script uploads agree.
+  const s3 = process.env.S3_ENDPOINT
+    ? new S3Client({
+        region: process.env.S3_REGION || "auto",
+        endpoint: process.env.S3_ENDPOINT,
+        forcePathStyle: true,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+        },
+      })
+    : null
+  logger.info(s3 ? `media → S3 bucket ${process.env.S3_BUCKET}` : `media → Supabase bucket ${BUCKET}`)
+
   // repo root = one level up from backend/
   const repoRoot = path.resolve(process.cwd(), "..")
   const mdPath = path.join(repoRoot, "Products", "products-data.md")
@@ -253,7 +274,8 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
   const uploadFile = async (
     absPath: string,
     prodId: string,
-    filename: string
+    filename: string,
+    handle: string
   ): Promise<string | null> => {
     try {
       const buf = await fs.readFile(absPath)
@@ -265,6 +287,21 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
         .replace(/[^a-zA-Z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
       const objectPath = `${prodId.toLowerCase()}-${base}-${buf.length}${ext}`
+      if (s3) {
+        // Match the layout every existing product already uses in the bucket:
+        // products/<handle>/<original filename>, filename kept verbatim.
+        const key = `products/${handle}/${filename}`
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: process.env.S3_BUCKET!,
+            Key: key,
+            Body: buf,
+            ContentType: contentType,
+          })
+        )
+        const href = key.split("/").map(encodeURIComponent).join("/")
+        return `${process.env.S3_FILE_URL!.replace(/\/+$/, "")}/${href}`
+      }
       const { error } = await supabase.storage
         .from(BUCKET)
         .upload(objectPath, buf, { contentType, upsert: true })
@@ -283,7 +320,20 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
     // backend category — route them there for discoverability/filtering.
     const isMangalsutra =
       p.handle.includes("mangalsutra") || p.tags.includes("mangalsutra")
-    const catHandle = isMangalsutra ? "mangalsutras" : CATEGORY_HANDLE[p.category]
+    // Pendant (and pendant + earring set) products live under their own
+    // `pendants` category, matching every set already live, even though the md
+    // files them under the combined "Necklaces & Pendants" heading. Keyed on the
+    // handle only — plain necklaces often carry a "pendant" TAG (the piece hangs
+    // from a chain) and must still land in `necklace`.
+    const isPendant =
+      !isMangalsutra &&
+      CATEGORY_HANDLE[p.category] === "necklace" &&
+      p.handle.includes("pendant")
+    const catHandle = isMangalsutra
+      ? "mangalsutras"
+      : isPendant
+      ? "pendants"
+      : CATEGORY_HANDLE[p.category]
     const category = categories.find((c: any) => c.handle === catHandle)
     if (!category) {
       logger.warn(`  category "${p.category}" (-> ${catHandle}) not found; importing without category.`)
@@ -322,7 +372,7 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
       let bfThumb: string | undefined
       if (needsImages) {
         for (const f of galleryOrder) {
-          const url = await uploadFile(path.join(absDir, f), p.prodId, f)
+          const url = await uploadFile(path.join(absDir, f), p.prodId, f, p.handle)
           if (url) {
             bfImageUrls.push(url)
             if (f === p.thumbnail && !bfThumb) bfThumb = url
@@ -333,7 +383,7 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
       const bfVideoUrls: string[] = []
       if (needsImages) {
         for (const f of p.videos) {
-          const url = await uploadFile(path.join(absDir, f), p.prodId, f)
+          const url = await uploadFile(path.join(absDir, f), p.prodId, f, p.handle)
           if (url) bfVideoUrls.push(url)
         }
       }
@@ -362,7 +412,7 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
     const imageUrls: string[] = []
     let thumbnailUrl: string | undefined
     for (const f of galleryOrder) {
-      const url = await uploadFile(path.join(absDir, f), p.prodId, f)
+      const url = await uploadFile(path.join(absDir, f), p.prodId, f, p.handle)
       if (url) {
         imageUrls.push(url)
         if (f === p.thumbnail && !thumbnailUrl) thumbnailUrl = url
@@ -373,7 +423,7 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
     // upload videos
     const videoUrls: string[] = []
     for (const f of p.videos) {
-      const url = await uploadFile(path.join(absDir, f), p.prodId, f)
+      const url = await uploadFile(path.join(absDir, f), p.prodId, f, p.handle)
       if (url) videoUrls.push(url)
     }
 

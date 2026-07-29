@@ -5,6 +5,23 @@ import { HttpTypes } from "@medusajs/types"
 // edits. Skip the fetch cache entirely rather than tune a revalidate window —
 // always-fresh has no meaningful cost here, and it's one less place stale
 // admin edits (deleted/renamed categories) could linger in nav/homepage.
+/**
+ * Categories that must never appear anywhere the catalogue is listed — nav,
+ * footer, homepage rows, search facets, category-page breadcrumbs.
+ *
+ * Filtered here, at the single source every listing goes through, rather than
+ * per-component, so a new listing added later can't accidentally resurface
+ * them. Matched case-insensitively on both name and handle.
+ *
+ * This hides them from the storefront; it does NOT delete the underlying
+ * Medusa categories, so any products still assigned to them keep their data.
+ */
+const HIDDEN_CATEGORY_KEYS = ["collections", "gifting"]
+
+const isHiddenCategory = (c: HttpTypes.StoreProductCategory) =>
+  HIDDEN_CATEGORY_KEYS.includes((c.name || "").trim().toLowerCase()) ||
+  HIDDEN_CATEGORY_KEYS.includes((c.handle || "").trim().toLowerCase())
+
 export const listCategories = async (query?: Record<string, any>) => {
   const limit = query?.limit || 100
 
@@ -25,7 +42,18 @@ export const listCategories = async (query?: Record<string, any>) => {
         cache: "no-store",
       }
     )
-    .then(({ product_categories }) => product_categories)
+    .then(({ product_categories }) =>
+      (product_categories || [])
+        .filter((c) => !isHiddenCategory(c))
+        // Also strip them from children, so they can't reappear nested under
+        // another category in dropdowns or breadcrumbs.
+        .map((c) => ({
+          ...c,
+          category_children: (c.category_children || []).filter(
+            (child) => !isHiddenCategory(child)
+          ),
+        }))
+    )
 }
 
 export const getCategoryByHandle = async (categoryHandle: string[]) => {
