@@ -18,6 +18,7 @@ import ReorderButton from "@modules/account/components/reorder-button"
 import RequestReturn from "@modules/returns/components/request-return"
 import { convertToLocale } from "@lib/util/money"
 import { getDisplayFulfillmentStatus } from "@lib/util/order-status"
+import { courierHistory } from "@lib/util/courier"
 import { HttpTypes } from "@medusajs/types"
 
 type Props = {
@@ -210,9 +211,7 @@ export default function OrderDetailsTemplate({
         <div className="pt-3 pb-1">
           <OrderTimeline
             createdAt={order.created_at as string}
-            history={
-              ((order.metadata as any)?.shiprocket_history as any[]) || []
-            }
+            history={courierHistory(order.metadata)}
             isCanceled={(order as any).status === "canceled"}
             rtoProcessedAt={
               (order.metadata as any)?.rto_processed_at || null

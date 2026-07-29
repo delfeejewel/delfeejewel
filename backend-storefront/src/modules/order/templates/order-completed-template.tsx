@@ -14,6 +14,7 @@ import GuestTrackPrompt from "@modules/order/components/guest-track-prompt"
 import InvoiceButton from "@modules/order/components/invoice-button"
 import ThankYouDecor from "@modules/order/components/thank-you-decor"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { courierHistory } from "@lib/util/courier"
 import { HttpTypes } from "@medusajs/types"
 
 type OrderCompletedTemplateProps = {
@@ -68,9 +69,7 @@ export default async function OrderCompletedTemplate({
               <div className="border-t border-[var(--color-lavender)] pt-5 small:pt-6">
                 <OrderTimeline
                   createdAt={order.created_at as string}
-                  history={
-                    ((order.metadata as any)?.shiprocket_history as any[]) || []
-                  }
+                  history={courierHistory(order.metadata)}
                   isCanceled={(order as any).status === "canceled"}
                   rtoProcessedAt={
                     (order.metadata as any)?.rto_processed_at || null

@@ -77,9 +77,13 @@ const nextConfig = {
         : []),
     ],
   },
-  // "Bracelets & Bangles" and "Necklaces & Pendants" were split into
-  // separate categories (Bracelets; Necklace + Pendants) — preserve any
-  // bookmarked/indexed links to the old combined category URLs.
+  // Category handles have been renamed twice, and old URLs stay indexed and
+  // bookmarked long after. Keep every historical form redirecting to the
+  // current one:
+  //   1. "Bracelets & Bangles" / "Necklaces & Pendants" were split into
+  //      separate categories.
+  //   2. Every handle was then standardised to the PLURAL form, which moved
+  //      necklace -> necklaces and rakhi -> rakhis.
   async redirects() {
     return [
       {
@@ -89,7 +93,17 @@ const nextConfig = {
       },
       {
         source: "/:countryCode/categories/necklaces-pendants",
-        destination: "/:countryCode/categories/necklace",
+        destination: "/:countryCode/categories/necklaces",
+        permanent: true,
+      },
+      {
+        source: "/:countryCode/categories/necklace",
+        destination: "/:countryCode/categories/necklaces",
+        permanent: true,
+      },
+      {
+        source: "/:countryCode/categories/rakhi",
+        destination: "/:countryCode/categories/rakhis",
         permanent: true,
       },
     ]

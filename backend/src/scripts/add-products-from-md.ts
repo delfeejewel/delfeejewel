@@ -51,20 +51,21 @@ const CONTENT_TYPES: Record<string, string> = {
 
 // md "Category:" value -> backend category handle
 // NOTE: these must match the handles that actually exist in the store — see
-// GET /store/product-categories. They are `necklace` / `bracelets` / `pendants`,
-// NOT the plural-compound names used in the md headings. An unmatched handle is
-// only a warning, so a stale entry here silently produces uncategorised products.
+// GET /store/product-categories. Every category handle is PLURAL. An unmatched
+// handle is only a warning, so a stale entry here silently produces
+// uncategorised products — which is exactly what happened when the categories
+// were renamed and this map was left pointing at the old names.
 const CATEGORY_HANDLE: Record<string, string> = {
   Rings: "rings",
-  Necklaces: "necklace",
-  "Necklaces & Pendants": "necklace",
+  Necklaces: "necklaces",
+  "Necklaces & Pendants": "necklaces",
   Bracelets: "bracelets",
   "Bracelets & Bangles": "bracelets",
   Anklets: "anklets",
   Earrings: "earrings",
   Mangalsutras: "mangalsutras",
-  Rakhi: "rakhi",
-  Rakhis: "rakhi",
+  Rakhi: "rakhis",
+  Rakhis: "rakhis",
 }
 
 type Variant = { size: string; sku: string; price: number; weight: number }
@@ -327,7 +328,7 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
     // from a chain) and must still land in `necklace`.
     const isPendant =
       !isMangalsutra &&
-      CATEGORY_HANDLE[p.category] === "necklace" &&
+      CATEGORY_HANDLE[p.category] === "necklaces" &&
       p.handle.includes("pendant")
     const catHandle = isMangalsutra
       ? "mangalsutras"

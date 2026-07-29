@@ -7,6 +7,12 @@ import { Package, Mail, Hash, Search, Truck, ExternalLink } from "lucide-react"
 
 import { lookupOrder, lookupOrderByToken } from "@lib/data/orders"
 import { convertToLocale } from "@lib/util/money"
+import {
+  courierAwb,
+  courierHistory,
+  courierName,
+  trackingUrl,
+} from "@lib/util/courier"
 import OrderTimeline from "@modules/order/components/order-timeline"
 
 type FoundOrder = {
@@ -179,8 +185,9 @@ export default function TrackOrderTemplate() {
   const meta = (order?.metadata || {}) as any
   const codUpfront = Number(meta.cod_upfront_amount) || 0
   const codDue = Math.max(0, (Number(order?.total) || 0) - codUpfront)
-  const awb = meta.awb as string | undefined
-  const courier = meta.shiprocket_courier as string | undefined
+  const awb = courierAwb(meta)
+  const courier = courierName(meta)
+  const trackHref = trackingUrl(meta)
 
   return (
     <div className="relative bg-[var(--color-bg-primary)] overflow-hidden">
@@ -341,7 +348,7 @@ export default function TrackOrderTemplate() {
                 <div className="my-6">
                   <OrderTimeline
                     createdAt={order.created_at}
-                    history={meta.shiprocket_history || []}
+                    history={courierHistory(meta)}
                     isCanceled={order.status === "canceled"}
                     rtoProcessedAt={meta.rto_processed_at || null}
                     rtoRefundAmount={Number(meta.rto_refund_amount) || null}
@@ -374,11 +381,9 @@ export default function TrackOrderTemplate() {
                         )}
                       </p>
                     </div>
-                    {awb && (
+                    {trackHref && (
                       <a
-                        href={`https://shiprocket.co/tracking/${encodeURIComponent(
-                          awb
-                        )}`}
+                        href={trackHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-plum)] hover:text-[var(--color-plum-deep)]"

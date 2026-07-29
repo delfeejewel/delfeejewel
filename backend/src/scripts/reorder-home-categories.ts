@@ -15,11 +15,11 @@ import { updateProductCategoriesWorkflow } from "@medusajs/medusa/core-flows"
  *   npx medusa exec ./src/scripts/reorder-home-categories.ts apply
  */
 const DESIRED_ORDER = [
-  "rakhi",
+  "rakhis",
   "rings",
   "bracelets",
   "pendants",
-  "necklace",
+  "necklaces",
   "earrings",
   "mangalsutras",
   "anklets",

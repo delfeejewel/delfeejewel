@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createProductCategoriesWorkflow } from "@medusajs/medusa/core-flows"
 
 /**
- * Idempotently create the "Rakhi" product category (handle: rakhi) so the
+ * Idempotently create the "Rakhis" product category (handle: rakhis) so the
  * seasonal Raksha Bandhan collection has its own storefront category.
  */
 export default async function ensureRakhiCategory({ container }: ExecArgs) {
@@ -13,7 +13,7 @@ export default async function ensureRakhiCategory({ container }: ExecArgs) {
   const { data: existing } = await query.graph({
     entity: "product_category",
     fields: ["id", "name", "handle"],
-    filters: { handle: "rakhi" } as any,
+    filters: { handle: "rakhis" } as any,
   })
 
   if (existing?.length) {
@@ -25,8 +25,8 @@ export default async function ensureRakhiCategory({ container }: ExecArgs) {
     input: {
       product_categories: [
         {
-          name: "Rakhi",
-          handle: "rakhi",
+          name: "Rakhis",
+          handle: "rakhis",
           description:
             "Handcrafted 925 sterling silver rakhis for Raksha Bandhan.",
           is_active: true,
