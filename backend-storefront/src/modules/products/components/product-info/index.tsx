@@ -5,17 +5,24 @@ import { HttpTypes } from "@medusajs/types"
 import { useParams, usePathname, useSearchParams, useRouter } from "next/navigation"
 import { isEqual } from "lodash"
 import { motion, useInView } from "framer-motion"
-import { addToCart } from "@lib/data/cart"
+import {
+  addToCart,
+  applyPromoCode,
+  getAppliedPromoCodes,
+  removePromoCode,
+} from "@lib/data/cart"
 import { addWishlistItem, removeWishlistItem } from "@lib/data/wishlist"
 import { loginAction } from "@lib/data/customer"
 import { checkDelivery, type DeliveryCheck } from "@lib/data/delivery"
 import { getProductPrice } from "@lib/util/get-product-price"
 import {
   Heart, Award, Truck, ShieldCheck, CheckCircle, Star,
-  Clock, Gift, Package, Share2, Minus, Plus, X, Tag,
+  Clock, Gift, Package, Share2, Minus, Plus, X,
 } from "lucide-react"
 import { AnimatePresence } from "framer-motion"
 import type { ReviewSummary } from "@modules/reviews/types"
+import type { StoreCoupon } from "@lib/data/promotions"
+import CouponOffers from "@modules/products/components/coupon-offers"
 
 type Props = {
   product: HttpTypes.StoreProduct
@@ -23,6 +30,7 @@ type Props = {
   isLoggedIn: boolean
   initialWishlisted: boolean
   reviewSummary?: ReviewSummary
+  coupons?: StoreCoupon[]
 }
 
 const optionsAsKeymap = (opts: HttpTypes.StoreProductVariant["options"]) =>
@@ -41,6 +49,7 @@ export default function ProductInfo({
   isLoggedIn,
   initialWishlisted,
   reviewSummary,
+  coupons = [],
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
@@ -84,9 +93,60 @@ export default function ProductInfo({
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [giftWrap, setGiftWrap] = useState(false)
-  const [promoOpen, setPromoOpen] = useState(false)
-  const [promoCode, setPromoCode] = useState("")
+  // Coupons. `appliedCode` is live on the cart; `stagedCode` is held for a cart
+  // that doesn't exist yet and goes in with the first add to bag.
+  const [appliedCode, setAppliedCode] = useState<string | null>(null)
+  const [stagedCode, setStagedCode] = useState<string | null>(null)
+  const [pendingCode, setPendingCode] = useState<string | null>(null)
   const [promoError, setPromoError] = useState("")
+  const promoCode = appliedCode || stagedCode || ""
+
+  // Reflect a coupon the shopper already applied elsewhere (cart/checkout) so
+  // the offers list doesn't invite them to re-apply it.
+  useEffect(() => {
+    let cancelled = false
+    getAppliedPromoCodes()
+      .then((codes) => {
+        if (!cancelled && codes.length) setAppliedCode(codes[0])
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleApplyCoupon = async (code: string) => {
+    if (pendingCode) return
+    setPromoError("")
+    setPendingCode(code)
+    try {
+      const result = await applyPromoCode(code)
+      if (result.error) {
+        setPromoError(result.error)
+      } else if (result.deferred) {
+        // No cart yet — hold it; `handleAddToCart` sends it along.
+        setStagedCode(code)
+      } else {
+        setAppliedCode(code)
+        setStagedCode(null)
+      }
+    } catch (e: any) {
+      setPromoError(e?.message || "That coupon code isn't valid.")
+    } finally {
+      setPendingCode(null)
+    }
+  }
+
+  const handleRemoveCoupon = async () => {
+    const code = appliedCode
+    setAppliedCode(null)
+    setStagedCode(null)
+    setPromoError("")
+    if (code) {
+      const result = await removePromoCode(code)
+      if (!result.ok && result.error) setPromoError(result.error)
+    }
+  }
 
   // Per-product flag set in the admin (metadata.gift_ready). Controls the
   // "Gift Ready" badge and the gift-wrap option below — both hidden unless on.
@@ -158,7 +218,15 @@ export default function ProductInfo({
         giftWrap,
         promoCode: promoCode || undefined,
       })
-      if (result?.promoError) setPromoError(result.promoError)
+      if (result?.promoError) {
+        // The staged code was rejected against the real cart — drop it rather
+        // than silently retrying it on every subsequent add.
+        setPromoError(result.promoError)
+        setStagedCode(null)
+      } else if (stagedCode) {
+        setAppliedCode(stagedCode)
+        setStagedCode(null)
+      }
     } catch (e: any) {
       setAddError(
         e?.message || "Couldn't add to your bag. Please try again."
@@ -188,8 +256,13 @@ export default function ProductInfo({
       // navigate away from the page where the input lives.
       if (result?.promoError) {
         setPromoError(result.promoError)
+        setStagedCode(null)
         setIsBuying(false)
         return
+      }
+      if (stagedCode) {
+        setAppliedCode(stagedCode)
+        setStagedCode(null)
       }
       router.push(`/${countryCode}/checkout?step=address`)
     } catch (e) {
@@ -525,54 +598,16 @@ export default function ProductInfo({
           </label>
         )}
 
-        {/* Coupon code — entered here, applied when Add to Cart / Buy Now runs */}
-        <div className="flex flex-col gap-2">
-          {!promoOpen ? (
-            <button
-              type="button"
-              onClick={() => setPromoOpen(true)}
-              className="self-start inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
-            >
-              <Tag size={13} />
-              Have a coupon code?
-            </button>
-          ) : (
-            <>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) => {
-                    setPromoCode(e.target.value.toUpperCase())
-                    setPromoError("")
-                  }}
-                  placeholder="ENTER CODE"
-                  className="flex-1 h-11 px-4 rounded-lg text-[13px] uppercase tracking-wider outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPromoCode("")
-                    setPromoOpen(false)
-                    setPromoError("")
-                  }}
-                  aria-label="Remove coupon code"
-                  className="w-11 h-11 shrink-0 rounded-lg border border-[var(--color-lavender)] flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors"
-                >
-                  <X size={16} className="text-[var(--color-text-secondary)]" />
-                </button>
-              </div>
-              <p className="text-[11px] text-[var(--color-text-muted)]">
-                Applied when you add this to your bag.
-              </p>
-            </>
-          )}
-          {promoError && (
-            <p className="text-[12px] text-red-500" role="alert">
-              {promoError}
-            </p>
-          )}
-        </div>
+        {/* Offers & coupons — live codes, applied straight from this page */}
+        <CouponOffers
+          coupons={coupons}
+          appliedCode={appliedCode}
+          stagedCode={stagedCode}
+          pendingCode={pendingCode}
+          error={promoError}
+          onApply={handleApplyCoupon}
+          onRemove={handleRemoveCoupon}
+        />
 
         {/* Quantity + Add to Cart + Wishlist — all on one line */}
         <div className="pt-2 space-y-3">

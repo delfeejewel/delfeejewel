@@ -63,6 +63,39 @@ export const ROLE_HIDDEN_NAV_ROUTES: Record<string, string[]> = {
   employee: ["/app/customer-groups"],
 }
 
+/** Roles that should not see the sidebar's ⌘K search trigger. */
+export const SEARCH_HIDDEN_ROLES = ["admin", "employee"]
+
+/**
+ * Hide the sidebar search (⌘K) button.
+ *
+ * Unlike the entries above it is NOT a <NavLink>, so there is no href to match
+ * on — it is a button that opens the command palette. The dashboard bundle is
+ * minified past the point where class names are stable to target, so match on
+ * structure instead: the only control in the sidebar carrying a <kbd> shortcut
+ * hint next to the label "Search".
+ *
+ * Scoped to the sidebar (found via a nav link that always exists) so it cannot
+ * accidentally hide a search box on a list page. Cosmetic only — the ⌘K
+ * keyboard shortcut itself still works, since that is bound at the document
+ * level by the dashboard.
+ */
+const hideSearchTrigger = () => {
+  const anchor = document.querySelector<HTMLElement>('a[href="/app/orders"]')
+  const sidebar = anchor?.closest<HTMLElement>("nav") || anchor?.parentElement?.parentElement
+  const scope: ParentNode = sidebar || document
+
+  for (const el of Array.from(scope.querySelectorAll<HTMLElement>("button"))) {
+    const label = (el.textContent || "").trim()
+    if (!label.startsWith("Search")) continue
+    // The shortcut hint is what distinguishes the palette trigger from any
+    // other button that happens to say "Search".
+    if (!el.querySelector("kbd") && label !== "Search") continue
+    const wrapper = el.closest<HTMLElement>("div.px-3") || el
+    wrapper.style.display = "none"
+  }
+}
+
 const hideNavLinks = (routes: string[]) => {
   for (const route of routes) {
     const link = document.querySelector<HTMLAnchorElement>(
@@ -89,10 +122,16 @@ export const startEmployeeNavGuard = () => {
         ...(role === "employee" ? HIDDEN_NAV_ROUTES : []),
         ...(ROLE_HIDDEN_NAV_ROUTES[role] || []),
       ]
-      if (!routes.length) return
+      const hideSearch = SEARCH_HIDDEN_ROLES.includes(role)
+      if (!routes.length && !hideSearch) return
 
-      hideNavLinks(routes)
-      new MutationObserver(() => hideNavLinks(routes)).observe(document.body, {
+      const apply = () => {
+        if (routes.length) hideNavLinks(routes)
+        if (hideSearch) hideSearchTrigger()
+      }
+
+      apply()
+      new MutationObserver(apply).observe(document.body, {
         childList: true,
         subtree: true,
       })

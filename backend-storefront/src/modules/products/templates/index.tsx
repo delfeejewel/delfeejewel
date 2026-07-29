@@ -14,6 +14,7 @@ import { getProductPrice } from "@lib/util/get-product-price"
 import MobileStickyBar from "@modules/products/components/mobile-sticky-bar"
 import RecentlyViewedTracker from "@modules/products/components/recently-viewed-tracker"
 import { getProductReviews } from "@lib/data/reviews"
+import { listStoreCoupons } from "@lib/data/promotions"
 
 // ─── Breadcrumb ──────────────────────────────────────
 function Breadcrumb({ product }: { product: HttpTypes.StoreProduct }) {
@@ -64,6 +65,10 @@ const ProductTemplate = async ({
   // Rating summary for the PDP header (stars + count). Same fetch the reviews
   // section uses below — deduped/cached by Next, so no extra round-trip.
   const { summary: reviewSummary } = await getProductReviews(product.id)
+
+  // Publicly advertisable coupon codes for this product (offers strip in the
+  // buy box). Cached for 5 min and failure-tolerant — never blocks the page.
+  const coupons = await listStoreCoupons(product.id)
 
   // Media = product images (videos auto-detected by extension) + any URLs in
   // metadata.videos (array or comma-separated string). Videos render as <video>.
@@ -194,6 +199,7 @@ const ProductTemplate = async ({
                 isLoggedIn={isLoggedIn}
                 initialWishlisted={initialWishlisted}
                 reviewSummary={reviewSummary}
+                coupons={coupons}
               />
 
               {/* Gradient divider */}

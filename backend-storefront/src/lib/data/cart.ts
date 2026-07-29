@@ -483,6 +483,75 @@ export async function applyPromotions(codes: string[]) {
   return cart
 }
 
+/**
+ * Codes already sitting on the shopper's cart, if they have one. Lets the PDP
+ * offers section open in the right state (showing "Applied" rather than an
+ * Apply button for a code that's already on the bag).
+ */
+export async function getAppliedPromoCodes(): Promise<string[]> {
+  const cartId = await getCartId()
+  if (!cartId) return []
+  const cart = await retrieveCart(cartId, "id,*promotions")
+  return ((cart?.promotions as any[]) || [])
+    .map((p) => p?.code)
+    .filter(Boolean) as string[]
+}
+
+/**
+ * Apply a coupon straight from the product page.
+ *
+ * There may be no cart yet (nothing added), and creating one just to hold a
+ * coupon would leave empty carts everywhere and break Medusa's own cart-level
+ * promotion rules. So: apply immediately when a cart exists, otherwise report
+ * back `deferred` and let the caller hand the code to `addToCart`, which
+ * applies it the moment the cart is born.
+ */
+export async function applyPromoCode(
+  code: string
+): Promise<{ applied?: boolean; deferred?: boolean; error?: string }> {
+  const trimmed = code?.trim().toUpperCase()
+  if (!trimmed) return { error: "Please enter a coupon code." }
+
+  const cartId = await getCartId()
+  if (!cartId) {
+    return { deferred: true }
+  }
+
+  const existing = await getAppliedPromoCodes()
+  if (existing.some((c) => c.toUpperCase() === trimmed)) {
+    return { applied: true }
+  }
+
+  try {
+    await applyPromotions([...existing, trimmed])
+    return { applied: true }
+  } catch (e: any) {
+    return { error: e?.message || "That coupon code isn't valid." }
+  }
+}
+
+/**
+ * Drop a coupon applied from the product page. A no-op when the code was only
+ * staged (no cart yet) — the caller just clears its own state.
+ */
+export async function removePromoCode(
+  code: string
+): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = code?.trim().toUpperCase()
+  const cartId = await getCartId()
+  if (!cartId || !trimmed) return { ok: true }
+
+  try {
+    const remaining = (await getAppliedPromoCodes()).filter(
+      (c) => c.toUpperCase() !== trimmed
+    )
+    await applyPromotions(remaining)
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Could not remove the coupon." }
+  }
+}
+
 // Normalise a 10-digit local number to E.164 with India's fixed +91 ISD code.
 const toE164India = (v: FormDataEntryValue | null) => {
   const digits = String(v || "").replace(/\D/g, "").slice(-10)

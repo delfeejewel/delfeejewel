@@ -133,6 +133,12 @@ const COMING_SOON_BYPASS_PATHS = [
 const STATIC_ASSET_RE =
   /\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|mjs|map|woff2?|ttf|otf|eot|txt|xml|json|pdf|mp4|webm|wasm)$/i
 
+// Search-engine ownership files (Google Search Console drops a
+// google<hash>.html at the domain root). These must serve verbatim from the
+// exact root path — a country-code rewrite or the coming-soon redirect makes
+// verification fail — and they're .html, so STATIC_ASSET_RE won't cover them.
+const SITE_VERIFICATION_RE = /^\/google[0-9a-z]+\.html$/i
+
 function isComingSoonAllowed(pathname: string): boolean {
   if (STATIC_ASSET_RE.test(pathname)) return true // static assets
   return COMING_SOON_BYPASS_PATHS.some(
@@ -152,6 +158,12 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/notify-launch") ||
     request.nextUrl.pathname.startsWith("/api/qa-access")
   ) {
+    return NextResponse.next()
+  }
+
+  // Serve site-verification files straight from /public, ahead of both the
+  // coming-soon gate and the country-code rewrite.
+  if (SITE_VERIFICATION_RE.test(request.nextUrl.pathname)) {
     return NextResponse.next()
   }
 
