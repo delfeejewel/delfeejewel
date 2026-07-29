@@ -3,7 +3,6 @@ import { getStoreInfo, getFooterSettings, getMenus } from "@lib/data/cms"
 import { BRAND } from "@lib/constants.brand"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import NewsletterForm from "@modules/layout/components/newsletter-form"
 
 /* ─── Static Data ─────────────────────────────────────── */
 
@@ -270,11 +269,6 @@ export default async function Footer() {
             <p className="text-[13px] small:text-[14px] text-white/50 mt-3 max-w-sm leading-relaxed">
               {tagline}. Timeless pieces crafted with love, designed to be treasured forever.
             </p>
-          </div>
-
-          {/* Newsletter mini */}
-          <div className="w-full small:w-auto small:min-w-[320px]">
-            <NewsletterForm />
           </div>
         </div>
 

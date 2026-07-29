@@ -1,15 +1,22 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import EmailNotificationService from "../../../modules/email_notification/service"
+import { saveContactSubmission } from "../../../utils/save-contact-submission"
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 /**
  * POST /store/contact
- * Notifies the team of a new Contact Us submission.
+ * Stores a Contact Us submission and notifies the team.
  *
- * The submission itself is stored by the storefront directly in Supabase
- * (`contact_submissions`, managed in CMS → Forms). This endpoint only fires the
- * team-notification email, fire-and-forget — it never blocks the storefront.
+ * This endpoint OWNS persistence: it writes `contact_submissions` over
+ * Postgres (read in CMS → Forms → Submissions). Previously the storefront
+ * inserted the row itself via the Supabase REST API using the anon key, which
+ * returns 402 as soon as the project exceeds its free-tier quota — breaking the
+ * contact form while the database itself was perfectly healthy.
+ *
+ * The response reports what actually happened, so the storefront can tell a
+ * customer their message got through rather than guessing:
+ *   { success, stored }   success = stored OR the notification email was queued
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const { name, email, phone, subject, message } = (req.body ?? {}) as Record<
@@ -35,20 +42,38 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     req.scope.resolve("email_notification")
   const logger = req.scope.resolve("logger")
 
-  // Fire-and-forget: the message is already persisted in Supabase, so don't
-  // hold the response on email delivery.
-  emailService
-    .sendContactNotificationEmail({
-      to,
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone?.trim() || null,
-      subject: subject?.trim() || null,
-      message: message.trim(),
-    })
-    .catch((err: any) =>
-      logger.error(`Contact notification email failed: ${err?.message}`)
-    )
+  const submission = {
+    name: name.trim(),
+    email: email.trim(),
+    phone: phone?.trim() || null,
+    subject: subject?.trim() || null,
+    message: message.trim(),
+  }
 
-  return res.json({ success: true })
+  const stored = await saveContactSubmission(submission)
+  if (!stored) {
+    logger.error(
+      `Contact submission from ${submission.email} could not be stored; ` +
+        `falling back to the notification email only.`
+    )
+  }
+
+  // Await delivery so we can tell the customer the truth. If the row was NOT
+  // stored, the email is the only copy of this message — a silent failure there
+  // would lose it outright.
+  let emailed = false
+  try {
+    await emailService.sendContactNotificationEmail({ to, ...submission })
+    emailed = true
+  } catch (err: any) {
+    logger.error(`Contact notification email failed: ${err?.message}`)
+  }
+
+  if (!stored && !emailed) {
+    return res
+      .status(503)
+      .json({ success: false, stored: false, message: "Could not record your message" })
+  }
+
+  return res.json({ success: true, stored })
 }
