@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { motion } from "framer-motion"
-import { PackageSearch, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { PackageSearch, ChevronLeft, ChevronRight } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { listProducts } from "@lib/data/products"
 import FilterSidebar, { type ActiveFilters } from "@modules/store/components/filters/filter-sidebar"
@@ -13,6 +13,8 @@ import ProductCard from "@modules/categories/components/product-card"
 import TrustBadges from "@modules/categories/components/trust-badges"
 import CategoryFaq from "@modules/categories/components/category-faq"
 import type { FaqItem } from "@modules/content/components/faq-accordion"
+import { getPageItems } from "@lib/util/pagination"
+import { ProductCardSkeletonGrid } from "@modules/categories/components/product-card-skeleton"
 
 const PRODUCTS_PER_PAGE = 12
 // Pages of this size are fetched client-side to load the full category (see the
@@ -192,18 +194,11 @@ export default function CategoryPageClient({
             onGridChange={setGridCols}
           />
 
-          {loadingMore && paginatedProducts.length > 0 && (
-            <div
-              className="flex items-center gap-2 py-2 text-[13px]"
-              style={{ color: "var(--color-text-secondary)" }}
-            >
-              <Loader2 size={14} className="animate-spin" />
-              Loading the full category…
-            </div>
-          )}
 
           {/* Product grid */}
-          {paginatedProducts.length > 0 ? (
+          {isLoadingCatalogue ? (
+            <ProductCardSkeletonGrid gridClass={gridClass} />
+          ) : paginatedProducts.length > 0 ? (
             <>
               <motion.div className={`grid ${gridClass} gap-3 small:gap-4`} layout>
                 {paginatedProducts.map((product, i) => (
@@ -231,20 +226,33 @@ export default function CategoryPageClient({
                     <ChevronLeft size={16} />
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-medium transition-all duration-200"
-                      style={{
-                        background: page === currentPage ? "var(--color-accent-dark)" : "transparent",
-                        color: page === currentPage ? "#fff" : "var(--color-text-secondary)",
-                        border: page === currentPage ? "none" : "1px solid var(--color-border)",
-                      }}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {getPageItems(currentPage, totalPages).map((item, i) =>
+                    item === "…" ? (
+                      <span
+                        key={`gap-${i}`}
+                        aria-hidden="true"
+                        className="w-5 h-9 flex items-end justify-center text-[13px] select-none"
+                        style={{ color: "var(--color-text-secondary)" }}
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => goToPage(item)}
+                        aria-label={`Go to page ${item}`}
+                        aria-current={item === currentPage ? "page" : undefined}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-medium transition-all duration-200"
+                        style={{
+                          background: item === currentPage ? "var(--color-accent-dark)" : "transparent",
+                          color: item === currentPage ? "#fff" : "var(--color-text-secondary)",
+                          border: item === currentPage ? "none" : "1px solid var(--color-border)",
+                        }}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
 
                   <button
                     onClick={() => goToPage(currentPage + 1)}
@@ -257,14 +265,6 @@ export default function CategoryPageClient({
                 </div>
               )}
             </>
-          ) : isLoadingCatalogue ? (
-            <div
-              className="flex flex-col items-center justify-center py-20 text-center"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              <Loader2 size={28} className="animate-spin mb-4" />
-              <p className="text-sm">Loading products…</p>
-            </div>
           ) : (
             <motion.div
               className="flex flex-col items-center justify-center py-20 text-center"
