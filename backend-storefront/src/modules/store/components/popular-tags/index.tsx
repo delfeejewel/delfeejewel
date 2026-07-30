@@ -2,6 +2,8 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 
+import { type Audience, parseAudience } from "@lib/util/sku-audience"
+
 const POPULAR_TAGS: Array<{ label: string; value: string }> = [
   { label: "Bridal", value: "bridal" },
   { label: "Daily Wear", value: "daily-wear" },
@@ -13,18 +15,35 @@ const POPULAR_TAGS: Array<{ label: string; value: string }> = [
   { label: "Gifts for Him", value: "him" },
 ]
 
+const AUDIENCE_CHIPS: Array<{ label: string; value: Audience }> = [
+  { label: "For Men", value: "men" },
+  { label: "For Women", value: "women" },
+]
+
 export default function PopularTags() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const active = searchParams.get("tag")
+  const activeAudience = parseAudience(searchParams.get("for"))
+
+  const push = (params: URLSearchParams) => {
+    params.delete("page")
+    router.push(`${pathname}?${params.toString()}`)
+  }
 
   const setTag = (value: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
     if (!value || active === value) params.delete("tag")
     else params.set("tag", value)
-    params.delete("page")
-    router.push(`${pathname}?${params.toString()}`)
+    push(params)
+  }
+
+  const setAudience = (value: Audience) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (activeAudience === value) params.delete("for")
+    else params.set("for", value)
+    push(params)
   }
 
   return (
@@ -36,9 +55,14 @@ export default function PopularTags() {
         >
           Popular right now
         </p>
-        {active && (
+        {(active || activeAudience) && (
           <button
-            onClick={() => setTag(null)}
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString())
+              params.delete("tag")
+              params.delete("for")
+              push(params)
+            }}
             className="text-[11px] underline"
             style={{ color: "var(--color-text-muted)" }}
           >
@@ -47,6 +71,37 @@ export default function PopularTags() {
         )}
       </div>
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {/* Audience views are driven by the SKU prefix, not by a tag, so they
+            live in their own toggle group ahead of the tag chips. */}
+        {AUDIENCE_CHIPS.map((a) => {
+          const isActive = activeAudience === a.value
+          return (
+            <button
+              key={a.value}
+              onClick={() => setAudience(a.value)}
+              aria-pressed={isActive}
+              className="flex-shrink-0 px-4 py-2 rounded-full text-[12px] font-medium whitespace-nowrap transition-all duration-200"
+              style={{
+                background: isActive
+                  ? "var(--color-gold)"
+                  : "var(--color-bg-primary)",
+                color: isActive ? "#fff" : "var(--color-text-secondary)",
+                border: isActive
+                  ? "1px solid var(--color-gold)"
+                  : "1px solid var(--color-border)",
+              }}
+            >
+              {a.label}
+            </button>
+          )
+        })}
+
+        <span
+          aria-hidden="true"
+          className="flex-shrink-0 self-stretch w-px my-1"
+          style={{ background: "var(--color-border)" }}
+        />
+
         {POPULAR_TAGS.map((t) => {
           const isActive = active === t.value
           return (

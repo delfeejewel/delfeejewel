@@ -6,8 +6,9 @@ import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
-import { LIST_PRODUCT_FIELDS } from "./product-fields"
+import { LIST_PRODUCT_FIELDS, SKU_INDEX_FIELDS } from "./product-fields"
 import { getRegion, retrieveRegion } from "./regions"
+import { Audience, filterProductsByAudience } from "@lib/util/sku-audience"
 
 export const listProducts = async ({
   pageParam = 1,
@@ -94,6 +95,68 @@ export const listProducts = async ({
         queryParams,
       }
     })
+}
+
+/**
+ * The Men / Women listings, resolved from the variant SKU prefix
+ * (GR/GBR → men, LR/LBR → women — see `lib/util/sku-audience`).
+ *
+ * `/store/products` can only filter SKUs by exact value, never by prefix, so
+ * the catalogue has to be scanned. Done in two passes on purpose:
+ *
+ *  1. A cheap SKU-only scan of the whole scope (no price calculation) to work
+ *     out WHICH products belong to the audience.
+ *  2. A normal listing fetch of just those ids, with the full listing fields.
+ *
+ * One combined pass would mean calculating prices for the entire catalogue —
+ * measured at ~9s against production versus ~1s for the scan. Splitting also
+ * gives an exact count, which lets the caller hand the COMPLETE set to the
+ * listing grid: no client-side backfill, and pagination is right on page 1.
+ */
+export const listProductsByAudience = async ({
+  audience,
+  countryCode,
+  regionId,
+  extraQueryParams,
+}: {
+  audience: Audience
+  countryCode?: string
+  regionId?: string
+  extraQueryParams?: Record<string, any>
+}): Promise<{
+  response: { products: HttpTypes.StoreProduct[]; count: number }
+}> => {
+  const {
+    response: { products: index },
+  } = await listProducts({
+    pageParam: 1,
+    queryParams: {
+      ...extraQueryParams,
+      // Matching happens after the fetch, so the whole scope has to be in hand.
+      // 1000 comfortably exceeds the catalogue; revisit if it nears that.
+      limit: 1000,
+      fields: SKU_INDEX_FIELDS,
+    } as any,
+    countryCode,
+    regionId,
+  })
+
+  const ids = filterProductsByAudience(index, audience).map((p) => p.id)
+
+  if (!ids.length) {
+    return { response: { products: [], count: 0 } }
+  }
+
+  const {
+    response: { products },
+  } = await listProducts({
+    pageParam: 1,
+    queryParams: { ...extraQueryParams, limit: ids.length, id: ids } as any,
+    countryCode,
+    regionId,
+  })
+
+  return { response: { products, count: products.length } }
 }
 
 /**

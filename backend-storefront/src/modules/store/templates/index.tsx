@@ -1,9 +1,10 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 
-import { listProducts } from "@lib/data/products"
+import { listProducts, listProductsByAudience } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { getTagByValue } from "@lib/data/tags"
+import { Audience } from "@lib/util/sku-audience"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import ListingHero from "@modules/store/components/listing-hero"
 import ProductListingClient from "@modules/store/components/product-listing"
@@ -59,16 +60,23 @@ const TAG_TITLES: Record<string, { title: string; tagline: string }> = {
   },
 }
 
+const AUDIENCE_TITLES: Record<Audience, { title: string; tagline: string }> = {
+  men: { title: "Shop for Men", tagline: "Pieces with quiet strength." },
+  women: { title: "Shop for Women", tagline: "Designed to feel personal." },
+}
+
 export default async function StoreTemplate({
   sortBy,
   page,
   countryCode,
   tag,
+  audience,
 }: {
   sortBy?: SortOptions
   page?: string
   countryCode: string
   tag?: string
+  audience?: Audience
 }) {
   const region = await getRegion(countryCode)
   if (!region) notFound()
@@ -76,19 +84,34 @@ export default async function StoreTemplate({
   // Resolve tag → tag id (if present)
   const tagId = tag ? await getTagByValue(tag) : null
 
-  // Main product list (filtered by tag if provided)
-  const queryParams: any = { limit: PRODUCT_LIMIT }
-  if (tag && tagId) queryParams.tag_id = [tagId]
-  const { response } = await listProducts({
-    pageParam: 1,
-    queryParams,
-    countryCode,
-  })
+  const tagParams = tag && tagId ? { tag_id: [tagId] } : undefined
+
+  // Anything that narrows the catalogue suppresses the landing-page sections
+  // (category browser, staff picks) and switches the hero to a filtered title.
+  const isFiltered = Boolean(tag || audience)
+
+  // Main product list (scoped by tag and/or audience if provided).
+  //
+  // The audience match runs on SKU prefixes after the fetch, so that path pulls
+  // the whole scope at once and hands the COMPLETE set to the grid below —
+  // which is why `fetchParams` stays undefined there (no client backfill, and
+  // the count is already exact).
+  const { response } = audience
+    ? await listProductsByAudience({
+        audience,
+        countryCode,
+        extraQueryParams: tagParams,
+      })
+    : await listProducts({
+        pageParam: 1,
+        queryParams: { limit: PRODUCT_LIMIT, ...(tagParams || {}) } as any,
+        countryCode,
+      })
 
   // Staff picks render only on the un-filtered landing (see `!tag` below), and
   // there the main query is itself un-filtered — so we pick them out of the
   // batch we already have rather than paying for a second catalogue fetch.
-  const staffPicks = (tag ? [] : response.products || [])
+  const staffPicks = (isFiltered ? [] : response.products || [])
     .filter((p) => {
       const meta = (p.metadata as any) || {}
       return (
@@ -99,7 +122,9 @@ export default async function StoreTemplate({
     })
     .slice(0, STAFF_PICK_LIMIT)
 
-  const heroMeta = tag
+  const heroMeta = audience
+    ? AUDIENCE_TITLES[audience]
+    : tag
     ? TAG_TITLES[tag] || {
         title: `Tagged: ${tag}`,
         tagline: "Hand-picked pieces matching this filter.",
@@ -112,15 +137,15 @@ export default async function StoreTemplate({
   return (
     <div data-testid="store-container">
       {/* Browse by category — only on the un-filtered store landing */}
-      {!tag && (
+      {!isFiltered && (
         <Suspense fallback={null}>
           <BrowseCategories />
         </Suspense>
       )}
 
-      <div className={tag ? "" : "mt-8 small:mt-10"}>
+      <div className={isFiltered ? "" : "mt-8 small:mt-10"}>
         <ListingHero
-          eyebrow={tag ? "Filtered" : "Store"}
+          eyebrow={isFiltered ? "Filtered" : "Store"}
           title={heroMeta.title}
           tagline={heroMeta.tagline}
           productCount={response.count}
@@ -129,14 +154,16 @@ export default async function StoreTemplate({
 
       <PopularTags />
 
-      {!tag && staffPicks.length > 0 && <StaffPicks products={staffPicks} />}
+      {!isFiltered && staffPicks.length > 0 && (
+        <StaffPicks products={staffPicks} />
+      )}
 
       <div className="content-container py-6">
         <ProductListingClient
           initialProducts={response.products}
           initialCount={response.count}
           region={region}
-          fetchParams={tag && tagId ? { tag_id: [tagId] } : undefined}
+          fetchParams={audience ? undefined : tagParams}
           hideTrustBadges
         />
       </div>

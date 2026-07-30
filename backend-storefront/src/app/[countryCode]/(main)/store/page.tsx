@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 
+import { parseAudience } from "@lib/util/sku-audience"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
 
@@ -13,6 +14,8 @@ type Params = {
     sortBy?: SortOptions
     page?: string
     tag?: string
+    /** Audience view — `men` or `women`, matched on the variant SKU prefix. */
+    for?: string
   }>
   params: Promise<{
     countryCode: string
@@ -30,6 +33,7 @@ export default async function StorePage(props: Params) {
       page={page}
       countryCode={params.countryCode}
       tag={tag}
+      audience={parseAudience(searchParams.for)}
     />
   )
 }
