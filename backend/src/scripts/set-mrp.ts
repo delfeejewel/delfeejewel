@@ -112,7 +112,7 @@ export default async function setMrp({ container }: ExecArgs) {
       continue
     }
 
-    for (const variant of product.variants ?? []) {
+    for (const variant of (product.variants ?? []) as any[]) {
       const inr = (variant.prices ?? []).find(
         (p: any) => p.currency_code?.toLowerCase() === "inr"
       )
