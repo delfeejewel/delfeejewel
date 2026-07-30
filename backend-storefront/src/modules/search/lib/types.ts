@@ -4,6 +4,7 @@ export type SuggestProduct = {
   handle: string
   thumbnail: string | null
   price: string | null
+  original_price: string | null
 }
 
 export type SuggestLink = {

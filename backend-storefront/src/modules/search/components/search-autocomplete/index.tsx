@@ -212,12 +212,14 @@ export default function SearchAutocomplete({
     handle,
     thumbnail,
     price,
+    originalPrice,
   }: {
     index: number
     title: string
     handle: string
     thumbnail: string | null
     price: string | null
+    originalPrice?: string | null
   }) => (
     <button
       type="button"
@@ -243,8 +245,15 @@ export default function SearchAutocomplete({
           {title}
         </span>
         {price && (
-          <span className="block text-[12px] font-semibold text-[var(--color-plum)]">
-            {price}
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[12px] font-semibold text-[var(--color-plum)]">
+              {price}
+            </span>
+            {originalPrice && (
+              <span className="text-[11px] line-through text-[var(--color-text-muted)]">
+                {originalPrice}
+              </span>
+            )}
           </span>
         )}
       </span>
@@ -377,6 +386,7 @@ export default function SearchAutocomplete({
                   handle={p.handle}
                   thumbnail={p.thumbnail}
                   price={p.price}
+                  originalPrice={p.original_price}
                 />
               ))}
             </>
@@ -440,6 +450,7 @@ export default function SearchAutocomplete({
                   handle={p.handle}
                   thumbnail={p.thumbnail}
                   price={p.price}
+                  originalPrice={p.original_price}
                 />
               ))}
             </>

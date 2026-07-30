@@ -70,6 +70,9 @@ const ProductTemplate = async ({
   // buy box). Cached for 5 min and failure-tolerant — never blocks the page.
   const coupons = await listStoreCoupons(product.id)
 
+  // Price shown in the mobile sticky bar (mirrors the buy box).
+  const { cheapestPrice: stickyPrice } = getProductPrice({ product })
+
   // Media = product images (videos auto-detected by extension) + any URLs in
   // metadata.videos (array or comma-separated string). Videos render as <video>.
   const VIDEO_RE = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i
@@ -227,7 +230,13 @@ const ProductTemplate = async ({
       </div>
 
       {/* Mobile sticky Add to Cart bar */}
-      <MobileStickyBar title={product.title || ""} price={(() => { const { cheapestPrice: cp } = getProductPrice({ product }); return cp?.calculated_price || "—" })()} />
+      <MobileStickyBar
+        title={product.title || ""}
+        price={stickyPrice?.calculated_price || "—"}
+        originalPrice={
+          stickyPrice?.price_type === "sale" ? stickyPrice.original_price : null
+        }
+      />
 
       {/* Records the product visit for the /store recently-viewed strip */}
       <RecentlyViewedTracker productId={product.id} />

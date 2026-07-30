@@ -1,5 +1,5 @@
 import FaqAccordion, { type FaqItem } from "@modules/content/components/faq-accordion"
-import { CATEGORY_FAQS, GENERIC_FAQS } from "./faq-data"
+import { CATEGORY_FAQS } from "./faq-data"
 
 export default function CategoryFaq({
   categoryHandle,
@@ -10,8 +10,15 @@ export default function CategoryFaq({
   categoryName: string
   faqs?: FaqItem[]
 }) {
-  const items =
-    faqs && faqs.length > 0 ? faqs : CATEGORY_FAQS[categoryHandle] || GENERIC_FAQS
+  // FAQs set on the category in the admin (metadata.faqs) win; otherwise the
+  // curated set for this handle. A category with neither renders nothing at all
+  // — only Rings, Bracelets and Rakhis have FAQs, and there is deliberately no
+  // generic fallback padding out the rest.
+  const items = faqs && faqs.length > 0 ? faqs : CATEGORY_FAQS[categoryHandle] || []
+
+  if (!items.length) {
+    return null
+  }
 
   return (
     <div className="max-w-[820px] mx-auto py-10 small:py-12">

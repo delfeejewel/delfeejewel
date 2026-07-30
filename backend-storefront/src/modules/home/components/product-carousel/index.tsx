@@ -95,8 +95,15 @@ export default function ProductCarousel({
                   {product.subtitle || product.material || "925 Sterling Silver"}
                 </p>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-lg text-[var(--color-plum)]">
-                    {cheapestPrice?.calculated_price || ""}
+                  <span className="flex items-baseline gap-2">
+                    <span className="font-semibold text-lg text-[var(--color-plum)]">
+                      {cheapestPrice?.calculated_price || ""}
+                    </span>
+                    {cheapestPrice?.price_type === "sale" && (
+                      <span className="text-[13px] line-through text-[var(--color-text-muted)]">
+                        {cheapestPrice.original_price}
+                      </span>
+                    )}
                   </span>
                   <button className="text-[var(--color-gold)] p-2 rounded-full border border-[var(--color-gold)] hover:[background:var(--color-gold)] hover:text-white transition-all duration-300 active:scale-90">
                     <ShoppingBag className="w-5 h-5" />

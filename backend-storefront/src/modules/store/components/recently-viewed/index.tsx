@@ -42,7 +42,8 @@ export default function RecentlyViewed({
             query: {
               id: ids.slice(0, MAX_DISPLAY),
               region_id: regionId,
-              fields: "id,title,handle,thumbnail,images.url,variants.calculated_price",
+              fields:
+                "id,title,handle,thumbnail,images.url,variants.calculated_price,+variants.metadata,+metadata",
             },
           }
         )
@@ -116,11 +117,21 @@ export default function RecentlyViewed({
                 {p.title}
               </p>
               {cheapestPrice && (
-                <p
-                  className="text-[12.5px] font-bold mt-0.5 tabular-nums"
-                  style={{ color: "var(--color-plum)" }}
-                >
-                  {cheapestPrice.calculated_price}
+                <p className="mt-0.5 flex items-baseline gap-1.5 tabular-nums">
+                  <span
+                    className="text-[12.5px] font-bold"
+                    style={{ color: "var(--color-plum)" }}
+                  >
+                    {cheapestPrice.calculated_price}
+                  </span>
+                  {cheapestPrice.price_type === "sale" && (
+                    <span
+                      className="text-[11px] line-through"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      {cheapestPrice.original_price}
+                    </span>
+                  )}
                 </p>
               )}
             </LocalizedClientLink>

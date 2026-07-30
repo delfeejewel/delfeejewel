@@ -75,11 +75,21 @@ export default function StaffPicks({
                 {p.title}
               </p>
               {cheapestPrice && (
-                <p
-                  className="text-[13px] font-bold mt-0.5 tabular-nums"
-                  style={{ color: "var(--color-plum)" }}
-                >
-                  {cheapestPrice.calculated_price}
+                <p className="mt-0.5 flex items-baseline gap-1.5 tabular-nums">
+                  <span
+                    className="text-[13px] font-bold"
+                    style={{ color: "var(--color-plum)" }}
+                  >
+                    {cheapestPrice.calculated_price}
+                  </span>
+                  {cheapestPrice.price_type === "sale" && (
+                    <span
+                      className="text-[11px] line-through"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      {cheapestPrice.original_price}
+                    </span>
+                  )}
                 </p>
               )}
             </LocalizedClientLink>

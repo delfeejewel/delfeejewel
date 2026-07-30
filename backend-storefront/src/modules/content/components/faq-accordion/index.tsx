@@ -5,6 +5,68 @@ import { Plus, Minus } from "lucide-react"
 
 export type FaqItem = { question: string; answer: string }
 
+/**
+ * Answers are plain strings so they stay easy to author and to store in
+ * category metadata, with two bits of light structure:
+ *   - a blank line starts a new paragraph
+ *   - a line beginning with "- " (or "• ") is a bullet
+ * Single-paragraph answers render exactly as they always did.
+ */
+const BULLET_RE = /^\s*[-•]\s+/
+
+/** "Chain Bracelets: Elegant and versatile…" → emphasise the leading label. */
+const renderBullet = (text: string) => {
+  const idx = text.indexOf(":")
+  if (idx > 0 && idx <= 40) {
+    return (
+      <>
+        <span className="font-semibold text-[var(--color-text-primary)]">
+          {text.slice(0, idx)}
+        </span>
+        {text.slice(idx + 1)}
+      </>
+    )
+  }
+  return text
+}
+
+function AnswerBody({ answer }: { answer: string }) {
+  const blocks = answer
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter(Boolean)
+
+  return (
+    <>
+      {blocks.map((block, bi) => {
+        const lines = block.split("\n").map((l) => l.trim()).filter(Boolean)
+        const isList = lines.length > 0 && lines.every((l) => BULLET_RE.test(l))
+
+        if (isList) {
+          return (
+            <ul
+              key={bi}
+              className={`list-disc pl-5 space-y-1.5 ${bi > 0 ? "mt-3" : ""}`}
+            >
+              {lines.map((line, li) => (
+                <li key={li} className="marker:text-[var(--color-gold)]">
+                  {renderBullet(line.replace(BULLET_RE, ""))}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        return (
+          <p key={bi} className={bi > 0 ? "mt-3" : undefined}>
+            {block.replace(/\n/g, " ")}
+          </p>
+        )
+      })}
+    </>
+  )
+}
+
 export default function FaqAccordion({
   items,
   startOpen = 0,
@@ -38,7 +100,7 @@ export default function FaqAccordion({
             </button>
             {isOpen && (
               <div className="px-5 pb-5 text-[14px] leading-[1.7] text-[var(--color-text-secondary)]">
-                {item.answer}
+                <AnswerBody answer={item.answer} />
               </div>
             )}
           </div>

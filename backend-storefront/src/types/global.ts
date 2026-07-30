@@ -14,6 +14,9 @@ export type VariantPrice = {
   original_price: string
   currency_code: string
   price_type: string
+  /** True when original_price comes from an admin-set compare-at (MRP)
+   *  rather than an active Medusa price-list sale. */
+  is_compare_at?: boolean
   percentage_diff: string
 }
 

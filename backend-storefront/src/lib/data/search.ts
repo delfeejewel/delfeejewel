@@ -13,9 +13,9 @@ import type {
   SuggestProduct,
 } from "@modules/search/lib/types"
 
-const SUGGEST_FIELDS = "*variants.calculated_price,+metadata"
+const SUGGEST_FIELDS = "*variants.calculated_price,+variants.metadata,+metadata"
 const RESULT_FIELDS =
-  "*variants.calculated_price,+variants.inventory_quantity,*variants.images,+metadata,+tags,*categories"
+  "*variants.calculated_price,+variants.inventory_quantity,+variants.metadata,*variants.images,+metadata,+tags,*categories"
 
 function dropHiddenProducts<T extends { handle?: string | null }>(
   products: T[]
@@ -27,11 +27,19 @@ function dropHiddenProducts<T extends { handle?: string | null }>(
 
 function toSuggestProduct(product: HttpTypes.StoreProduct): SuggestProduct {
   let price: string | null = null
+  let originalPrice: string | null = null
   try {
     const { cheapestPrice } = getProductPrice({ product })
     price = cheapestPrice?.calculated_price ?? null
+    // Only when there's a real discount to show (price list sale or an
+    // admin-set compare-at price).
+    originalPrice =
+      cheapestPrice?.price_type === "sale"
+        ? cheapestPrice.original_price ?? null
+        : null
   } catch {
     price = null
+    originalPrice = null
   }
   return {
     id: product.id,
@@ -39,6 +47,7 @@ function toSuggestProduct(product: HttpTypes.StoreProduct): SuggestProduct {
     handle: product.handle ?? "",
     thumbnail: product.thumbnail ?? product.images?.[0]?.url ?? null,
     price,
+    original_price: originalPrice,
   }
 }
 
