@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 
-import { HttpTypes } from "@medusajs/types"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { getTagByValue } from "@lib/data/tags"
@@ -86,15 +85,10 @@ export default async function StoreTemplate({
     countryCode,
   })
 
-  // Staff picks — pulled separately so they appear even when a tag filter is active.
-  // We over-fetch then filter by metadata client-server side here.
-  const { response: pickResponse } = await listProducts({
-    pageParam: 1,
-    queryParams: { limit: 60 },
-    countryCode,
-  }).catch(() => ({ response: { products: [] as HttpTypes.StoreProduct[], count: 0 } }))
-
-  const staffPicks = (pickResponse.products || [])
+  // Staff picks render only on the un-filtered landing (see `!tag` below), and
+  // there the main query is itself un-filtered — so we pick them out of the
+  // batch we already have rather than paying for a second catalogue fetch.
+  const staffPicks = (tag ? [] : response.products || [])
     .filter((p) => {
       const meta = (p.metadata as any) || {}
       return (

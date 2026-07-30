@@ -7,6 +7,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { productRating, filledStars } from "@lib/util/product-rating"
 
 const FALLBACK = "/images/fallback-no-image.png"
 
@@ -34,6 +35,9 @@ export default function ProductCard({
 
   const { cheapestPrice } = getProductPrice({ product })
   const badges = getBadges(product)
+
+  const rating = productRating(product.id)
+  const stars = filledStars(rating)
 
   const primaryImage = product.thumbnail || product.images?.[0]?.url || FALLBACK
   const secondaryImage = product.images?.[1]?.url || primaryImage
@@ -204,9 +208,9 @@ export default function ProductCard({
 
           <div className="flex items-center gap-1 mb-2">
             {Array.from({ length: 5 }, (_, i) => (
-              <Star key={i} size={10} fill={i < 4 ? "#f59e0b" : "none"} stroke={i < 4 ? "#f59e0b" : "#ddd"} strokeWidth={1.5} />
+              <Star key={i} size={10} fill={i < stars ? "#f59e0b" : "none"} stroke={i < stars ? "#f59e0b" : "#ddd"} strokeWidth={1.5} />
             ))}
-            <span className="text-[10px] ml-0.5" style={{ color: "var(--color-text-muted)" }}>(4.0)</span>
+            <span className="text-[10px] ml-0.5" style={{ color: "var(--color-text-muted)" }}>({rating.toFixed(1)})</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -216,14 +220,9 @@ export default function ProductCard({
                   {cheapestPrice.calculated_price}
                 </span>
                 {cheapestPrice.price_type === "sale" && (
-                  <>
-                    <span className="text-[12px] line-through" style={{ color: "var(--color-text-muted)" }}>
-                      {cheapestPrice.original_price}
-                    </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
-                      Sale
-                    </span>
-                  </>
+                  <span className="text-[12px] line-through" style={{ color: "var(--color-text-muted)" }}>
+                    {cheapestPrice.original_price}
+                  </span>
                 )}
               </>
             ) : (

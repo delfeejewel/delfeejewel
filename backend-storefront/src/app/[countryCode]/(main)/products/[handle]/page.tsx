@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
+import { PRODUCT_DETAIL_FIELDS } from "@lib/data/product-fields"
 import { getRegion, listRegions } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getWishlistProductIds } from "@lib/data/wishlist"
@@ -307,7 +308,9 @@ export default async function ProductPage(props: Props) {
   const [pricedProduct, customer, wishlistIds] = await Promise.all([
     listProducts({
       countryCode: params.countryCode,
-      queryParams: { handle: params.handle },
+      // Variant images power the gallery swap below — the only place that
+      // needs them, and the reason they aren't in the default field set.
+      queryParams: { handle: params.handle, fields: PRODUCT_DETAIL_FIELDS },
     }).then(({ response }) => response.products[0]),
     retrieveCustomer().catch(() => null),
     getWishlistProductIds(),

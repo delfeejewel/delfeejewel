@@ -411,21 +411,23 @@ export default function ProductInfo({
       )}
 
       {/* Price + stock */}
-      <div className="flex items-baseline gap-4 mb-1">
+      {/* Selling price leads; the struck MRP follows it, so the eye lands on
+          what's actually being charged rather than on the crossed-out figure. */}
+      <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1 mb-1">
         {price ? (
           <>
-            {price.price_type === "sale" && (
-              <span className="text-[16px] line-through text-[var(--color-text-muted)]">
-                {price.original_price}
-              </span>
-            )}
             <span className="font-wittgenstein text-[26px] small:text-[28px] font-bold text-[var(--color-plum)]">
               {!selectedVariant && cheapestPrice ? <><span className="text-[14px] font-normal text-[var(--color-text-muted)]">From </span>{cheapestPrice.calculated_price}</> : price.calculated_price}
             </span>
             {price.price_type === "sale" && (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-green-50 text-green-700">
-                Save {price.percentage_diff}%
-              </span>
+              <>
+                <span className="text-[15px] line-through text-[var(--color-text-muted)]">
+                  {price.original_price}
+                </span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-green-50 text-green-700">
+                  Save {price.percentage_diff}%
+                </span>
+              </>
             )}
           </>
         ) : (
@@ -435,7 +437,7 @@ export default function ProductInfo({
 
       {/* Tax + stock */}
       <div className="flex items-center gap-4 mb-6">
-        <span className="text-[11px] text-[var(--color-text-muted)]">Exclusive of GST · 3% added at checkout</span>
+        <span className="text-[11px] text-[var(--color-text-muted)]">Inclusive of all taxes</span>
         {selectedVariant && inStock && (
           <span className="text-[11px] font-semibold tracking-[0.05em] flex items-center gap-1 text-green-600">
             <CheckCircle size={12} /> In Stock

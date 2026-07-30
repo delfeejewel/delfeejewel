@@ -83,7 +83,12 @@ export default function ProductListingClient({
     ;(async () => {
       setLoadingMore(true)
       const pages = Math.ceil(initialCount / FETCH_BATCH)
-      const all: HttpTypes.StoreProduct[] = []
+
+      // Keyed by id so the server's first-paint batch and page 1 of the
+      // client fetch (which overlap) don't duplicate. Map preserves insertion
+      // order, so the catalogue keeps its original ordering.
+      const seen = new Map(initialProducts.map((p) => [p.id, p]))
+
       for (let p = 1; p <= pages; p++) {
         if (cancelled) return
         try {
@@ -92,12 +97,16 @@ export default function ProductListingClient({
             queryParams: { limit: FETCH_BATCH, ...(fetchParams || {}) },
             regionId: region.id,
           })
-          all.push(...response.products)
+          for (const product of response.products) seen.set(product.id, product)
+          // Commit each page as it lands. Server actions are serialised by
+          // Next, so these requests can't overlap — publishing incrementally
+          // is what keeps the grid filling in rather than sitting empty
+          // until the last page returns.
+          if (!cancelled) setAllProducts([...seen.values()])
         } catch {
           break
         }
       }
-      if (!cancelled && all.length) setAllProducts(all)
       if (!cancelled) setLoadingMore(false)
     })()
 
@@ -217,9 +226,10 @@ export default function ProductListingClient({
             onGridChange={setGridCols}
           />
 
-          {isLoadingCatalogue ? (
-            <ProductCardSkeletonGrid gridClass={gridClass} />
-          ) : paginatedProducts.length > 0 ? (
+          {/* Show whatever has arrived — the server's first-paint batch covers
+              the first pages, so skeletons are only for a genuinely empty
+              slice that later products may still fill. */}
+          {paginatedProducts.length > 0 ? (
             <>
               <motion.div className={`grid ${gridClass} gap-3 small:gap-4`} layout>
                 {paginatedProducts.map((product, i) => (
@@ -297,6 +307,8 @@ export default function ProductListingClient({
                 </div>
               )}
             </>
+          ) : isLoadingCatalogue ? (
+            <ProductCardSkeletonGrid gridClass={gridClass} />
           ) : (
             <motion.div
               className="flex flex-col items-center justify-center py-20 text-center"
