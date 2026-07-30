@@ -15,6 +15,9 @@ type GalleryProps = {
 
 const FALLBACK = "/images/fallback-no-image.png"
 
+// Tallest the lightbox media area may get, leaving room for the thumbnail strip
+const MEDIA_MAX_VH = 70
+
 export default function ProductGallery({ media, title }: GalleryProps) {
   const allMedia: MediaItem[] = media.length
     ? media
@@ -33,6 +36,8 @@ export default function ProductGallery({ media, title }: GalleryProps) {
   const [zoomed, setZoomed] = useState(false)
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
   const [mounted, setMounted] = useState(false)
+  // Natural aspect ratio (w/h) per video, read from metadata — used to size the lightbox
+  const [aspects, setAspects] = useState<Record<string, number>>({})
   const ref = useRef(null)
   const inView = useInView(ref, { once: true })
 
@@ -40,6 +45,8 @@ export default function ProductGallery({ media, title }: GalleryProps) {
 
   const current = allMedia[selected] ?? allMedia[0]
   const isVideo = current.type === "video"
+  // Only videos drive the popup's shape; images stay square
+  const lightboxAspect = isVideo ? aspects[current.id] : undefined
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -47,6 +54,13 @@ export default function ProductGallery({ media, title }: GalleryProps) {
       x: ((e.clientX - rect.left) / rect.width) * 100,
       y: ((e.clientY - rect.top) / rect.height) * 100,
     })
+  }
+
+  const rememberAspect = (id: string) => (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const v = e.currentTarget
+    if (v.videoWidth && v.videoHeight) {
+      setAspects((a) => (a[id] ? a : { ...a, [id]: v.videoWidth / v.videoHeight }))
+    }
   }
 
   const prev = () => setSelected((s) => (s - 1 + allMedia.length) % allMedia.length)
@@ -128,7 +142,8 @@ export default function ProductGallery({ media, title }: GalleryProps) {
                     playsInline
                     preload="metadata"
                     poster={posterUrl}
-                    className="w-full h-full object-cover bg-black"
+                    onLoadedMetadata={rememberAspect(current.id)}
+                    className="w-full h-full object-contain bg-black"
                   />
                 ) : (
                   <Image
@@ -148,15 +163,13 @@ export default function ProductGallery({ media, title }: GalleryProps) {
               </motion.div>
             </AnimatePresence>
 
-            {/* Expand button — opens lightbox (hidden for videos, which have their own controls) */}
-            {!isVideo && (
-              <button
-                onClick={() => setLightboxOpen(true)}
-                className="absolute bottom-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[11px] font-medium text-[var(--color-text-secondary)] hover:bg-white hover:shadow-md z-10"
-              >
-                <ZoomIn size={13} /> Expand
-              </button>
-            )}
+            {/* Expand button — opens lightbox (videos open at their own aspect ratio) */}
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className={`absolute ${isVideo ? "bottom-16" : "bottom-5"} right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[11px] font-medium text-[var(--color-text-secondary)] hover:bg-white hover:shadow-md z-10`}
+            >
+              <ZoomIn size={13} /> Expand
+            </button>
 
             {/* Nav arrows */}
             {allMedia.length > 1 && (
@@ -198,6 +211,11 @@ export default function ProductGallery({ media, title }: GalleryProps) {
         >
           <motion.div
             className="relative w-[92vw] max-w-[800px] rounded-2xl overflow-hidden bg-white shadow-2xl"
+            style={
+              lightboxAspect
+                ? { width: `min(92vw, 800px, calc(${MEDIA_MAX_VH}vh * ${lightboxAspect}))` }
+                : undefined
+            }
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -215,8 +233,11 @@ export default function ProductGallery({ media, title }: GalleryProps) {
               <X size={18} className="text-[var(--color-text-secondary)]" />
             </button>
 
-            {/* Media area */}
-            <div className="relative aspect-square max-h-[75vh] bg-[var(--color-bg-primary)]">
+            {/* Media area — square for images, the video's own aspect ratio for videos */}
+            <div
+              className={`relative bg-[var(--color-bg-primary)] ${lightboxAspect ? "" : "aspect-square max-h-[75vh]"}`}
+              style={lightboxAspect ? { aspectRatio: String(lightboxAspect) } : undefined}
+            >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={current.id}
@@ -232,6 +253,7 @@ export default function ProductGallery({ media, title }: GalleryProps) {
                       controls
                       autoPlay
                       playsInline
+                      onLoadedMetadata={rememberAspect(current.id)}
                       className="w-full h-full object-contain bg-black"
                     />
                   ) : (
