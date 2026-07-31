@@ -16,7 +16,6 @@ import { listProducts } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
 import { getRegion } from "@lib/data/regions"
 import {
-  getHeroSlides,
   getPromoBanners,
   getExperienceFeatures,
   getReviewSource,
@@ -40,7 +39,6 @@ export default async function Home(props: {
     region,
     categories,
     featuredProductsData,
-    heroSlides,
     promoBanners,
     experienceFeatures,
     reviewSource,
@@ -48,7 +46,6 @@ export default async function Home(props: {
     getRegion(countryCode),
     listCategories({ limit: 20 }),
     listProducts({ countryCode, queryParams: { limit: 12 } }),
-    getHeroSlides(),
     getPromoBanners(),
     getExperienceFeatures(),
     getReviewSource(),
@@ -74,7 +71,7 @@ export default async function Home(props: {
 
   return (
     <div className="font-outfit bg-[var(--color-bg-primary)]">
-      <Hero slides={heroSlides ?? undefined} />
+      <Hero />
       <CategoryGrid categories={topLevelCategories} />
       <PromoBanners banners={promoBanners} />
       <ProductCarousel products={featuredProducts} region={region} />
