@@ -341,8 +341,48 @@ async function defaultProductOrder(
   return next()
 }
 
+/**
+ * One coupon per cart, enforced server-side.
+ *
+ * The live codes (RAKSHA / ETERNAL / EVERYDAY) are three doors to the same 15%
+ * offer, so sending all three on one cart update would stack to ~45% off.
+ * The storefront already replaces rather than appends, but that is a client and
+ * anyone can POST promo_codes directly — so we truncate here as well. Keeping
+ * the FIRST code matches what a shopper means by "apply this one".
+ *
+ * NB middlewares.ts is not hot-reloaded — restart the server after editing.
+ */
+async function enforceSinglePromotion(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  const body = req.body as { promo_codes?: unknown } | undefined
+  const codes = body?.promo_codes
+
+  if (Array.isArray(codes) && codes.length > 1) {
+    const deduped = [
+      ...new Set(
+        codes
+          .filter((c): c is string => typeof c === "string" && !!c.trim())
+          .map((c) => c.trim().toUpperCase())
+      ),
+    ]
+    // Clearing the cart's coupons (an empty array) is legitimate, so only the
+    // multi-code case is rewritten.
+    ;(req.body as any).promo_codes = deduped.slice(0, 1)
+  }
+
+  return next()
+}
+
 export default defineMiddlewares({
   routes: [
+    {
+      matcher: "/store/carts/*",
+      method: ["POST"],
+      middlewares: [enforceSinglePromotion],
+    },
     {
       matcher: "/*",
       method: ["GET"],

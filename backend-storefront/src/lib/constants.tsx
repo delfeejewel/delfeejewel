@@ -5,7 +5,15 @@ import PayPal from "@modules/common/icons/paypal"
 
 /* Add-on products that must stay purchasable (published) but never surface in
  * customer-facing listings, search, or their own product page. */
-export const HIDDEN_PRODUCT_HANDLES = ["gift-wrap"]
+export const HIDDEN_PRODUCT_HANDLES = ["gift-wrap", "cod-fee"]
+
+/**
+ * Categories sold final-sale: no returns, no exchanges, and their value never
+ * counts toward the free-shipping threshold. Mirrors
+ * `NON_RETURNABLE_CATEGORY_HANDLES` on the backend, which does the enforcing —
+ * this copy only drives what the storefront tells the customer.
+ */
+export const FINAL_SALE_CATEGORY_HANDLES = ["coins"]
 
 /* Map of payment provider_id to their title and icon. Add in any payment providers you want to use. */
 export const paymentInfoMap: Record<

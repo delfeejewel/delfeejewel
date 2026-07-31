@@ -54,9 +54,16 @@ export default async function Home(props: {
   const reviews =
     reviewSource === "dynamic" ? await getDynamicReviews() : await getReviews()
 
+  // "Shop by Category" is a curated homepage module, not a full index: a
+  // category can opt out with `metadata.hide_from_homepage` (Coins does) while
+  // still appearing in the main nav, footer and mobile menu, which all read the
+  // unfiltered category list. Note this is deliberately NOT the
+  // HIDDEN_CATEGORY_KEYS list in lib/data/categories — that one hides a
+  // category everywhere.
   const topLevelCategories =
     categories
       ?.filter((c) => !c.parent_category)
+      ?.filter((c) => c.metadata?.hide_from_homepage !== true)
       ?.map((c) => ({
         name: c.name,
         handle: c.handle,

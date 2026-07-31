@@ -6,10 +6,13 @@ import { motion } from "framer-motion"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 // Static banners — the artwork carries its own copy, so no overlay text.
+// The third banner ("Elegance You Can Wear Every Day", code EVERYDAY) is held
+// back until its corrected art lands — the shipped version misspells the code
+// as "EVERDAY". Re-add it here with hero-banner-3.jpg once fixed; the slider
+// keys everything off SLIDES.length, so no other change is needed.
 const SLIDES = [
-  { image_url: "/images/hero-banner-1.jpg", alt: "Rakhi Edit — 15% off with code Raksha", link: "/store" },
-  { image_url: "/images/hero-banner-2.jpg", alt: "A Promise That Lasts Forever — 15% off with code Eternal", link: "/store" },
-  { image_url: "/images/hero-banner-3.jpg", alt: "Elegance You Can Wear Every Day — 15% off with code Everday", link: "/store" },
+  { image_url: "/images/hero-banner-1.jpg", alt: "Rakhi Edit — 15% off with code RAKSHA", link: "/store" },
+  { image_url: "/images/hero-banner-2.jpg", alt: "A Promise That Lasts Forever — 15% off with code ETERNAL", link: "/store" },
 ]
 
 const SLIDE_INTERVAL = 5000

@@ -15,6 +15,9 @@ import { addWishlistItem, removeWishlistItem } from "@lib/data/wishlist"
 import { loginAction } from "@lib/data/customer"
 import { checkDelivery, type DeliveryCheck } from "@lib/data/delivery"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { convertToLocale } from "@lib/util/money"
+import { FINAL_SALE_CATEGORY_HANDLES } from "@lib/constants"
+import { materialBadge } from "@lib/util/material-badge"
 import {
   Heart, Award, Truck, ShieldCheck, CheckCircle, Star,
   Clock, Gift, Package, Share2, Minus, Plus, X,
@@ -139,12 +142,20 @@ export default function ProductInfo({
 
   const handleRemoveCoupon = async () => {
     const code = appliedCode
+    const previousStaged = stagedCode
     setAppliedCode(null)
     setStagedCode(null)
     setPromoError("")
     if (code) {
       const result = await removePromoCode(code)
-      if (!result.ok && result.error) setPromoError(result.error)
+      if (!result.ok) {
+        // The coupon is still on the cart. Showing "not applied" here would
+        // leave the page contradicting the cart (and the price the shopper is
+        // about to pay), so put the state back.
+        setAppliedCode(code)
+        setStagedCode(previousStaged)
+        setPromoError(result.error || "Could not remove the coupon.")
+      }
     }
   }
 
@@ -190,6 +201,58 @@ export default function ProductInfo({
 
   const { cheapestPrice, variantPrice } = getProductPrice({ product, variantId: selectedVariant?.id })
   const price = variantPrice || cheapestPrice
+
+  // What this product costs once the applied coupon is taken off.
+  //
+  // The percentage comes from the coupon itself, never a constant, so changing
+  // the value in the admin is reflected here without a deploy. Only percentage
+  // coupons get a per-item figure: a fixed "₹200 off the order" can't honestly
+  // be attributed to one item in a multi-item cart.
+  const activeCoupon = useMemo(() => {
+    const code = (appliedCode || stagedCode)?.toUpperCase()
+    if (!code) return null
+    return coupons.find((c) => c.code.toUpperCase() === code) ?? null
+  }, [coupons, appliedCode, stagedCode])
+
+  // Medusa's promotion engine skips products flagged `discountable: false`
+  // (Coins), for every promotion regardless of its rules — so no coupon can
+  // ever change this product's price, and none should be offered or quoted.
+  // Absent field means discountable: only an explicit false opts out.
+  const isDiscountable = (product as any).discountable !== false
+
+  const purityBadge = materialBadge((product as any).material)
+
+  // Coins are sold final-sale: priced off the live metal rate, so a return days
+  // later means buying the metal back at a moved price. Say so on the page —
+  // the return API rejects them, and a customer should learn that here rather
+  // than after they've bought.
+  const isFinalSale = (product.categories || []).some(
+    (c: any) => FINAL_SALE_CATEGORY_HANDLES.includes(c?.handle)
+  )
+
+  const couponPrice = useMemo(() => {
+    if (!isDiscountable) return null
+    if (!activeCoupon || activeCoupon.kind !== "percentage") return null
+    const pct = Number(activeCoupon.value)
+    if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return null
+
+    const base = price?.calculated_price_number
+    if (typeof base !== "number" || !Number.isFinite(base) || base <= 0) return null
+
+    const effective = Math.round(base * (1 - pct / 100))
+    const currency = product.variants?.[0]?.calculated_price?.currency_code || "inr"
+
+    return {
+      effective: convertToLocale({ amount: effective, currency_code: currency }),
+      saving: convertToLocale({ amount: base - effective, currency_code: currency }),
+      // No variant chosen yet means `price` is the cheapest across variants —
+      // quote it as a "from", never as this item's price.
+      isFrom: !selectedVariant && !!cheapestPrice,
+      // Nothing has been applied to a real cart yet, so this is a projection.
+      isProjected: !appliedCode && !!stagedCode,
+      code: activeCoupon.code,
+    }
+  }, [isDiscountable, activeCoupon, price, product.variants, selectedVariant, cheapestPrice, appliedCode, stagedCode])
   const collection = product.collection
   const stockQty = selectedVariant?.inventory_quantity || 0
   const lowStock = selectedVariant?.manage_inventory && stockQty > 0 && stockQty <= 5
@@ -435,6 +498,43 @@ export default function ProductInfo({
         )}
       </div>
 
+      {/* What it costs with the applied coupon. Deliberately secondary to the
+          price above — the catalogue price stays the headline, this is a
+          saving, not a replacement list price. */}
+      {couponPrice && (
+        <div
+          className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1 rounded px-2 py-1 bg-green-50"
+          data-testid="pdp-coupon-price"
+        >
+          <span className="text-[12px] font-semibold text-green-700">
+            With {couponPrice.code}
+            {couponPrice.isProjected ? " at checkout" : ""}:
+          </span>
+          <span className="text-[15px] font-bold text-green-700">
+            {couponPrice.isFrom ? "from " : ""}
+            {couponPrice.effective}
+          </span>
+          <span className="text-[11.5px] text-green-700/80">
+            (you save {couponPrice.saving})
+          </span>
+        </div>
+      )}
+
+      {/* Final sale — stated up front, before the shopper commits */}
+      {isFinalSale && (
+        <div
+          className="flex items-start gap-2 mb-3 rounded-lg border border-[var(--color-lavender)] bg-[var(--color-bg-secondary)] px-3 py-2"
+          data-testid="pdp-final-sale"
+        >
+          <ShieldCheck size={14} className="text-[var(--color-plum)] shrink-0 mt-0.5" />
+          <p className="text-[11.5px] leading-snug text-[var(--color-text-secondary)]">
+            <span className="font-semibold text-[var(--color-text-primary)]">Final sale.</span>{" "}
+            Priced on the live metal rate — not eligible for return, exchange or
+            coupons, and excluded from free shipping.
+          </p>
+        </div>
+      )}
+
       {/* Tax + stock */}
       <div className="flex items-center gap-4 mb-6">
         <span className="text-[11px] text-[var(--color-text-muted)]">Inclusive of all taxes</span>
@@ -600,7 +700,11 @@ export default function ProductInfo({
           </label>
         )}
 
-        {/* Offers & coupons — live codes, applied straight from this page */}
+        {/* Offers & coupons — live codes, applied straight from this page.
+            Hidden entirely for non-discountable products (Coins): Medusa's
+            promotion engine skips them, so advertising a code here would offer
+            a discount that silently comes to ₹0 on this item. */}
+        {isDiscountable && (
         <CouponOffers
           coupons={coupons}
           appliedCode={appliedCode}
@@ -610,6 +714,7 @@ export default function ProductInfo({
           onApply={handleApplyCoupon}
           onRemove={handleRemoveCoupon}
         />
+        )}
 
         {/* Quantity + Add to Cart + Wishlist — all on one line */}
         <div className="pt-2 space-y-3">
@@ -676,10 +781,14 @@ export default function ProductInfo({
         </div>
 
 
-        {/* Trust badges — expanded */}
+        {/* Trust badges — expanded. The purity badge reads the product's own
+            material: the coins are 999 fine silver, not 925 sterling, and a
+            hardcoded claim would contradict the purity stamped on the product
+            in its own photograph. Dropped entirely when the material doesn't
+            state a purity. */}
         <div className="grid grid-cols-3 gap-3 pt-6 border-t border-[var(--color-lavender)]">
           {[
-            { icon: Award, label: "925 Sterling" },
+            ...(purityBadge ? [{ icon: Award, label: purityBadge }] : []),
             { icon: ShieldCheck, label: "Secure Payment" },
             { icon: Package, label: "Premium Pack" },
           ].map(({ icon: Icon, label }) => (

@@ -51,7 +51,14 @@ export default async function seedCodFeeProduct({ container }: ExecArgs) {
         {
           title: "COD Handling Fee",
           handle: HANDLE,
-          status: ProductStatus.DRAFT,
+          // MUST be published: Medusa's addToCartWorkflow rejects variants of
+          // unpublished products ("do not exist or belong to a product that is
+          // not published"), so a draft fee product can never be added to a
+          // cart and POST /store/carts/:id/cod-fee 500s. Gift Wrap hit this
+          // same trap and was published by hand. Keeping it out of the
+          // storefront is the job of HIDDEN_PRODUCT_HANDLES on the storefront,
+          // not of the draft status.
+          status: ProductStatus.PUBLISHED,
           description: "Cash on Delivery handling charge.",
           sales_channels: [{ id: sc.id }],
           shipping_profile_id: sp.id,

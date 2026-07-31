@@ -5,6 +5,7 @@ import type {
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { getFeatureFlags } from "../../../../../lib/feature-flags"
+import { nonReturnableProductIds } from "../../../../../lib/non-returnable"
 import { RETURN_REQUEST_MODULE } from "../../../../../modules/return_request"
 
 const RETURN_WINDOW_DAYS =
@@ -223,6 +224,25 @@ export async function POST(
   const orderItemsById = new Map(
     ((order.items as any[]) || []).map((it) => [it.id, it])
   )
+
+  // Final-sale items (Coins) can be neither returned nor exchanged. Checked
+  // here, before any quantity or price work, so the customer gets the real
+  // reason rather than a confusing downstream error.
+  const finalSaleIds = await nonReturnableProductIds(query)
+  if (finalSaleIds.size) {
+    const blocked = (items || [])
+      .map((sel) => orderItemsById.get(sel.line_item_id))
+      .filter((oi) => oi && finalSaleIds.has(oi.product_id))
+    if (blocked.length) {
+      const names = blocked.map((oi: any) => `"${oi.title}"`).join(", ")
+      return ERR(
+        res,
+        400,
+        `${names} ${blocked.length === 1 ? "is" : "are"} final sale and cannot be returned or exchanged. ` +
+          `Please remove ${blocked.length === 1 ? "it" : "them"} from this request.`
+      )
+    }
+  }
 
   // For exchanges, every selected line needs a target variant; we resolve them in a single query.
   const isExchange = requestType === "exchange"

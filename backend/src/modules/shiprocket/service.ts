@@ -54,6 +54,13 @@ const API_BASE = "https://apiv2.shiprocket.in/v1/external"
 const MIN_WEIGHT_KG = 0.05
 const FALLBACK_DIMENSIONS = { length: 10, breadth: 8, height: 5 }
 
+/**
+ * Categories whose value never counts toward the free-shipping threshold.
+ * Coins are high-value and low-margin, so free shipping on them would eat the
+ * margin on the sale.
+ */
+const NO_FREE_SHIPPING_CATEGORY_HANDLES = ["coins"]
+
 export default class ShiprocketFulfillmentService extends AbstractFulfillmentProviderService {
   static identifier = "shiprocket"
 
@@ -283,11 +290,10 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     try {
       const address = context?.shipping_address
       const items: any[] = context?.items || []
-      const itemSubtotal = items.reduce(
-        (sum, it) =>
-          sum + (Number(it?.unit_price) || 0) * (Number(it?.quantity) || 0),
-        0
-      )
+      // Coins never earn free shipping, so their value doesn't count toward the
+      // threshold. A coins-only cart therefore has an eligible subtotal of 0 and
+      // always pays courier cost.
+      const itemSubtotal = await this.freeShipEligibleSubtotal(items)
 
       if (!address?.postal_code) {
         // No address yet — quote the flat fallback so the option still shows.
@@ -333,6 +339,69 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     } catch (error) {
       return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
     }
+  }
+
+  /** Product ids in the no-free-shipping categories, cached briefly. */
+  private noFreeShipIds_: Set<string> | null = null
+  private noFreeShipIdsAt_ = 0
+
+  /**
+   * Product ids excluded from the free-shipping threshold — everything in the
+   * "Coins" category. Cached for 5 minutes: this runs on every shipping quote,
+   * and the catalogue changes rarely.
+   *
+   * On lookup failure the last known set is reused, and if we have never
+   * loaded one, null is returned so the caller falls back to the plain
+   * subtotal. That direction is deliberate: a transient DB error should not
+   * start charging shipping to ordinary jewellery customers who qualify.
+   */
+  private async noFreeShippingProductIds(): Promise<Set<string> | null> {
+    const FIVE_MIN = 5 * 60_000
+    if (this.noFreeShipIds_ && Date.now() - this.noFreeShipIdsAt_ < FIVE_MIN) {
+      return this.noFreeShipIds_
+    }
+
+    try {
+      const query = this.container_[ContainerRegistrationKeys.QUERY]
+      const { data } = await query.graph({
+        entity: "product",
+        filters: { categories: { handle: NO_FREE_SHIPPING_CATEGORY_HANDLES } },
+        fields: ["id"],
+      })
+      this.noFreeShipIds_ = new Set((data as any[]).map((p) => p.id))
+      this.noFreeShipIdsAt_ = Date.now()
+      return this.noFreeShipIds_
+    } catch (e: any) {
+      this.container_[ContainerRegistrationKeys.LOGGER]?.warn(
+        `Shiprocket: could not load no-free-shipping products (${e?.message}). ` +
+          `Falling back to ${this.noFreeShipIds_ ? "the cached set" : "the full subtotal"}.`
+      )
+      return this.noFreeShipIds_
+    }
+  }
+
+  /**
+   * Item subtotal that counts toward the free-shipping threshold, in rupees.
+   *
+   * Excludes Coins. A mixed cart still qualifies on the value of everything
+   * else — buying a coin alongside jewellery doesn't cost the customer their
+   * free shipping, it just doesn't help them reach the bar.
+   */
+  private async freeShipEligibleSubtotal(items: any[]): Promise<number> {
+    const excluded = await this.noFreeShippingProductIds()
+
+    return items.reduce((sum, it) => {
+      const line = (Number(it?.unit_price) || 0) * (Number(it?.quantity) || 0)
+      if (!excluded?.size) return sum + line
+
+      const productId =
+        it?.product_id ??
+        it?.product?.id ??
+        it?.variant?.product_id ??
+        it?.line_item?.variant?.product_id ??
+        it?.line_item?.product_id
+      return excluded.has(productId) ? sum : sum + line
+    }, 0)
   }
 
   /**

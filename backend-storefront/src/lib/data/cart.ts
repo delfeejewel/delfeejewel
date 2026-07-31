@@ -418,6 +418,36 @@ export async function initiatePaymentSession(
 }
 
 /**
+ * Toggles the ₹50 Cash-on-Delivery handling fee on the current cart.
+ *
+ * Called whenever the shopper confirms a payment method at checkout, with
+ * `enabled` set to whether that method is COD — so switching from COD to a
+ * prepaid method removes the fee rather than stranding it on the order. Must
+ * run BEFORE the COD upfront token is computed, since the token is a
+ * percentage of the cart total and the fee is part of that total.
+ */
+export async function toggleCodFee(
+  enabled: boolean
+): Promise<{ ok: boolean; error: string | null }> {
+  const cartId = await getCartId()
+  if (!cartId) return { ok: false, error: "No active cart." }
+
+  const headers = await getAuthHeaders()
+  try {
+    await sdk.client.fetch(`/store/carts/${cartId}/cod-fee`, {
+      method: "POST",
+      headers,
+      body: { enabled },
+    })
+    const cartCacheTag = await getCacheTag("carts")
+    revalidateTag(cartCacheTag)
+    return { ok: true, error: null }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Could not update the COD fee." }
+  }
+}
+
+/**
  * Toggles the gift-wrap add-on on the current cart. Adds (or removes) the
  * ₹50 gift-wrap line item server-side via the custom store route, then
  * revalidates the cart cache so totals reflect immediately.
@@ -523,9 +553,15 @@ export async function applyPromoCode(
   }
 
   try {
-    await applyPromotions([...existing, trimmed])
+    // REPLACE, never append. The live codes (RAKSHA / ETERNAL / EVERYDAY) are
+    // three routes to the same 15% offer, so appending would stack them into
+    // 45% off. One coupon per cart, always — the backend enforces this too, so
+    // a hand-crafted API call can't get around it.
+    await applyPromotions([trimmed])
     return { applied: true }
   } catch (e: any) {
+    // The cart still holds whatever it had before — the update was rejected
+    // whole, so there is nothing to roll back here.
     return { error: e?.message || "That coupon code isn't valid." }
   }
 }

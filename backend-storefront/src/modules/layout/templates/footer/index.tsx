@@ -281,7 +281,10 @@ export default async function Footer() {
                 Shop by Category
               </span>
               <ul className="space-y-2.5">
-                {topLevelCategories.slice(0, 6).map((c) => (
+                {/* All categories, not a slice: the previous `.slice(0, 6)`
+                    silently dropped whatever ranked lowest, which hid Coins
+                    (ranked last) from the footer entirely. */}
+                {topLevelCategories.map((c) => (
                   <li key={c.id}>
                     <LocalizedClientLink
                       className="text-[13px] text-white/50 hover:text-white transition-colors duration-300"

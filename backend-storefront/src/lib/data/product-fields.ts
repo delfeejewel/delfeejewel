@@ -10,7 +10,7 @@
  * struck through), product-level metadata and tags.
  */
 export const LIST_PRODUCT_FIELDS =
-  "*variants.calculated_price,+variants.inventory_quantity,+variants.metadata,+metadata,+tags,"
+  "*variants.calculated_price,+variants.inventory_quantity,+variants.metadata,+metadata,+tags,+discountable,"
 
 /**
  * Listing fields plus per-variant image sets.
@@ -20,7 +20,7 @@ export const LIST_PRODUCT_FIELDS =
  * the full catalogue, so listings must not pay for it — pass this explicitly
  * as `queryParams.fields` where the gallery is actually used.
  */
-export const PRODUCT_DETAIL_FIELDS = `${LIST_PRODUCT_FIELDS}*variants.images,`
+export const PRODUCT_DETAIL_FIELDS = `${LIST_PRODUCT_FIELDS}*variants.images,+categories.handle,`
 
 /**
  * The bare minimum needed to map the catalogue to SKUs.

@@ -1,8 +1,8 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { paymentInfoMap } from "@lib/constants"
-import { initiatePaymentSession } from "@lib/data/cart"
+import { paymentInfoMap, isCod } from "@lib/constants"
+import { initiatePaymentSession, toggleCodFee } from "@lib/data/cart"
 import { CreditCard } from "@medusajs/icons"
 import { CheckCircle2 } from "lucide-react"
 import { Container, Text, clx } from "@medusajs/ui"
@@ -73,11 +73,27 @@ const Payment = ({
       const checkActiveSession =
         activeSession?.provider_id === selectedPaymentMethod
 
+      // The ₹50 COD handling fee is a cart line item, so it has to be settled
+      // before the payment session is created — the COD upfront token is a
+      // percentage of the cart total and must see the fee. Toggling it off for
+      // prepaid methods is what stops a stranded fee turning into a refund.
+      const codFee = await toggleCodFee(!!isCod(selectedPaymentMethod))
+      if (!codFee.ok) {
+        throw new Error(
+          codFee.error ||
+            "Could not update the Cash on Delivery fee. Please try again."
+        )
+      }
+
       if (!checkActiveSession) {
         await initiatePaymentSession(cart, {
           provider_id: selectedPaymentMethod,
         })
       }
+
+      // The fee changed the cart, so the summary above must re-read it rather
+      // than show a total that predates the line item.
+      router.refresh()
 
       return router.push(
         pathname + "?" + createQueryString("step", "review"),

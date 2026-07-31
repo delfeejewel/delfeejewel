@@ -66,7 +66,15 @@ const CATEGORY_HANDLE: Record<string, string> = {
   Mangalsutras: "mangalsutras",
   Rakhi: "rakhis",
   Rakhis: "rakhis",
+  Coins: "coins",
 }
+
+/**
+ * Categories whose products must never be discounted (see the Coins feature).
+ * Set at creation rather than patched afterwards: the live 15% coupons would
+ * otherwise apply to a coin for however long it takes to run the audit script.
+ */
+const NON_DISCOUNTABLE_CATEGORY_HANDLES = ["coins"]
 
 type Variant = { size: string; sku: string; price: number; weight: number }
 type Parsed = {
@@ -449,6 +457,9 @@ export default async function addProductsFromMd({ container }: ExecArgs) {
         gift_ready: true,
       },
       ...(category ? { category_ids: [category.id] } : {}),
+      ...(NON_DISCOUNTABLE_CATEGORY_HANDLES.includes(catHandle)
+        ? { discountable: false }
+        : {}),
       ...(typeId ? { type_id: typeId } : {}),
       ...(tagIds.length ? { tags: tagIds.map((id) => ({ id })) } : {}),
       shipping_profile_id: shippingProfile.id,
