@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react"
 import CartTotals from "@modules/common/components/cart-totals"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import GiftCardCode from "@modules/checkout/components/gift-card-code"
+import { GIFT_CARDS_ENABLED } from "@lib/constants"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
 
@@ -33,7 +34,7 @@ const Summary = ({ cart }: SummaryProps) => {
       </h2>
 
       <DiscountCode cart={cart} />
-      <GiftCardCode cart={cart} />
+      {GIFT_CARDS_ENABLED && <GiftCardCode cart={cart} />}
 
       <div className="h-px w-full bg-[var(--color-border)]" />
 

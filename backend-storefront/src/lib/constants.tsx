@@ -15,6 +15,15 @@ export const HIDDEN_PRODUCT_HANDLES = ["gift-wrap", "cod-fee"]
  */
 export const FINAL_SALE_CATEGORY_HANDLES = ["coins"]
 
+/**
+ * Gift cards are withdrawn — the product and every issued card were purged, so
+ * no code a shopper could type would ever be valid. The redemption field is
+ * hidden rather than deleted: the backend module, endpoints and admin route are
+ * all still in place, so flipping this back to true is the only step needed to
+ * bring the feature back (plus reseeding the gift card product).
+ */
+export const GIFT_CARDS_ENABLED = false
+
 /* Map of payment provider_id to their title and icon. Add in any payment providers you want to use. */
 export const paymentInfoMap: Record<
   string,

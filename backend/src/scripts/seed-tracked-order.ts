@@ -74,7 +74,7 @@ export default async function seedTrackedOrder({ container }: ExecArgs) {
         metadata: { hsn_code: "7113" },
       },
     ],
-    shipping_methods: [{ name: "Express Shipping", amount: 0 }],
+    shipping_methods: [{ name: "Standard Shipping", amount: 0 }],
   })
   const created = Array.isArray(order) ? order[0] : order
   logger.info(`Order created: #${created.display_id} (${created.id})`)

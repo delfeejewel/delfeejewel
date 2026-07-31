@@ -78,7 +78,9 @@ export default async function seedCoinsCategory({ container }: ExecArgs) {
   // ---- 2. enforce discountable: false on its products --------------------
   const { data: products } = await query.graph({
     entity: "product",
-    filters: { categories: { id: categoryId } },
+    // `as any`: the generated filter type doesn't model nested relation filters
+    // by id, so this fails the build without the cast (TS2322).
+    filters: { categories: { id: categoryId } } as any,
     fields: ["id", "title", "handle", "discountable", "variants.metadata"],
   })
 

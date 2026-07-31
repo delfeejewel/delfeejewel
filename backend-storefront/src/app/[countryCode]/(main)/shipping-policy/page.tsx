@@ -126,14 +126,6 @@ const SECTIONS: LegalSection[] = [
           Shipping charges, if applicable, will be calculated and displayed
           during checkout.
         </p>
-        <p>
-          <strong>Express Shipping</strong>
-        </p>
-        <p>
-          Express shipping may be available for select locations at an
-          additional charge. The applicable fee will be displayed during
-          checkout, subject to service availability.
-        </p>
       </>
     ),
   },

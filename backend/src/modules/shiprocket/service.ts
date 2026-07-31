@@ -231,14 +231,15 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   // ─── Fulfillment Options ─────────────────────
   async getFulfillmentOptions(): Promise<any[]> {
     return [
+      // One customer-facing speed only. "Express Shipping" was withdrawn: it
+      // charged ₹200 more but was never honoured at fulfillment — courier
+      // selection (rankCouriers/assignAwb) scores by reliability and never saw
+      // which option was paid for, so an Express order shipped exactly like a
+      // Standard one. Re-adding it means ranking by estimated_delivery_days
+      // for the express option, not just quoting a higher price.
       {
         id: "shiprocket-standard",
         name: "Standard Shipping",
-        is_return: false,
-      },
-      {
-        id: "shiprocket-express",
-        name: "Express Shipping",
         is_return: false,
       },
       {
@@ -250,7 +251,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   }
 
   async validateOption(data: any): Promise<boolean> {
-    return ["shiprocket-standard", "shiprocket-express", "shiprocket-return"].includes(data.id)
+    return ["shiprocket-standard", "shiprocket-return"].includes(data.id)
   }
 
   async validateFulfillmentData(
@@ -275,15 +276,14 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     context: any
   ): Promise<any> {
     // IMPORTANT: this store keeps prices in RUPEES (major unit) — a ₹1999 ring
-    // is stored as 1999, and the flat shipping options are 99 / 299. So every
-    // amount returned here is in rupees (NOT paise).
-    const isExpress =
-      optionData?.id === "shiprocket-express" || data?.id === "shiprocket-express"
-    const FALLBACK = isExpress ? 299 : 99 // rupees, if Shiprocket can't be reached
+    // is stored as 1999, and the flat shipping option is 99. So every amount
+    // returned here is in rupees (NOT paise).
+    const FALLBACK = 99 // rupees, if Shiprocket can't be reached
 
-    // Client free-shipping rule (Standard only): free to the customer when the
-    // item subtotal (pre-discount) is above ₹5,000 AND the real courier cost is
-    // under ₹400 — the client absorbs that courier cost in margin.
+    // Client free-shipping rule: free to the customer when the item subtotal
+    // (pre-discount — the coupon does not push a qualifying cart back under the
+    // bar) is above ₹5,000 AND the real courier cost is under ₹400 — the client
+    // absorbs that courier cost in margin.
     const FREE_MIN_SUBTOTAL = Number(this.options_.free_ship_min_subtotal ?? 5000)
     const FREE_MAX_COURIER = Number(this.options_.free_ship_max_courier ?? 400)
 
@@ -312,25 +312,14 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
       }
 
-      // Standard = cheapest courier; Express = fastest courier.
-      if (isExpress) {
-        couriers.sort(
-          (a: any, b: any) =>
-            (a.estimated_delivery_days || 99) - (b.estimated_delivery_days || 99)
-        )
-      } else {
-        couriers.sort((a: any, b: any) => (a.rate || 0) - (b.rate || 0))
-      }
+      // Quote the cheapest serviceable courier.
+      couriers.sort((a: any, b: any) => (a.rate || 0) - (b.rate || 0))
 
       const selected = couriers[0]
       const courierCost = Math.round(Number(selected?.rate) || FALLBACK) // rupees
 
-      // Apply the free-shipping rule (Standard only).
-      if (
-        !isExpress &&
-        itemSubtotal > FREE_MIN_SUBTOTAL &&
-        courierCost < FREE_MAX_COURIER
-      ) {
+      // Apply the free-shipping rule.
+      if (itemSubtotal > FREE_MIN_SUBTOTAL && courierCost < FREE_MAX_COURIER) {
         return { calculated_amount: 0, is_calculated_price_tax_inclusive: true }
       }
 

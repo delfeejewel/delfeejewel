@@ -251,40 +251,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
           },
         ],
       },
-      {
-        name: "Express Shipping",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Express",
-          description: "Delivered in 1-2 business days.",
-          code: "express",
-        },
-        prices: [
-          {
-            currency_code: "inr",
-            amount: 299,
-          },
-          {
-            region_id: region.id,
-            amount: 299,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
+      // "Express Shipping" (₹299) was withdrawn — it charged more but was never
+      // honoured at fulfillment, so it shipped identically to Standard. Do not
+      // reinstate it here without also ranking couriers by delivery speed.
     ],
   });
   logger.info("Finished seeding fulfillment data.");
