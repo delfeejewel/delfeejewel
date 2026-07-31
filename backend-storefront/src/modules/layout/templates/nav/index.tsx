@@ -20,7 +20,9 @@ export default async function Nav() {
       listRegions().then((regions: StoreRegion[]) => regions),
       listLocales(),
       getLocale(),
-      listCategories({ limit: 20 }),
+      // No cap: the nav must list every category. A limit here silently drops
+      // whatever sorts last, which is how Coins nearly went missing.
+      listCategories(),
       getStoreInfo(),
       getHeaderSettings(),
       getMenu("header_quick_links"),

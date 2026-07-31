@@ -20,7 +20,13 @@ export const LIST_PRODUCT_FIELDS =
  * the full catalogue, so listings must not pay for it — pass this explicitly
  * as `queryParams.fields` where the gallery is actually used.
  */
-export const PRODUCT_DETAIL_FIELDS = `${LIST_PRODUCT_FIELDS}*variants.images,+categories.handle,`
+/**
+ * NB `categories.name` is required alongside `handle`: the PDP breadcrumb links
+ * to the category and labels it with its name. Requesting only the handle makes
+ * `product.categories` exist — so the breadcrumb stops falling back to
+ * "Products" — while leaving the label undefined, which renders an empty link.
+ */
+export const PRODUCT_DETAIL_FIELDS = `${LIST_PRODUCT_FIELDS}*variants.images,+categories.handle,+categories.name,`
 
 /**
  * The bare minimum needed to map the catalogue to SKUs.

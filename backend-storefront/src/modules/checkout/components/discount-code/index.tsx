@@ -5,6 +5,7 @@ import { Tag, X, ChevronDown } from "lucide-react"
 
 import { applyPromotions } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
+import { HIDDEN_PRODUCT_HANDLES } from "@lib/constants"
 import { HttpTypes } from "@medusajs/types"
 
 type DiscountCodeProps = {
@@ -65,6 +66,24 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
     return null
   }
 
+  // Items the applied coupon can't touch. Final-sale products (Coins) carry
+  // `discountable: false`, so Medusa's promotion engine skips them and the line
+  // keeps a zero discount while the rest of the basket is reduced. Without
+  // saying so, the shopper just sees a smaller saving than they expected.
+  //
+  // Read from the line's own discount rather than re-fetching the product: the
+  // cart query already returns it, and it reflects what actually happened.
+  // Service line items (gift wrap, the COD fee) are excluded too but aren't
+  // worth naming — nobody expects a coupon to discount their wrapping.
+  const excludedItems =
+    promotions.length > 0
+      ? ((cart.items || []) as any[]).filter(
+          (i) =>
+            Number(i?.discount_total ?? 0) === 0 &&
+            !HIDDEN_PRODUCT_HANDLES.includes(i?.variant?.product?.handle ?? "")
+        )
+      : []
+
   return (
     <div className="flex flex-col gap-3">
       {promotions.length > 0 && (
@@ -98,6 +117,17 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
             )
           })}
         </div>
+      )}
+
+      {excludedItems.length > 0 && (
+        <p
+          className="text-[11.5px] leading-snug text-[var(--color-text-muted)]"
+          data-testid="discount-excluded-note"
+        >
+          {excludedItems.length === 1
+            ? `Not applied to ${excludedItems[0].title ?? excludedItems[0].product_title} — final-sale items are excluded from coupons.`
+            : `Not applied to ${excludedItems.length} final-sale items, which are excluded from coupons.`}
+        </p>
       )}
 
       {!open ? (

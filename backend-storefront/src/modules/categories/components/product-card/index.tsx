@@ -1,13 +1,23 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { Heart, Eye, Star, ShoppingBag } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
+import { Heart, Eye, Star, ShoppingBag, Check, Loader2 } from "lucide-react"
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { productRating, filledStars } from "@lib/util/product-rating"
+import { addWishlistItem, removeWishlistItem } from "@lib/data/wishlist"
+import { addToCart } from "@lib/data/cart"
+import QuickView from "@modules/products/components/quick-view"
+import {
+  loadWishlistIds,
+  isWishlisted as isWishlistedInStore,
+  setWishlisted as setWishlistedInStore,
+  subscribeWishlist,
+} from "@lib/util/wishlist-store"
 
 const FALLBACK = "/images/fallback-no-image.png"
 
@@ -31,7 +41,26 @@ export default function ProductCard({
   const [hovered, setHovered] = useState(false)
   const [wishlisted, setWishlisted] = useState(false)
   const [heartPop, setHeartPop] = useState(false)
+  const [wishPending, setWishPending] = useState(false)
+  const [quickOpen, setQuickOpen] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [added, setAdded] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const { countryCode } = useParams() as { countryCode?: string }
+
+  // Reflect the wishlist the customer already has. Shared across every card on
+  // the page, so this costs one request per page load rather than one per card.
+  useEffect(() => {
+    let alive = true
+    const sync = () => alive && setWishlisted(isWishlistedInStore(product.id!))
+    loadWishlistIds().then(sync)
+    const unsub = subscribeWishlist(sync)
+    return () => {
+      alive = false
+      unsub()
+    }
+  }, [product.id])
 
   const { cheapestPrice } = getProductPrice({ product })
   const badges = getBadges(product)
@@ -62,15 +91,85 @@ export default function ProductCard({
     setHovered(false)
   }
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  /**
+   * Save/unsave. This used to flip local state only — the heart turned red and
+   * nothing was stored, so a shopper could "save" a dozen pieces and find an
+   * empty wishlist later. It now goes through the same API the product page
+   * uses, and sends a signed-out shopper to log in rather than pretending.
+   */
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setWishlisted(!wishlisted)
+    if (wishPending) return
+
+    const next = !wishlisted
+    setWishlisted(next)
+    setWishlistedInStore(product.id!, next)
     setHeartPop(true)
     setTimeout(() => setHeartPop(false), 400)
+    setWishPending(true)
+
+    const res = next
+      ? await addWishlistItem(product.id!)
+      : await removeWishlistItem(product.id!)
+
+    setWishPending(false)
+
+    if (!res.success) {
+      // Roll back, then route to login when that's the reason.
+      setWishlisted(!next)
+      setWishlistedInStore(product.id!, !next)
+      if (/sign(ed)? in/i.test(res.error || "")) {
+        router.push(`/${countryCode || "in"}/account`)
+      }
+    }
+  }
+
+  /**
+   * One-size products go straight into the bag. Anything with options opens
+   * Quick View so the shopper picks a size — silently adding "whichever
+   * variant is first" is how a ring arrives in the wrong size.
+   */
+  const handleAddToBag = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const variants = product.variants || []
+    if (variants.length !== 1) {
+      setQuickOpen(true)
+      return
+    }
+    if (adding || added) return
+
+    setAdding(true)
+    try {
+      await addToCart({
+        variantId: variants[0].id!,
+        quantity: 1,
+        countryCode: countryCode || "in",
+      })
+      setAdded(true)
+      // The header cart badge is a server component, so it only re-reads the
+      // cart on a refresh. Without this the item is in the bag but the icon
+      // still shows the old count.
+      router.refresh()
+      setTimeout(() => setAdded(false), 2000)
+    } catch {
+      // Fall back to the full page, where the real error is surfaced.
+      setQuickOpen(true)
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const openQuickView = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setQuickOpen(true)
   }
 
   return (
+    <>
     <LocalizedClientLink href={`/products/${product.handle}`} className="group block">
       <motion.div
         ref={cardRef}
@@ -178,9 +277,10 @@ export default function ProductCard({
             <motion.button
               className="px-4 py-2 rounded-full text-[11px] font-semibold text-white flex items-center gap-1.5"
               style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.25)" }}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+              onClick={openQuickView}
               whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.25)" }}
               whileTap={{ scale: 0.95 }}
+              data-testid="card-quick-view"
             >
               <Eye size={13} />
               Quick View
@@ -188,11 +288,19 @@ export default function ProductCard({
             <motion.button
               className="p-2 rounded-full text-white"
               style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.25)" }}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+              onClick={handleAddToBag}
               whileHover={{ scale: 1.1, background: "rgba(212,175,55,0.7)" }}
               whileTap={{ scale: 0.9 }}
+              aria-label={added ? "Added to bag" : "Add to bag"}
+              data-testid="card-add-to-bag"
             >
-              <ShoppingBag size={13} />
+              {added ? (
+                <Check size={13} />
+              ) : adding ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <ShoppingBag size={13} />
+              )}
             </motion.button>
           </motion.div>
         </div>
@@ -232,5 +340,15 @@ export default function ProductCard({
         </div>
       </motion.div>
     </LocalizedClientLink>
+
+    {/* Outside the link on purpose: a dialog nested in an <a> is invalid markup
+        and every click inside it would bubble into navigation. */}
+    <QuickView
+      product={product}
+      countryCode={countryCode || "in"}
+      open={quickOpen}
+      onClose={() => setQuickOpen(false)}
+    />
+    </>
   )
 }

@@ -44,7 +44,7 @@ export default async function Home(props: {
     reviewSource,
   ] = await Promise.all([
     getRegion(countryCode),
-    listCategories({ limit: 20 }),
+    listCategories(),
     listProducts({ countryCode, queryParams: { limit: 12 } }),
     getPromoBanners(),
     getExperienceFeatures(),
