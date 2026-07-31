@@ -7,6 +7,7 @@ import { updateFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 
 import { actorHasPermission } from "../../../../../../lib/rbac"
 import { resolveShiprocketProvider } from "../../../../../../lib/shiprocket-provider"
+import { assertStepAllowed } from "../../../../../../lib/packing-steps"
 
 /**
  * POST /admin/packing/orders/:id/ready-to-ship
@@ -31,6 +32,7 @@ export async function POST(
     fields: [
       "id",
       "metadata",
+      "items.*",
       "fulfillments.id",
       "fulfillments.data",
       "fulfillments.labels.label_url",
@@ -56,6 +58,26 @@ export async function POST(
   }
   if (!labelUrl) {
     return res.status(400).json({ message: "Print the label before marking ready to ship" })
+  }
+
+  // Full hierarchy check: items picked, gift wrap applied, label PASTED,
+  // invoice printed and in the box, parcel sealed.
+  //
+  // This route previously checked only the AWB and the label, so an order could
+  // be marked ready — and a van called — with not a single item ticked.
+  const orderItems = (order.items as any[]) || []
+  const blockedBy = assertStepAllowed("ready_to_ship", {
+    // Service lines (gift wrap, COD fee) are never physically picked.
+    itemIds: orderItems
+      .filter((i) => !["gift-wrap", "cod-fee"].includes(i.product_handle))
+      .map((i) => i.id),
+    giftWrap: orderItems.some((i) => i.product_handle === "gift-wrap"),
+    packing,
+    fulfillmentData: fData,
+    labelUrl,
+  })
+  if (blockedBy) {
+    return res.status(400).json({ message: blockedBy })
   }
 
   // Best-effort: this is the call that tells Shiprocket to actually send a

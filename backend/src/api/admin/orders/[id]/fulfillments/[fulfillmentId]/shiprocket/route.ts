@@ -8,6 +8,10 @@ import { updateFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 import { actorHasPermission } from "../../../../../../../lib/rbac"
 import { resolveActor, appendPackingHistory } from "../../../../../../../lib/packing-log"
 import { resolveShiprocketProvider } from "../../../../../../../lib/shiprocket-provider"
+import {
+  walletAssignmentAllowed,
+  REENABLE_ABOVE,
+} from "../../../../../../../lib/shiprocket-wallet"
 
 /**
  * POST /admin/orders/:id/fulfillments/:fulfillmentId/shiprocket
@@ -150,6 +154,28 @@ export async function POST(
         return res.json({
           awb_code: data.awb_code,
           courier_name: data.courier_name || null,
+        })
+      }
+
+      // Wallet guard. AWB assignment is paid from the Shiprocket wallet and an
+      // attempt can be charged even when it fails, so a latched-low wallet is
+      // refused here rather than burning money on a call that won't succeed.
+      // Reads the persisted latch (no Shiprocket round-trip); an unknown
+      // balance never blocks, and an admin override wins.
+      const walletGate = await walletAssignmentAllowed(req.scope)
+      if (!walletGate.allowed) {
+        return res.status(402).json({
+          message:
+            `Shiprocket wallet is too low${
+              walletGate.last_balance !== null
+                ? ` (₹${walletGate.last_balance})`
+                : ""
+            }. Courier assignment stays disabled until it is topped up past ` +
+            `₹${REENABLE_ABOVE} — an attempt now would fail and may still be ` +
+            `charged. Refresh the wallet in the dispatch panel after topping up, ` +
+            `or override there if you have just paid.`,
+          wallet_balance: walletGate.last_balance,
+          wallet_blocked: true,
         })
       }
       if (!data.shiprocket_shipment_id) {

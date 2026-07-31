@@ -930,6 +930,131 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     }
   }
 
+  /**
+   * Shiprocket wallet balance, in ₹.
+   *
+   * AWB assignment is paid out of this wallet: when it runs dry, Shiprocket
+   * rejects the assignment — and per assignAwb's own note, an attempt can debit
+   * the wallet even when it fails. So a packer repeatedly clicking "Assign
+   * courier" against an empty wallet burns money and gets nothing. The admin UI
+   * reads this to disable the button before that happens, rather than after.
+   *
+   * Cached for 60s: the packing widget polls it, and this is a rate-limited
+   * third-party endpoint. Returns null when it cannot be read — callers must
+   * treat "unknown" as "don't block", never as "empty", or an outage would stop
+   * all dispatch.
+   */
+  private walletBalance_: number | null = null
+  private walletBalanceAt_ = 0
+
+  async getWalletBalance(force = false): Promise<number | null> {
+    if (this.simulating()) return 9999
+
+    const FRESH_MS = 60_000
+    if (
+      !force &&
+      this.walletBalance_ !== null &&
+      Date.now() - this.walletBalanceAt_ < FRESH_MS
+    ) {
+      return this.walletBalance_
+    }
+
+    try {
+      const result = await this.apiCall("/account/details/wallet-balance")
+      const raw =
+        result?.data?.balance_amount ??
+        result?.balance_amount ??
+        result?.data?.wallet_balance
+      const n = Number(raw)
+      if (!Number.isFinite(n)) return this.walletBalance_
+
+      this.walletBalance_ = n
+      this.walletBalanceAt_ = Date.now()
+      return n
+    } catch (e: any) {
+      this.container_[ContainerRegistrationKeys.LOGGER]?.warn(
+        `Shiprocket: could not read wallet balance (${e?.message})`
+      )
+      return this.walletBalance_
+    }
+  }
+
+  /**
+   * Generate the pickup manifest for a batch of shipments.
+   *
+   * A manifest is the handover document the courier signs — one per pickup
+   * batch, not per parcel. It is NOT required to ship, and nothing in this
+   * codebase gates dispatch on it: its value is proof of handover when a
+   * courier later says they never collected something.
+   */
+  async generateManifest(
+    shipmentIds: (string | number)[]
+  ): Promise<{ manifest_url: string | null }> {
+    if (this.simulating()) {
+      return { manifest_url: `https://example.invalid/manifest/${this.simId("MAN")}` }
+    }
+    const result = await this.apiCall("/manifests/generate", "POST", {
+      shipment_id: shipmentIds.map((s) => Number(s) || s),
+    })
+    return {
+      manifest_url:
+        result?.manifest_url || result?.data?.manifest_url || null,
+    }
+  }
+
+  /** Re-print an already generated manifest for the same batch. */
+  async printManifest(
+    orderIds: (string | number)[]
+  ): Promise<{ manifest_url: string | null }> {
+    if (this.simulating()) {
+      return { manifest_url: `https://example.invalid/manifest/${this.simId("MAN")}` }
+    }
+    const result = await this.apiCall("/manifests/print", "POST", {
+      order_ids: orderIds.map((o) => Number(o) || o),
+    })
+    return {
+      manifest_url: result?.manifest_url || result?.data?.manifest_url || null,
+    }
+  }
+
+  /**
+   * Live status for one AWB, straight from Shiprocket.
+   *
+   * The webhook is the primary source, but webhook delivery is not guaranteed —
+   * without a pull path an order can sit on "Out for delivery" forever. Used by
+   * the dispatch panel's Refresh button and by the daily reconciliation job.
+   */
+  async trackByAwb(awb: string): Promise<{
+    status: string | null
+    courier_name: string | null
+    delivered: boolean
+    history: Array<{ status: string; at: string | null; location?: string | null }>
+  }> {
+    if (this.simulating()) {
+      return { status: "In Transit", courier_name: "Simulated Courier", delivered: false, history: [] }
+    }
+
+    const result = await this.apiCall(`/courier/track/awb/${encodeURIComponent(awb)}`)
+    const data = result?.tracking_data || result?.data?.tracking_data || {}
+    const activities: any[] = data?.shipment_track_activities || []
+    const track = (data?.shipment_track || [])[0] || {}
+
+    const status: string | null =
+      track?.current_status || data?.shipment_status || null
+    const lower = String(status || "").toLowerCase()
+
+    return {
+      status,
+      courier_name: track?.courier_name || null,
+      delivered: lower.includes("delivered") && !lower.includes("rto"),
+      history: activities.map((a) => ({
+        status: a?.status || a?.["sr-status-label"] || "",
+        at: a?.date || null,
+        location: a?.location || null,
+      })),
+    }
+  }
+
   // ─── Cancel Fulfillment ──────────────────────
   // Deliberately throws on failure (rather than swallowing) — Medusa's core
   // fulfillment module discards whatever this method returns and only acts

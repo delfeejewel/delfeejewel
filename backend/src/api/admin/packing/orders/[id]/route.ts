@@ -4,6 +4,7 @@ import type {
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
+import { evaluatePacking } from "../../../../../lib/packing-steps"
 import { resolveShiprocketProvider } from "../../../../../lib/shiprocket-provider"
 
 /**
@@ -40,6 +41,10 @@ export async function GET(
       "items.variant_title",
       "items.quantity",
       "items.detail.quantity",
+      // Needed to tell merchandise from service lines (gift wrap, COD fee) —
+      // without it every service line counts as something to physically pick.
+      "items.product_handle",
+      "items.variant_sku",
       "fulfillments.id",
       "fulfillments.provider_id",
       "fulfillments.data",
@@ -99,8 +104,21 @@ export async function GET(
           ready_to_ship_at: activePacking.ready_to_ship_at,
           invoice_printed_at: activePacking.invoice_printed_at || null,
           invoice_added_at: activePacking.invoice_added_at || null,
+          attestations: activePacking.attestations || {},
         }
       : null,
+    // The full step hierarchy, computed server-side. The widget renders this
+    // rather than deciding for itself what is unlocked — one definition, so the
+    // UI and the endpoints that enforce it can never disagree.
+    steps: evaluatePacking({
+      itemIds: ((order.items as any[]) || [])
+        .filter((i) => !["gift-wrap", "cod-fee"].includes(i.product_handle))
+        .map((i) => i.id),
+      giftWrap: !!(order.metadata as any)?.gift_wrap,
+      packing: activePacking,
+      fulfillmentData: fData,
+      labelUrl: label.label_url || null,
+    }),
     fulfillment:
       !cancelled && fulfillment
         ? {
