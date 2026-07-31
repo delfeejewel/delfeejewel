@@ -313,17 +313,33 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       }
 
       // Quote the cheapest serviceable courier.
-      couriers.sort((a: any, b: any) => (a.rate || 0) - (b.rate || 0))
+      // The customer is charged the MIDPOINT of the cheapest and dearest
+      // serviceable courier for this exact route and weight — not the cheapest.
+      //
+      // Why: the courier that actually carries the parcel is chosen at
+      // fulfillment by reliability, not price (see rankCouriers), so quoting
+      // the cheapest guarantees a loss whenever a better courier is used.
+      // Charging the midpoint absorbs that spread: cheap routes still cost the
+      // customer a little more than the floor, dear ones a little less than the
+      // ceiling, and the margin either way is visible per order in the admin.
+      const rates = couriers
+        .map((c: any) => Number(c.rate))
+        .filter((r: number) => Number.isFinite(r) && r > 0)
 
-      const selected = couriers[0]
-      const courierCost = Math.round(Number(selected?.rate) || FALLBACK) // rupees
+      if (!rates.length) {
+        return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
+      }
 
-      // Apply the free-shipping rule.
+      const cheapest = Math.min(...rates)
+      const dearest = Math.max(...rates)
+      const courierCost = Math.round((cheapest + dearest) / 2) // rupees
+
+      // Free-shipping rule. Measured against the amount we would have charged,
+      // which is also our best estimate of what the shipment will cost us.
       if (itemSubtotal > FREE_MIN_SUBTOTAL && courierCost < FREE_MAX_COURIER) {
         return { calculated_amount: 0, is_calculated_price_tax_inclusive: true }
       }
 
-      // Otherwise the customer pays the live courier cost.
       return { calculated_amount: courierCost, is_calculated_price_tax_inclusive: true }
     } catch (error) {
       return { calculated_amount: FALLBACK, is_calculated_price_tax_inclusive: true }
@@ -351,13 +367,31 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     }
 
     try {
-      const query = this.container_[ContainerRegistrationKeys.QUERY]
-      const { data } = await query.graph({
-        entity: "product",
-        filters: { categories: { handle: NO_FREE_SHIPPING_CATEGORY_HANDLES } },
-        fields: ["id"],
-      })
-      this.noFreeShipIds_ = new Set((data as any[]).map((p) => p.id))
+      // MUST use the pg connection, NOT ContainerRegistrationKeys.QUERY: this
+      // provider runs inside the Fulfillment module's isolated container, which
+      // registers only `logger` and the pg connection. query.graph() throws on
+      // every call here and the catch below swallows it — which silently
+      // disabled this exclusion entirely, so a coins-only cart over ₹5,000
+      // shipped free. Same trap already documented in resolvePayment().
+      const knex = this.container_[ContainerRegistrationKeys.PG_CONNECTION]
+
+      // Collect BOTH product and variant ids. A fulfillment context item is
+      // not guaranteed to carry a product id in any particular shape, but it
+      // always identifies its variant — matching on either means the exclusion
+      // doesn't depend on guessing the payload shape.
+      const rows = await knex("product as p")
+        .join("product_category_product as pcp", "pcp.product_id", "p.id")
+        .join("product_category as c", "c.id", "pcp.product_category_id")
+        .leftJoin("product_variant as v", function (this: any) {
+          this.on("v.product_id", "=", "p.id").andOnNull("v.deleted_at")
+        })
+        .whereIn("c.handle", NO_FREE_SHIPPING_CATEGORY_HANDLES)
+        .whereNull("p.deleted_at")
+        .select("p.id as product_id", "v.id as variant_id")
+
+      this.noFreeShipIds_ = new Set(
+        rows.flatMap((r: any) => [r.product_id, r.variant_id]).filter(Boolean)
+      )
       this.noFreeShipIdsAt_ = Date.now()
       return this.noFreeShipIds_
     } catch (e: any) {
@@ -383,13 +417,22 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       const line = (Number(it?.unit_price) || 0) * (Number(it?.quantity) || 0)
       if (!excluded?.size) return sum + line
 
-      const productId =
-        it?.product_id ??
-        it?.product?.id ??
-        it?.variant?.product_id ??
-        it?.line_item?.variant?.product_id ??
-        it?.line_item?.product_id
-      return excluded.has(productId) ? sum : sum + line
+      // Any id on the item that identifies the product or its variant is
+      // enough — `excluded` holds both, so we don't have to know which shape
+      // the fulfillment context happens to use.
+      const ids = [
+        it?.product_id,
+        it?.product?.id,
+        it?.variant_id,
+        it?.variant?.id,
+        it?.variant?.product_id,
+        it?.line_item?.product_id,
+        it?.line_item?.variant_id,
+        it?.line_item?.variant?.id,
+        it?.line_item?.variant?.product_id,
+      ].filter(Boolean)
+
+      return ids.some((id) => excluded.has(id)) ? sum : sum + line
     }, 0)
   }
 
@@ -688,9 +731,14 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     // Generate AWB (Air Waybill). Auto-assignment can fail (no courier
     // serviceable/available) — the admin can retry manually afterwards via
     // the "shiprocket" fulfillment route.
-    let awb: { awb_code: string | null; courier_name: string | null } = {
+    let awb: {
+      awb_code: string | null
+      courier_name: string | null
+      courier_rate: number | null
+    } = {
       awb_code: null,
       courier_name: null,
+      courier_rate: null,
     }
     if (shiprocketOrder?.order_id && shiprocketOrder?.shipment_id) {
       try {
@@ -722,6 +770,9 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         shiprocket_shipment_id: shiprocketOrder?.shipment_id,
         awb_code: awb.awb_code,
         courier_name: awb.courier_name,
+        // What the shipment cost US (₹). Paired with the order's shipping_total
+        // (what the customer paid), this is the per-order shipping margin.
+        courier_rate: awb.courier_rate,
       },
       labels: awb.awb_code
         ? [
@@ -748,7 +799,9 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   private async rankCouriers(
     order: any,
     weight: number
-  ): Promise<Array<{ courier_id: number; courier_name: string; score: number }>> {
+  ): Promise<
+    Array<{ courier_id: number; courier_name: string; score: number; rate: number }>
+  > {
     try {
       const address = order?.shipping_address || {}
       const deliveryPincode = address.postal_code
@@ -766,6 +819,10 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         .map((c) => ({
           courier_id: Number(c.courier_company_id),
           courier_name: c.courier_name,
+          // What this courier charges us for the shipment — recorded on the
+          // fulfillment so per-order shipping margin (charged vs paid) is a
+          // subtraction rather than a guess.
+          rate: Number(c.rate) || 0,
           score:
             (Number(c.pickup_performance) || 0) * 2 +
             (Number(c.delivery_performance) || 0) +
@@ -797,9 +854,17 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
   async assignAwb(
     shipmentId: string,
     context?: { order?: any; weight?: number }
-  ): Promise<{ awb_code: string | null; courier_name: string | null }> {
+  ): Promise<{
+    awb_code: string | null
+    courier_name: string | null
+    courier_rate: number | null
+  }> {
     if (this.simulating()) {
-      return { awb_code: this.simId("AWB"), courier_name: "Simulated Courier" }
+      return {
+        awb_code: this.simId("AWB"),
+        courier_name: "Simulated Courier",
+        courier_rate: null,
+      }
     }
     const logger = this.container_[ContainerRegistrationKeys.LOGGER]
 
@@ -816,6 +881,8 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
             return {
               awb_code,
               courier_name: awbData?.response?.data?.courier_name || best.courier_name,
+              courier_rate:
+                Number(awbData?.response?.data?.freight_charges) || best.rate || null,
             }
           }
           logger?.warn(
@@ -837,6 +904,8 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     return {
       awb_code: awbData?.response?.data?.awb_code || null,
       courier_name: awbData?.response?.data?.courier_name || null,
+      // Shiprocket's own auto-assign path: it reports the freight it charged.
+      courier_rate: Number(awbData?.response?.data?.freight_charges) || null,
     }
   }
 
