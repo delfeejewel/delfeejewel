@@ -37,9 +37,9 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
   if (!categories.length) return null
 
   return (
-    <section className="py-10 small:py-16 bg-white">
+    <section className="pt-8 pb-10 small:py-16 bg-white">
       {/* Header */}
-      <div className="page-container mb-8">
+      <div className="page-container mb-5 small:mb-8">
         <h2 className="font-wittgenstein text-[24px] small:text-[30px] text-[var(--color-plum)]">
           Shop by Category
         </h2>
@@ -75,12 +75,17 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
             row still scrolls from the first tile. justify-center would make the
             overflowing start unreachable.
           */}
-          <div className="flex flex-row gap-5 small:gap-8 px-6 small:px-10 pt-4 pb-4 w-max mx-auto">
+          {/*
+            pt/pb reserve room for the hover lift (-translate-y-2) so the tile
+            never clips against the scroll box — only needed where hover exists,
+            so mobile gets a tighter 8px.
+          */}
+          <div className="flex flex-row gap-4 small:gap-8 px-6 small:px-10 pt-2 pb-2 small:pt-4 small:pb-4 w-max mx-auto">
             {categories.map((cat) => (
               <LocalizedClientLink
                 key={cat.handle}
                 href={`/categories/${cat.handle}`}
-                className="group shrink-0 w-[128px] small:w-[160px] medium:w-[176px] flex flex-col items-center cursor-pointer"
+                className="group shrink-0 w-[120px] small:w-[160px] medium:w-[176px] flex flex-col items-center cursor-pointer"
               >
                 {/* Circle */}
                 <div className="w-full aspect-square rounded-full overflow-hidden bg-[var(--color-bg-secondary)] shadow-md group-hover:shadow-2xl group-hover:-translate-y-2 transition-all duration-500 ease-out">
@@ -94,7 +99,7 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
                 </div>
 
                 {/* Label */}
-                <div className="mt-4 text-center">
+                <div className="mt-3 small:mt-4 text-center">
                   <p className="font-semibold text-[14px] small:text-[15px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-plum)] transition-colors">
                     {cat.name}
                   </p>
