@@ -179,6 +179,38 @@ export const COMMON_FILTERS: FilterGroup[] = [
   },
 ]
 
+// Shared by every neck-worn category (necklace sets, necklace chains, plain
+// chains, chain sets) so they all filter the same way.
+const NECKLACE_TYPE_FILTER: FilterGroup = {
+  key: "necklace_type",
+  label: "Necklace Type",
+  type: "checkbox",
+  section: "core",
+  options: [
+    { label: "Chain", value: "chain" },
+    { label: "Pendant", value: "pendant" },
+    { label: "Choker", value: "choker" },
+    { label: "Mangalsutra", value: "mangalsutra" },
+    { label: "Layered", value: "layered" },
+    { label: "Statement", value: "statement" },
+  ],
+}
+
+const CHAIN_LENGTH_FILTER: FilterGroup = {
+  key: "chain_length",
+  label: "Chain Length",
+  type: "checkbox",
+  section: "core",
+  options: [
+    { label: "14 inch", value: "14" },
+    { label: "16 inch", value: "16" },
+    { label: "18 inch", value: "18" },
+    { label: "20 inch", value: "20" },
+    { label: "22 inch", value: "22" },
+    { label: "24 inch", value: "24" },
+  ],
+}
+
 // ─── Category-specific filters ───────────────────────
 export const CATEGORY_FILTERS: Record<string, FilterGroup[]> = {
   rings: [
@@ -234,36 +266,11 @@ export const CATEGORY_FILTERS: Record<string, FilterGroup[]> = {
       ],
     },
   ],
-  necklaces: [
-    {
-      key: "necklace_type",
-      label: "Necklace Type",
-      type: "checkbox",
-      section: "core",
-      options: [
-        { label: "Chain", value: "chain" },
-        { label: "Pendant", value: "pendant" },
-        { label: "Choker", value: "choker" },
-        { label: "Mangalsutra", value: "mangalsutra" },
-        { label: "Layered", value: "layered" },
-        { label: "Statement", value: "statement" },
-      ],
-    },
-    {
-      key: "chain_length",
-      label: "Chain Length",
-      type: "checkbox",
-      section: "core",
-      options: [
-        { label: "14 inch", value: "14" },
-        { label: "16 inch", value: "16" },
-        { label: "18 inch", value: "18" },
-        { label: "20 inch", value: "20" },
-        { label: "22 inch", value: "22" },
-        { label: "24 inch", value: "24" },
-      ],
-    },
-  ],
+  // handle stays `necklaces`; the category is displayed as "Necklace Sets"
+  necklaces: [NECKLACE_TYPE_FILTER, CHAIN_LENGTH_FILTER],
+  "necklace-chains": [NECKLACE_TYPE_FILTER, CHAIN_LENGTH_FILTER],
+  "chain-sets": [NECKLACE_TYPE_FILTER, CHAIN_LENGTH_FILTER],
+  chains: [CHAIN_LENGTH_FILTER],
   bracelets: [
     {
       key: "bracelet_type",

@@ -6,7 +6,11 @@ import { motion } from "framer-motion"
 const CATEGORY_META: Record<string, { tagline: string }> = {
   rings: { tagline: "Crafted to perfection, worn with pride" },
   earrings: { tagline: "Frame your face with elegance" },
+  // handle stays `necklaces`; the category is displayed as "Necklace Sets"
   necklaces: { tagline: "Adorn your neckline with timeless beauty" },
+  "necklace-chains": { tagline: "One perfect piece, worn on its own" },
+  "chain-sets": { tagline: "Chain and earrings, made to match" },
+  chains: { tagline: "The everyday link that goes with everything" },
   bracelets: { tagline: "Grace your wrist with every gesture" },
   solitaires: { tagline: "Brilliance that speaks for itself" },
   mangalsutras: { tagline: "A bond of love, in every bead" },

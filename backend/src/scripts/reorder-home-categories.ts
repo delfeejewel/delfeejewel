@@ -6,9 +6,9 @@ import { updateProductCategoriesWorkflow } from "@medusajs/medusa/core-flows"
  * Set top-level product_category.rank so the homepage category row
  * (CategoryGrid, which renders /store/product-categories in its returned
  * order — no client-side sort) shows:
- *   Rakhi, Rings, Bracelets, Pendants, Necklace, Earrings, Mangalsutras,
- *   Anklets, then any other top-level categories after (unchanged relative
- *   order among themselves).
+ *   Rakhi, Rings, Bracelets, Pendants, Necklace Sets, Necklace Chains,
+ *   Chain Sets, Chains, Earrings, Mangalsutras, Anklets, then any other
+ *   top-level categories after (unchanged relative order among themselves).
  *
  * Usage (DRY RUN by default):
  *   npx medusa exec ./src/scripts/reorder-home-categories.ts
@@ -19,7 +19,10 @@ const DESIRED_ORDER = [
   "rings",
   "bracelets",
   "pendants",
-  "necklaces",
+  "necklaces", // displayed as "Necklace Sets"
+  "necklace-chains",
+  "chain-sets",
+  "chains",
   "earrings",
   "mangalsutras",
   "anklets",
