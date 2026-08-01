@@ -30,8 +30,15 @@ export const listCategories = async (query?: Record<string, any>) => {
       "/store/product-categories",
       {
         query: {
+          // `+metadata` is load-bearing: nav/footer/tile visibility and cover
+          // images all read metadata (see lib/util/category-visibility). It
+          // arrived implicitly while every entry here was a `*` relation
+          // expansion, but naming a single BARE field in this string would
+          // switch the API to explicit-select and silently drop it — and with
+          // it every category's visibility config. The `+` prefix adds to the
+          // defaults instead of replacing them, so it stays safe either way.
           fields:
-            "*category_children, *products, *parent_category, *parent_category.parent_category",
+            "*category_children, *products, *parent_category, *parent_category.parent_category, +metadata",
           limit,
           // Store API doesn't default-sort by rank — without this, category
           // order (e.g. the homepage row) is arbitrary DB order, not the

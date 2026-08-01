@@ -1,4 +1,5 @@
 import { listCategories } from "@lib/data/categories"
+import { visibleCategoriesFor } from "@lib/util/category-visibility"
 import { getStoreInfo, getFooterSettings, getMenus } from "@lib/data/cms"
 import { BRAND } from "@lib/constants.brand"
 import Image from "next/image"
@@ -214,7 +215,7 @@ export default async function Footer() {
       getFooterSettings(),
       getMenus(["footer_col_1", "footer_col_2", "footer_col_3"]),
     ])
-  const topLevelCategories = productCategories?.filter((c) => !c.parent_category) || []
+  const topLevelCategories = visibleCategoriesFor(productCategories, "footer")
 
   const tagline = footerSettings?.tagline || BRAND.tagline
 

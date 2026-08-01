@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { listRegions } from "@lib/data/regions"
 import { listLocales } from "@lib/data/locales"
 import { listCategories } from "@lib/data/categories"
+import { visibleCategoriesFor } from "@lib/util/category-visibility"
 import { getLocale } from "@lib/data/locale-actions"
 import { getStoreInfo, getHeaderSettings, getMenu } from "@lib/data/cms"
 import { BRAND } from "@lib/constants.brand"
@@ -28,7 +29,10 @@ export default async function Nav() {
       getMenu("header_quick_links"),
     ])
 
-  const topLevelCategories = categories?.filter((c) => !c.parent_category) || []
+  // Header bar and mobile drawer are configured independently per category, so
+  // they get their own lists off the one fetch rather than sharing one.
+  const headerCategories = visibleCategoriesFor(categories, "header")
+  const mobileCategories = visibleCategoriesFor(categories, "mobile")
 
   const email = storeInfo?.email || "enquire@delfee.in"
   const phone = storeInfo?.phone || "+91 9877686053"
@@ -113,7 +117,7 @@ export default async function Nav() {
                 regions={regions}
                 locales={locales}
                 currentLocale={currentLocale}
-                categories={topLevelCategories.map((c) => ({ name: c.name, handle: c.handle }))}
+                categories={mobileCategories.map((c) => ({ name: c.name, handle: c.handle }))}
               />
             </div>
             <LocalizedClientLink
@@ -187,11 +191,11 @@ export default async function Nav() {
       </header>
 
       {/* Category bar (desktop only) */}
-      {topLevelCategories.length > 0 && (
+      {headerCategories.length > 0 && (
         <div className="hidden small:block w-full bg-[var(--color-bg-primary)] border-b border-[var(--color-lavender)]">
           <div className="content-container">
             <ul className="flex items-center justify-center gap-x-9 h-12 overflow-x-auto no-scrollbar">
-              {topLevelCategories.map((category) => (
+              {headerCategories.map((category) => (
                 <li key={category.id}>
                   <LocalizedClientLink
                     href={`/categories/${category.handle}`}

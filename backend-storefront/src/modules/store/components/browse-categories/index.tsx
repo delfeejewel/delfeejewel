@@ -2,19 +2,29 @@ import Image from "next/image"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { listCategories } from "@lib/data/categories"
-
-const FALLBACK = "/images/fallback-no-image.png"
+import { visibleCategoriesFor } from "@lib/util/category-visibility"
 
 /**
  * Top-level category tiles shown above the listing on /store.
  * Server-fetched. Each tile links to /categories/[handle].
+ *
+ * Shares the `tiles` visibility surface with the homepage "Shop by Category"
+ * grid — same image-led card, so the same admin checkbox governs both, and
+ * both require a cover image rather than falling back to a placeholder.
  */
 export default async function BrowseCategories() {
-  let categories = await listCategories({ limit: 50 }).catch(() => [])
-
-  // Top-level only (no parent category). The store API already excludes
-  // internal/inactive categories, so no further filtering needed.
-  categories = (categories || []).filter((c: any) => !c.parent_category)
+  // No cap: a `.slice(0, 6)` here silently drops whatever ranks lowest, the
+  // same bug that once hid Coins from the footer. Visibility is admin config,
+  // not an arbitrary cut-off.
+  // Annotated rather than `.catch(() => [])` inline: the bare `[]` widens the
+  // awaited type to a union with never[], which collapses the generic below.
+  let all: Awaited<ReturnType<typeof listCategories>> = []
+  try {
+    all = await listCategories({ limit: 100 })
+  } catch {
+    all = []
+  }
+  const categories = visibleCategoriesFor(all, "tiles")
 
   if (!categories.length) return null
 
@@ -38,11 +48,8 @@ export default async function BrowseCategories() {
       </header>
 
       <div className="grid grid-cols-3 small:grid-cols-6 gap-3 small:gap-4">
-        {categories.slice(0, 6).map((c: any) => {
-          const cover =
-            (c.metadata?.cover_image as string) ||
-            c.thumbnail ||
-            FALLBACK
+        {categories.map((c: any) => {
+          const cover = c.metadata.cover_image as string
           return (
             <LocalizedClientLink
               key={c.id}

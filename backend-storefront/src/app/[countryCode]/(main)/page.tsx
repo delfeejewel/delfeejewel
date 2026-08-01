@@ -14,6 +14,7 @@ import PromoBanners from "@modules/home/components/promo-banners"
 import ShopByGender from "@modules/home/components/shop-by-gender"
 import { listProducts } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
+import { visibleCategoriesFor } from "@lib/util/category-visibility"
 import { getRegion } from "@lib/data/regions"
 import {
   getPromoBanners,
@@ -54,21 +55,17 @@ export default async function Home(props: {
   const reviews =
     reviewSource === "dynamic" ? await getDynamicReviews() : await getReviews()
 
-  // "Shop by Category" is a curated homepage module, not a full index: a
-  // category can opt out with `metadata.hide_from_homepage` (Coins does) while
-  // still appearing in the main nav, footer and mobile menu, which all read the
-  // unfiltered category list. Note this is deliberately NOT the
-  // HIDDEN_CATEGORY_KEYS list in lib/data/categories — that one hides a
-  // category everywhere.
-  const topLevelCategories =
-    categories
-      ?.filter((c) => !c.parent_category)
-      ?.filter((c) => c.metadata?.hide_from_homepage !== true)
-      ?.map((c) => ({
-        name: c.name,
-        handle: c.handle,
-        cover_image: (c.metadata?.cover_image as string) || null,
-      })) || []
+  // "Shop by Category" is a curated homepage module, not a full index. Which
+  // categories appear is per-category admin config — see lib/util/category-
+  // visibility. The `tiles` surface additionally requires a cover image, so an
+  // imageless category can't render a grey placeholder card here.
+  const topLevelCategories = visibleCategoriesFor(categories, "tiles").map(
+    (c) => ({
+      name: c.name,
+      handle: c.handle,
+      cover_image: c.metadata!.cover_image as string,
+    })
+  )
 
   const featuredProducts = featuredProductsData?.response?.products || []
 
