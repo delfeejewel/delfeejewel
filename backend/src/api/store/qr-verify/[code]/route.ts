@@ -33,6 +33,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       "title",
       "sku",
       "product.id",
+      "product.status",
       "product.title",
       "product.handle",
       "product.description",
@@ -42,7 +43,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     ],
   })
   const variant = (variants as any[])?.[0]
-  if (!variant?.product) {
+  // Unpublished products must never surface on a customer-facing route — this
+  // is the one product read that doesn't go through /store/products (which
+  // forces status=published itself), so the check is done by hand.
+  if (!variant?.product || variant.product.status !== "published") {
     return res
       .status(404)
       .json({ verified: false, message: "Product info unavailable." })
