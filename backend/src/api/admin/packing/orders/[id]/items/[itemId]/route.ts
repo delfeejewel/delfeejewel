@@ -93,13 +93,26 @@ export async function POST(
   }
 
   const nowIso = new Date().toISOString()
-  const history = Array.isArray(packing.history) ? packing.history : []
-  history.push({
-    step: packed ? `item_packed:${itemId}` : `item_unpacked:${itemId}`,
-    at: nowIso,
-    actor_id: actorId,
-    actor_email: actorEmail,
-  })
+
+  /**
+   * One line per item, reflecting where it stands now — not a transcript of
+   * every tick. A packer correcting a mis-click used to leave "Marked an item
+   * packed / Unmarked an item as packed" pairs that buried the events that
+   * actually matter. So: packing records the line, unpacking removes it.
+   */
+  const prevHistory = Array.isArray(packing.history) ? packing.history : []
+  const history = prevHistory.filter(
+    (h: any) =>
+      h?.step !== `item_packed:${itemId}` && h?.step !== `item_unpacked:${itemId}`
+  )
+  if (packed) {
+    history.push({
+      step: `item_packed:${itemId}`,
+      at: nowIso,
+      actor_id: actorId,
+      actor_email: actorEmail,
+    })
+  }
 
   const orderModule: any = req.scope.resolve(Modules.ORDER)
   await orderModule.updateOrders([

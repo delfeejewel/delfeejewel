@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { readCmsRow } from "../lib/cms-db"
 
 let cachedInfo: any = null
 let cacheTime = 0
@@ -42,13 +43,20 @@ export function getStateCode(state: string): string {
   return GST_STATE_CODES[name] || "99"
 }
 
+/**
+ * Seller identity for the invoice's "Sold by" block, from the CMS.
+ *
+ * Read over POSTGRES first, REST second — the same lesson as the email sender
+ * (see utils/get-email-sender). While the Supabase project sat over its quota,
+ * REST returned 402, this silently fell back to env defaults, and every tax
+ * invoice went out reading "Delfee / GSTIN N/A". A GST invoice without a GSTIN
+ * is not a valid tax document, so this must not depend on the service path that
+ * fails first.
+ */
 export async function getStoreInfo() {
   if (cachedInfo && Date.now() - cacheTime < CACHE_TTL) {
     return cachedInfo
   }
-
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   const fallback = {
     store_name: process.env.SELLER_NAME || process.env.BRAND_NAME || "Delfee",
@@ -64,18 +72,37 @@ export async function getStoreInfo() {
     email: "",
   }
 
-  if (!url || !key) return fallback
+  // 1. Postgres — the connection Medusa already depends on.
+  const pg = await readCmsRow("cms_store_info")
+  if (pg.ok && pg.row) {
+    cachedInfo = pg.row
+    cacheTime = Date.now()
+    return pg.row
+  }
 
-  const supabase = createClient(url, key)
-  const { data, error } = await supabase
-    .from("cms_store_info")
-    .select("*")
-    .limit(1)
-    .single()
+  // 2. REST — retained for environments without a direct DATABASE_URL.
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (url && key) {
+    try {
+      const supabase = createClient(url, key)
+      const { data, error } = await supabase
+        .from("cms_store_info")
+        .select("*")
+        .limit(1)
+        .maybeSingle()
+      if (!error && data) {
+        cachedInfo = data
+        cacheTime = Date.now()
+        return data
+      }
+    } catch {
+      // Fall through to the env fallback below.
+    }
+  }
 
-  if (error || !data) return fallback
-
-  cachedInfo = data
-  cacheTime = Date.now()
-  return data
+  // 3. Env. Deliberately NOT cached: caching an outage as though it were the
+  // answer would keep printing "GSTIN N/A" for the whole TTL after the CMS
+  // came back.
+  return fallback
 }

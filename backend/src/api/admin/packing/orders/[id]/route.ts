@@ -7,6 +7,13 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { evaluatePacking } from "../../../../../lib/packing-steps"
 import { resolveShiprocketProvider } from "../../../../../lib/shiprocket-provider"
 
+/** Storefront links follow the same shape as the pick-label/QR routes. */
+const STOREFRONT = (process.env.STOREFRONT_URL || "http://localhost:8000").replace(
+  /\/$/,
+  ""
+)
+const STOREFRONT_COUNTRY = process.env.STOREFRONT_COUNTRY || "in"
+
 /**
  * GET /admin/packing/orders/:id
  * Full packing-checklist detail for one order: items, packing progress, and
@@ -45,8 +52,6 @@ export async function GET(
       // without it every service line counts as something to physically pick.
       "items.product_handle",
       "items.variant_sku",
-      // Lets the checklist link each line to its product in Admin.
-      "items.product_id",
       "fulfillments.id",
       "fulfillments.provider_id",
       "fulfillments.data",
@@ -79,7 +84,11 @@ export async function GET(
     id: it.id,
     title: it.title,
     variant_title: it.variant_title || null,
-    product_id: it.product_id || null,
+    // Built here rather than in the admin bundle: STOREFRONT_URL is a server
+    // env var, and the browser has no way to read it.
+    product_url: it.product_handle
+      ? `${STOREFRONT}/${STOREFRONT_COUNTRY}/products/${it.product_handle}`
+      : null,
     // Both already queried above but never returned: the dispatch widget shows
     // the SKU, and filters service lines (gift wrap, COD fee) out of the pick
     // list by handle — with the field missing that filter matched nothing.

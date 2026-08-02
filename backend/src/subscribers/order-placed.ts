@@ -45,15 +45,15 @@ async function buildInvoiceAttachment(
 /**
  * Where the shop's own copy of an order goes.
  *
- * Defaults to the public enquiries inbox so this works with no config; the env
- * vars are there for staging (or a dedicated orders@ address later) without a
- * code change. `ORDER_NOTIFICATION_EMAIL` may be a comma-separated list.
+ * Defaults to the owner's inbox so this works with no config; the env vars are
+ * there for staging (or a dedicated orders@ address later) without a code
+ * change. `ORDER_NOTIFICATION_EMAIL` may be a comma-separated list.
  */
 function shopNotificationRecipients(): string {
   return (
     process.env.ORDER_NOTIFICATION_EMAIL ||
     process.env.ADMIN_NOTIFICATION_EMAIL ||
-    "enquire@delfee.in"
+    "vardhmanjewellers1641@gmail.com"
   )
 }
 

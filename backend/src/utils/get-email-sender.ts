@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
-import { Pool } from "pg"
+import { readCmsRow } from "../lib/cms-db"
 import { TransportConfig } from "../modules/email_notification/transport"
 
 // The outbound email sender is configured in the CMS (cms_email_sender table),
@@ -68,39 +68,9 @@ function toConfig(row: any): TransportConfig | null {
   return null
 }
 
-// One small pool for the whole process. Email sends are infrequent, so this is
-// deliberately tiny — it must never compete with Medusa's own connections.
-let pool: Pool | null = null
-function getPool(): Pool | null {
-  if (pool) return pool
-  const connectionString = process.env.DATABASE_URL
-  if (!connectionString) return null
-  pool = new Pool({
-    connectionString,
-    max: 2,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 8_000,
-    // Supabase requires TLS; the pooler presents a cert we don't pin.
-    ssl: connectionString.includes("supabase.co")
-      ? { rejectUnauthorized: false }
-      : undefined,
-  })
-  pool.on("error", () => {
-    /* never let an idle-client error crash the process */
-  })
-  return pool
-}
-
 /** Primary path: read the sender row straight from Postgres. */
 async function readFromPostgres(): Promise<{ ok: boolean; row: any }> {
-  const p = getPool()
-  if (!p) return { ok: false, row: null }
-  try {
-    const { rows } = await p.query("select * from cms_email_sender limit 1")
-    return { ok: true, row: rows[0] ?? null }
-  } catch {
-    return { ok: false, row: null }
-  }
+  return readCmsRow("cms_email_sender")
 }
 
 /** Fallback path: the Supabase REST API (subject to project quota limits). */

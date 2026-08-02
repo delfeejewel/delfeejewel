@@ -31,7 +31,8 @@ type Item = {
   title: string
   variant_title: string | null
   /** Null for service lines (gift wrap, COD fee) — those get no product link. */
-  product_id: string | null
+  product_url: string | null
+  product_handle: string | null
   quantity: number
   packed: boolean
 }
@@ -41,6 +42,9 @@ type HistoryEntry = {
   at: string
   actor_id: string | null
   actor_email: string | null
+  /** Extras some steps record alongside themselves (see logStep). */
+  awb_code?: string | null
+  attempt?: number | null
 }
 
 type Detail = {
@@ -90,10 +94,45 @@ const STEP_LABELS: Record<string, string> = {
   shipment_reset: "Reset the shipment (undid AWB / ready-to-ship)",
 }
 
-function historyStepLabel(step: string): string {
-  if (step.startsWith("item_packed:")) return STEP_LABELS.item_packed
-  if (step.startsWith("item_unpacked:")) return STEP_LABELS.item_unpacked
-  return STEP_LABELS[step] || step
+/**
+ * Lines that aren't physically picked. The server already excludes these when
+ * deciding whether every item is packed, so showing them here only invited
+ * ticking a box for a fee.
+ */
+const SERVICE_HANDLES = ["gift-wrap", "cod-fee"]
+
+const isMerchandise = (item: { product_handle: string | null }) =>
+  !SERVICE_HANDLES.includes(item.product_handle || "")
+
+/**
+ * Turns a raw history step into something a packer can read.
+ *
+ * `item_packed:<id>` carries the line it refers to, so name it — "Marked an
+ * item packed" three times in a row says nothing about which items. Extras
+ * recorded alongside the step (AWB code, wrapper count) are surfaced too.
+ */
+function historyStepLabel(
+  entry: HistoryEntry,
+  itemTitles: Record<string, string>
+): string {
+  const { step } = entry
+
+  if (step.startsWith("item_packed:") || step.startsWith("item_unpacked:")) {
+    const title = itemTitles[step.split(":")[1]]
+    const verb = step.startsWith("item_packed:") ? "Packed" : "Unpacked"
+    return title ? `${verb} ${title}` : STEP_LABELS[
+      step.startsWith("item_packed:") ? "item_packed" : "item_unpacked"
+    ]
+  }
+
+  const base = STEP_LABELS[step] || step
+  if (step === "awb_assigned" && entry.awb_code) {
+    return `${base} — ${entry.awb_code}`
+  }
+  if (step === "shiprocket_order_created" && entry.attempt) {
+    return `${base} (attempt ${entry.attempt})`
+  }
+  return base
 }
 
 function formatWhen(iso: string): string {
@@ -288,9 +327,57 @@ const PackingPage = () => {
     })
   }
 
-  const allPacked = !!detail && detail.items.length > 0 && detail.items.every((i) => i.packed)
+  // Merchandise only — matches the server, which leaves service lines out of
+  // the "every item packed" check.
+  const merchandise = (detail?.items || []).filter(isMerchandise)
+  const allPacked = merchandise.length > 0 && merchandise.every((i) => i.packed)
+
+  /** Line id → title, so the activity log can name the item a step refers to. */
+  const itemTitles: Record<string, string> = Object.fromEntries(
+    (detail?.items || []).map((i) => [i.id, i.title])
+  )
+
+  /**
+   * Service lines are hidden from the checklist, so their tick/untick entries
+   * have no place in the log either — "Packed COD Handling Fee" describes
+   * something nobody picked up.
+   */
+  const serviceItemIds = new Set(
+    (detail?.items || []).filter((i) => !isMerchandise(i)).map((i) => i.id)
+  )
+
+  /** Items currently ticked — a "Packed X" line only stands while X is packed. */
+  const packedItemIds = new Set(
+    (detail?.items || []).filter((i) => i.packed).map((i) => i.id)
+  )
+
+  const visibleHistory = (detail?.history || []).filter((h) => {
+    // Legacy rows: unpacking removes the line now, but orders packed before
+    // that change still carry "Unmarked an item as packed" pairs.
+    if (h.step.startsWith("item_unpacked:")) return false
+
+    const match = /^item_packed:(.+)$/.exec(h.step)
+    if (!match) return true
+    const itemId = match[1]
+    return !serviceItemIds.has(itemId) && packedItemIds.has(itemId)
+  })
   const awbDone = !!detail?.fulfillment?.awb_code
   const labelDone = !!detail?.fulfillment?.label_url
+  const invoicePrinted = !!detail?.packing?.invoice_printed_at
+
+  /**
+   * Everything that must be true before a van can be called. "Invoice added to
+   * box" is deliberately NOT in here — it's a useful record but not a gate.
+   * The same list is enforced server-side (see PACKING_STEPS); this only stops
+   * the click that would be rejected anyway.
+   */
+  const readyBlockers = [
+    !detail?.packing && "Start packing",
+    !allPacked && "Pack every item",
+    !awbDone && "Generate the AWB",
+    !labelDone && "Print the label",
+    !invoicePrinted && "Print the invoice",
+  ].filter(Boolean) as string[]
   const pickupDone = !!detail?.fulfillment?.pickup_requested_at
   const shipped = !!detail?.fulfillment?.shipped_at
 
@@ -375,13 +462,35 @@ const PackingPage = () => {
       </div>
 
       <Drawer open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <Drawer.Content>
+        {/*
+          Wider than the stock 560px. The checklist carries full product titles
+          plus variant and quantity on one line, and the activity log puts a
+          sentence and a timestamp side by side — at 560px both wrapped
+          constantly. Inline style because the built-in `sm:max-w-[560px]` would
+          otherwise win on class order.
+        */}
+        <Drawer.Content style={{ maxWidth: "min(95vw, 1120px)" }}>
           <Drawer.Header>
             <Drawer.Title data-testid="packing-drawer-title" data-display-id={detail?.display_id}>
               {detail ? `Order #${detail.display_id}` : "Order"}
             </Drawer.Title>
           </Drawer.Header>
-          <Drawer.Body style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/*
+            Drawer.Body ships as `flex-1 px-6 py-4` — no overflow rule, and no
+            min-height:0. A flex child won't shrink past its content without
+            that, so a long checklist + activity log overflowed the fixed-height
+            drawer and was simply cut off at the bottom with nothing to scroll.
+          */}
+          <Drawer.Body
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+            }}
+          >
             {loadingDetail && <Text size="small">Loading…</Text>}
 
             {detail && (
@@ -432,8 +541,9 @@ const PackingPage = () => {
                 {/* Step 2: Per-item packed checkboxes */}
                 {detail.packing && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {detail.items.map((item) => {
+                    {detail.items.filter(isMerchandise).map((item) => {
                       const allButThisPacked = detail.items
+                        .filter(isMerchandise)
                         .filter((i) => i.id !== item.id)
                         .every((i) => i.packed)
                       return (
@@ -449,9 +559,9 @@ const PackingPage = () => {
                             {/* Opens the product in a new tab: checking a piece
                                 against its photo/SKU shouldn't cost the packer
                                 their place in the checklist. */}
-                            {item.product_id ? (
+                            {item.product_url ? (
                               <a
-                                href={`/app/products/${item.product_id}`}
+                                href={item.product_url}
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{ textDecoration: "underline" }}
@@ -543,24 +653,43 @@ const PackingPage = () => {
                 {/* Step 4.5: Invoice — print it, then confirm it physically went in the box */}
                 {detail.packing && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {/* Reads exactly like the "Label printed — Reprint →" row
+                        above once done: a done step is a ticked line, not a
+                        button that still looks like the next thing to press. */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <Button
-                        size="small"
-                        data-testid="packing-print-invoice-button"
-                        variant={detail.packing.invoice_printed_at ? "secondary" : "primary"}
-                        disabled={busy === "invoice_print"}
-                        onClick={printInvoice}
-                      >
-                        {busy === "invoice_print"
-                          ? "Printing…"
-                          : detail.packing.invoice_printed_at
-                          ? "Reprint Invoice"
-                          : "Print Invoice"}
-                      </Button>
-                      {detail.packing.invoice_printed_at && (
-                        <Text size="small" style={{ color: "#666" }}>
-                          Printed
-                        </Text>
+                      {detail.packing.invoice_printed_at ? (
+                        <>
+                          <Checkbox checked disabled />
+                          <Text size="small" weight="plus">
+                            Invoice printed
+                          </Text>
+                          <button
+                            type="button"
+                            data-testid="packing-print-invoice-button"
+                            disabled={busy === "invoice_print"}
+                            onClick={printInvoice}
+                            style={{
+                              fontSize: 12,
+                              color: "#5D2E46",
+                              fontWeight: 600,
+                              background: "none",
+                              border: 0,
+                              padding: 0,
+                              cursor: busy === "invoice_print" ? "default" : "pointer",
+                            }}
+                          >
+                            {busy === "invoice_print" ? "Printing…" : "Reprint →"}
+                          </button>
+                        </>
+                      ) : (
+                        <Button
+                          size="small"
+                          data-testid="packing-print-invoice-button"
+                          disabled={busy === "invoice_print"}
+                          onClick={printInvoice}
+                        >
+                          {busy === "invoice_print" ? "Printing…" : "Print Invoice"}
+                        </Button>
                       )}
                     </div>
 
@@ -590,14 +719,22 @@ const PackingPage = () => {
                           </Text>
                         </>
                       ) : (
-                        <Button
-                          size="small"
-                          data-testid="packing-ready-to-ship-button"
-                          disabled={!labelDone || busy === "ready"}
-                          onClick={readyToShip}
-                        >
-                          {busy === "ready" ? "Marking…" : "Mark as Ready to Ship"}
-                        </Button>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <Button
+                            size="small"
+                            data-testid="packing-ready-to-ship-button"
+                            disabled={readyBlockers.length > 0 || busy === "ready"}
+                            onClick={readyToShip}
+                          >
+                            {busy === "ready" ? "Marking…" : "Mark as Ready to Ship"}
+                          </Button>
+                          {readyBlockers.length > 0 && (
+                            // Says why, rather than leaving a dead button.
+                            <Text size="small" style={{ color: "#999" }}>
+                              First: {readyBlockers.join(", ")}
+                            </Text>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -696,7 +833,7 @@ const PackingPage = () => {
                 {/* Activity log — who did what, and when. Kept even after a
                     cancelled attempt resets the checklist above, so the record
                     of what happened isn't lost. */}
-                {!!detail.history?.length && (
+                {!!visibleHistory.length && (
                   <div
                     style={{
                       display: "flex",
@@ -710,16 +847,33 @@ const PackingPage = () => {
                     <Text size="small" weight="plus" style={{ color: "#666" }}>
                       Activity log
                     </Text>
-                    {detail.history.map((h, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                        <Text size="small">
-                          {historyStepLabel(h.step)} — {h.actor_email || "Unknown user"}
-                        </Text>
-                        <Text size="small" style={{ color: "#999", whiteSpace: "nowrap" }}>
-                          {formatWhen(h.at)}
-                        </Text>
-                      </div>
-                    ))}
+                    {/* No scrollbar of its own — the drawer body scrolls, and a
+                        second scroll area nested inside it is a trap on a
+                        narrow panel. */}
+                    <div
+                      style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    >
+                      {visibleHistory.map((h, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+                          <Text size="small">{historyStepLabel(h, itemTitles)}</Text>
+                          {/* Who and when travel together on the right, in the
+                              same muted weight — the event is what you scan
+                              for, the attribution is what you check after. */}
+                          <Text
+                            size="small"
+                            style={{
+                              color: "#999",
+                              whiteSpace: "nowrap",
+                              display: "flex",
+                              gap: 6,
+                            }}
+                          >
+                            <span>({h.actor_email || "unknown user"})</span>
+                            <span>{formatWhen(h.at)}</span>
+                          </Text>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>

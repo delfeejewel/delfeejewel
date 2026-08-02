@@ -22,10 +22,24 @@ export const INVOICE_ORDER_FIELDS = [
   "subtotal",
   "tax_total",
   "shipping_total",
+  "discount_total",
+  "items.discount_total",
+  /**
+   * The whole shipping method, not just its discount.
+   *
+   * Medusa computes an order's totals from the fields you actually request:
+   * without these, `shipping_total` came back 0 and `total` came back short by
+   * the shipping amount, so the invoice billed less than the customer paid
+   * (order #9: 1,324.15 printed vs 1,444.15 charged) and showed no shipping
+   * line at all.
+   */
+  "shipping_methods.*",
   "created_at",
   "metadata",
   "items.*",
   "shipping_address.*",
+  // The code the customer used, printed on the invoice beside the amount.
+  "promotions.code",
   "payment_collections.payments.provider_id",
   "payment_collections.payment_sessions.provider_id",
 ]
@@ -78,6 +92,26 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
     .filter(Boolean)
     .join(", ")
 
+  /**
+   * What came off the order. Prefer the order-level figure; fall back to the
+   * line/shipping breakdown for orders where it isn't populated, so a real
+   * discount is never printed as zero.
+   */
+  const discountAmount =
+    Number(order.discount_total) ||
+    ((order.items as any[]) || []).reduce(
+      (sum: number, i: any) => sum + (Number(i.discount_total) || 0),
+      0
+    ) +
+      ((order.shipping_methods as any[]) || []).reduce(
+        (sum: number, m: any) => sum + (Number(m.discount_total) || 0),
+        0
+      )
+
+  const discountCodes: string[] = ((order.promotions as any[]) || [])
+    .map((p: any) => p?.code)
+    .filter(Boolean)
+
   return {
     invoice_number: `INV-${order.display_id}`,
     invoice_date: fmtDate(order.created_at),
@@ -120,6 +154,9 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
         // item). `Number(x) || undefined` wrongly treated 0 as missing and fell
         // back to unit_price × qty, billing a free item at full price.
         line_total: item.total != null ? Number(item.total) : undefined,
+        // Printed beside the rate so the gap between "1,499" and what was
+        // charged is explained on the line itself.
+        discount: Number(item.discount_total) || 0,
         tax_rate: Number((item.metadata as any)?.tax_rate) || defaultTaxRate,
       })),
       // Shipping is part of what the customer paid — invoice it as its own line
@@ -134,11 +171,19 @@ export function buildInvoiceData(order: any, storeInfo: any): InvoiceData {
               quantity: 1,
               unit_price: Number(order.shipping_total),
               line_total: Number(order.shipping_total),
+              discount: ((order.shipping_methods as any[]) || []).reduce(
+                (sum: number, m: any) => sum + (Number(m.discount_total) || 0),
+                0
+              ),
               tax_rate: 0,
             },
           ]
         : []),
     ],
+
+    ...(discountAmount > 0
+      ? { discount: { amount: discountAmount, codes: discountCodes } }
+      : {}),
 
     is_intra_state: isIntraState,
     is_cancelled: !!order.canceled_at,

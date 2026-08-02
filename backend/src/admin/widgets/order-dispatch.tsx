@@ -68,7 +68,7 @@ type Detail = {
     variant_title: string | null
     variant_sku?: string | null
     /** Null for service lines (gift wrap, COD fee) — those get no product link. */
-    product_id?: string | null
+    product_url?: string | null
     quantity: number
     packed: boolean
     product_handle?: string
@@ -512,9 +512,9 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
                       its photos or SKU shouldn't lose the dispatch panel's
                       place. Stops the click reaching the wrapping <label>,
                       which would otherwise toggle the packed checkbox. */}
-                  {it.product_id ? (
+                  {it.product_url ? (
                     <a
-                      href={`/app/products/${it.product_id}`}
+                      href={it.product_url}
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}

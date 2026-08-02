@@ -15,15 +15,15 @@ import { useEffect } from "react"
  */
 
 type LineItem = {
+  id?: string
   title?: string
-  product_id?: string | null
-  variant?: { product_id?: string | null } | null
+  product_handle?: string | null
 }
 
 const LINKED_ATTR = "data-delfee-item-link"
 
-const linkify = (titleToProduct: Map<string, string>) => {
-  if (!titleToProduct.size) return
+const linkify = (titleToUrl: Map<string, string>) => {
+  if (!titleToUrl.size) return
 
   const candidates = Array.from(
     document.querySelectorAll<HTMLElement>("div, span, p, td, h2, h3")
@@ -41,11 +41,11 @@ const linkify = (titleToProduct: Map<string, string>) => {
     const text = el.textContent?.trim()
     if (!text) continue
 
-    const productId = titleToProduct.get(text)
-    if (!productId) continue
+    const url = titleToUrl.get(text)
+    if (!url) continue
 
     const link = document.createElement("a")
-    link.href = `/app/products/${productId}`
+    link.href = url
     link.target = "_blank"
     link.rel = "noreferrer"
     link.textContent = text
@@ -59,35 +59,55 @@ const linkify = (titleToProduct: Map<string, string>) => {
   }
 }
 
-const OrderItemLinksWidget = ({ data }: { data: { items?: LineItem[] } }) => {
+const OrderItemLinksWidget = ({
+  data,
+}: {
+  data: { id?: string; items?: LineItem[] }
+}) => {
   useEffect(() => {
-    const titleToProduct = new Map<string, string>()
-    for (const item of data?.items || []) {
-      const productId = item.product_id || item.variant?.product_id
-      // Service lines (gift wrap, COD fee) carry no product — left as plain text.
-      if (item.title && productId) titleToProduct.set(item.title.trim(), productId)
-    }
-    if (!titleToProduct.size) return
-
     let observer: MutationObserver | null = null
-    let running = false
+    let cancelled = false
 
-    const apply = () => {
-      // Our own writes retrigger the observer; the flag keeps that from looping.
-      if (running) return
-      running = true
-      try {
-        linkify(titleToProduct)
-      } finally {
-        running = false
-      }
+    // The storefront origin is a server env var, so it comes back with the
+    // items rather than being guessed in the browser.
+    fetch(`/admin/packing/orders/${data?.id}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => {
+        if (cancelled || !body) return
+
+        const titleToUrl = new Map<string, string>()
+        for (const item of body.items || []) {
+          // Service lines (gift wrap, COD fee) have no product page.
+          if (item?.title && item?.product_url) {
+            titleToUrl.set(String(item.title).trim(), item.product_url)
+          }
+        }
+        if (!titleToUrl.size) return
+
+        let running = false
+        const apply = () => {
+          // Our own writes retrigger the observer; the flag stops the loop.
+          if (running) return
+          running = true
+          try {
+            linkify(titleToUrl)
+          } finally {
+            running = false
+          }
+        }
+
+        apply()
+        observer = new MutationObserver(apply)
+        observer.observe(document.body, { childList: true, subtree: true })
+      })
+      .catch(() => {
+        /* on any error, leave the UI untouched */
+      })
+
+    return () => {
+      cancelled = true
+      observer?.disconnect()
     }
-
-    apply()
-    observer = new MutationObserver(apply)
-    observer.observe(document.body, { childList: true, subtree: true })
-
-    return () => observer?.disconnect()
   }, [data])
 
   return null

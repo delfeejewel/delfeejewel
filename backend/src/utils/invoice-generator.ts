@@ -34,8 +34,22 @@ export type InvoiceData = {
     quantity: number
     unit_price: number // gross unit price in major currency unit (GST-inclusive)
     line_total?: number // gross line total after discounts; defaults to unit_price × quantity
+    discount?: number // gross amount taken off this line, shown beside the rate
     tax_rate: number // e.g. 3 for 3%
   }[]
+
+  /**
+   * Promotion applied to the order, GST-inclusive like the line prices.
+   *
+   * The line totals are already net of it, so this is shown for transparency —
+   * a customer who paid with a code should see the code and the amount on the
+   * tax invoice, not just a price that quietly differs from the website.
+   * Omitted entirely when nothing was discounted.
+   */
+  discount?: {
+    amount: number
+    codes: string[]
+  }
 
   is_intra_state: boolean // true = CGST+SGST, false = IGST
 
@@ -52,16 +66,23 @@ export type InvoiceData = {
 }
 
 /* ─── Brand palette — mirrors the storefront design system ─── */
+/**
+ * Deliberately greyscale: an invoice is a document, not a brand surface, and it
+ * is most often printed on a mono office printer where a plum band comes out as
+ * a muddy grey slab. The old names are kept so the layout code below reads the
+ * same — they now all resolve to black or grey.
+ */
 const C = {
-  plum: "#5D2E46",
-  plumDeep: "#431830",
-  gold: "#D4AF37",
-  ink: "#1A1C1B",
-  textSecondary: "#504348",
-  textMuted: "#827378",
-  line: "#E6E2EE",
-  tint: "#FAF9F7",
+  plum: "#000000",
+  plumDeep: "#000000",
+  gold: "#000000",
+  ink: "#000000",
+  textSecondary: "#333333",
+  textMuted: "#666666",
+  line: "#BBBBBB",
+  tint: "#FFFFFF",
   white: "#FFFFFF",
+  headBand: "#EFEFEF",
 }
 
 const LOGO_PATH = path.join(process.cwd(), "static", "invoice-logo.png")
@@ -138,12 +159,12 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
         doc.text(line, RIGHT - 260, 74 + i * 12, { width: 260, align: "right" })
       })
 
-      // Gold rule under header
+      // Hairline rule under the header.
       doc
         .moveTo(LEFT, 128)
         .lineTo(RIGHT, 128)
-        .lineWidth(1.5)
-        .strokeColor(C.gold)
+        .lineWidth(0.8)
+        .strokeColor(C.ink)
         .stroke()
 
       /* ═══ SELLER / BUYER ════════════════════════════════ */
@@ -155,7 +176,7 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       doc
         .font("Helvetica-Bold")
         .fontSize(8)
-        .fillColor(C.gold)
+        .fillColor(C.textMuted)
         .text("SOLD BY", LEFT, infoY, { characterSpacing: 1.2 })
         .text("BILLED TO", rightX, infoY, { characterSpacing: 1.2 })
 
@@ -207,21 +228,24 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
 
       // Columns
       const col = {
-        sno: { x: LEFT + 8, w: 18, align: "left" as const },
-        item: { x: LEFT + 30, w: 148, align: "left" as const },
-        hsn: { x: LEFT + 182, w: 40, align: "left" as const },
-        qty: { x: LEFT + 218, w: 34, align: "center" as const },
-        rate: { x: LEFT + 250, w: 62, align: "right" as const },
-        taxable: { x: LEFT + 312, w: 64, align: "right" as const },
-        tax: { x: LEFT + 376, w: 58, align: "right" as const },
-        total: { x: LEFT + 432, w: 75, align: "right" as const },
+        sno: { x: LEFT + 8, w: 16, align: "left" as const },
+        item: { x: LEFT + 26, w: 146, align: "left" as const },
+        hsn: { x: LEFT + 176, w: 30, align: "left" as const },
+        qty: { x: LEFT + 208, w: 24, align: "center" as const },
+        rate: { x: LEFT + 234, w: 52, align: "right" as const },
+        // Sits immediately after the rate: what came off this line, where the
+        // customer looks when the price they remember doesn't match.
+        discount: { x: LEFT + 288, w: 56, align: "right" as const },
+        taxable: { x: LEFT + 346, w: 56, align: "right" as const },
+        tax: { x: LEFT + 404, w: 44, align: "right" as const },
+        total: { x: LEFT + 450, w: 62, align: "right" as const },
       }
 
       // Header band
       const headH = 26
-      doc.rect(LEFT, tableTop, W, headH).fill(C.plum)
+      doc.rect(LEFT, tableTop, W, headH).fill(C.headBand)
 
-      doc.font("Helvetica-Bold").fontSize(7.5).fillColor(C.white)
+      doc.font("Helvetica-Bold").fontSize(7.5).fillColor(C.ink)
       const headTextY = tableTop + 9
       doc.text("#", col.sno.x, headTextY, { width: col.sno.w })
       doc.text("ITEM", col.item.x, headTextY, { width: col.item.w })
@@ -232,6 +256,10 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       })
       doc.text("RATE", col.rate.x, headTextY, {
         width: col.rate.w,
+        align: "right",
+      })
+      doc.text("DISCOUNT", col.discount.x, headTextY, {
+        width: col.discount.w,
         align: "right",
       })
       doc.text("TAXABLE", col.taxable.x, headTextY, {
@@ -265,12 +293,9 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
           .font("Helvetica")
           .fontSize(8.5)
           .heightOfString(item.name, { width: col.item.w })
-        const rowH = Math.max(24, nameH + 14)
+        const rowH = Math.max(26, nameH + 17)
 
-        // Zebra tint on alternate rows
-        if (i % 2 === 1) {
-          doc.rect(LEFT, rowY, W, rowH).fill(C.tint)
-        }
+        // No zebra striping — the row rules are enough to track a line across.
 
         const ty = rowY + 8
         doc.font("Helvetica").fontSize(8.5).fillColor(C.textMuted)
@@ -289,6 +314,13 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
           width: col.rate.w,
           align: "right",
         })
+        const lineDiscount = Number(item.discount) || 0
+        doc.text(
+          lineDiscount > 0 ? `-${sym}${formatAmount(lineDiscount)}` : "—",
+          col.discount.x,
+          ty,
+          { width: col.discount.w, align: "right" }
+        )
         doc.text(`${sym}${formatAmount(taxable)}`, col.taxable.x, ty, {
           width: col.taxable.w,
           align: "right",
@@ -341,6 +373,14 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
         ty += 16
       }
 
+      // The amounts are on the lines themselves; all that's left to state here
+      // is which code produced them.
+      const discountAmount = Number(data.discount?.amount) || 0
+      const discountCodes = (data.discount?.codes || []).filter(Boolean)
+      if (discountAmount > 0 && discountCodes.length) {
+        totalRow("Discount code", discountCodes.join(", "))
+      }
+
       totalRow("Subtotal", `${sym}${formatAmount(subtotal)}`)
       if (data.is_intra_state) {
         const half = totalTax / 2
@@ -353,20 +393,27 @@ export function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       // Grand total box
       const boxY = ty + 4
       const boxH = 34
-      doc.rect(labelX, boxY, RIGHT - labelX, boxH).fill(C.plum)
+      doc
+        .rect(labelX, boxY, RIGHT - labelX, boxH)
+        .lineWidth(1)
+        .strokeColor(C.ink)
+        .stroke()
       doc
         .font("Helvetica-Bold")
         .fontSize(9.5)
-        .fillColor(C.white)
+        .fillColor(C.ink)
         .text("GRAND TOTAL", labelX + 14, boxY + 12, {
           characterSpacing: 0.8,
         })
       doc
         .font("Times-Bold")
         .fontSize(14)
-        .fillColor(C.gold)
-        .text(`${sym}${formatAmount(grandTotal)}`, valX - 14, boxY + 9, {
-          width: valW + 14,
+        .fillColor(C.ink)
+        // Measured from the box, not the totals column: the old width ran the
+        // figure past the right border now that the box is outlined rather
+        // than filled, so the overflow was visible.
+        .text(`${sym}${formatAmount(grandTotal)}`, labelX, boxY + 9, {
+          width: RIGHT - labelX - 14,
           align: "right",
         })
 

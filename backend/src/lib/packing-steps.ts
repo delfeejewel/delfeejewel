@@ -53,7 +53,21 @@ export const PACKING_STEPS: StepDef[] = [
   { id: "invoice_printed", kind: "action", label: "Print invoice", requires: ["label_pasted"] },
   { id: "invoice_added", kind: "attestation", label: "Invoice in the box", requires: ["invoice_printed"] },
   { id: "parcel_sealed", kind: "attestation", label: "Parcel sealed", requires: ["invoice_added"] },
-  { id: "ready_to_ship", kind: "action", label: "Ready to ship & call pickup", requires: ["parcel_sealed"] },
+  /**
+   * Gated on the steps that leave physical evidence — items picked, courier
+   * assigned, label and invoice printed. The three attestations in between
+   * (label pasted, invoice in the box, parcel sealed) stay available as a
+   * record but no longer block: they're a packer ticking a box about their own
+   * work, and requiring them stranded the packing drawer, which doesn't offer
+   * "label pasted" or "parcel sealed" at all — the button there could only ever
+   * be rejected by this check.
+   */
+  {
+    id: "ready_to_ship",
+    kind: "action",
+    label: "Ready to ship & call pickup",
+    requires: ["items_packed", "awb_assigned", "label_printed", "invoice_printed"],
+  },
   { id: "handed_over", kind: "attestation", label: "Handed to courier", requires: ["ready_to_ship"] },
 ]
 
