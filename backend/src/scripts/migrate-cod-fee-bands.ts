@@ -157,6 +157,34 @@ export default async function migrateCodFeeBands({ container }: ExecArgs) {
     logger.info(`✔ created ${band.sku} @ ₹${band.amount} (≤ ₹${band.max})`)
   }
 
+  // Converge the flags on every band variant. A `product-variant.created`
+  // subscriber races variant creation and can stamp manage_inventory=true with
+  // a stock level, which is wrong for a fee that has no inventory: it would
+  // decrement phantom stock on every COD order. (allow_backorder saves
+  // checkout from actually breaking, which is exactly why this drifts unseen.)
+  const { data: after } = await query.graph({
+    entity: "product",
+    filters: { handle: HANDLE },
+    fields: ["variants.id", "variants.sku", "variants.manage_inventory"],
+  })
+  const managed = ((after?.[0] as any)?.variants || []).filter(
+    (v: any) =>
+      COD_FEE_BANDS.some((b) => b.sku === v.sku) && v.manage_inventory === true
+  )
+  if (managed.length) {
+    await updateProductVariantsWorkflow(container).run({
+      input: {
+        product_variants: managed.map((v: any) => ({
+          id: v.id,
+          manage_inventory: false,
+        })),
+      } as any,
+    })
+    logger.info(
+      `✔ manage_inventory=false restored on: ${managed.map((v: any) => v.sku).join(", ")}`
+    )
+  }
+
   logger.info(
     `\nDone. Bands: ` +
       COD_FEE_BANDS.map((b) => `≤₹${b.max} → ₹${b.amount}`).join("  |  ")
