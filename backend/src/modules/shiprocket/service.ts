@@ -626,11 +626,22 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       order_items: this.resolveOrderItemsPayload(items, order, defaultHsn),
       payment_method: isCod ? "COD" : "Prepaid",
       // Shiprocket's own "Order Total"/"Collectable Amount" fields are BOTH
-      // computed as sub_total + shipping_charges (proven by a real label —
-      // sending shipping_charges on top of an already shipping-inclusive
-      // sub_total double-counted it: ₹1236.97 + ₹99 printed as ₹1335.97).
-      // So sub_total here must be net of shipping, letting Shiprocket add
-      // shipping_charges back to land on the right final figure.
+      // computed as:
+      //     sub_total + shipping_charges - total_discount
+      // Verified against two real labels:
+      //   - no promotion: ₹1236.97 + ₹99 printed as ₹1335.97 (sending
+      //     shipping_charges on top of an already shipping-inclusive
+      //     sub_total double-counted it).
+      //   - order #9, ₹224.85 promotion: we sent sub_total ₹1124.15 +
+      //     shipping ₹120 + total_discount ₹224.85 and the label printed
+      //     ₹1019.30 instead of the ₹1244.15 actually owed.
+      //
+      // So sub_total must be net of shipping (Shiprocket adds it back), and
+      // total_discount MUST stay 0: order.total is already net of every
+      // promotion, so sub_total is too. Passing order.discount_total here
+      // makes Shiprocket deduct the same discount a second time and the
+      // courier under-collects by exactly that amount. It is not a display
+      // field — it feeds the collectable arithmetic.
       //
       // For COD, that final figure is the balance the courier collects —
       // the order total minus any upfront token — NOT the gross order
@@ -644,7 +655,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         (isCod ? codCollectable : orderTotalMajor) - shippingChargesMajor
       ),
       shipping_charges: shippingChargesMajor,
-      total_discount: Number(order?.discount_total) || 0,
+      total_discount: 0,
       length,
       breadth,
       height,
