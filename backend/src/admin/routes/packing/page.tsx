@@ -271,8 +271,8 @@ const PackingPage = () => {
     const confirmed = await prompt({
       title: "Reset this shipment?",
       description:
-        "Voids the AWB/courier assignment at Shiprocket and clears the AWB, label, and ready-to-ship state on this order so packing can be redone properly. The order itself is NOT cancelled and nothing is refunded. Only do this if it hasn't actually been picked up by the courier yet.",
-      confirmText: "Reset Shipment",
+        "Voids the AWB and courier assignment at Shiprocket and clears the label and ready-to-ship state, so AWB/label/ready-to-ship can be redone for this order. The order itself is NOT cancelled and no payment is touched. Shiprocket charges at assignment, so the AWB you are voiding has already been paid for and is not automatically refunded. Only do this if the courier has not actually picked the parcel up yet.",
+      confirmText: "Reset shipment",
       cancelText: "Cancel",
     })
     if (!confirmed) return
@@ -656,24 +656,23 @@ const PackingPage = () => {
                   <div
                     style={{
                       display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      gap: 6,
+                      justifyContent: "flex-end",
                       marginTop: 4,
                     }}
                   >
+                    {/* Understated on purpose, and matching the order page's
+                        Dispatch card. The explanation that used to sit under
+                        this button now lives in the confirm dialog, where it
+                        is read at the moment it matters instead of becoming
+                        wallpaper next to every packed order. */}
                     <Button
                       size="small"
-                      variant="danger"
+                      variant="transparent"
                       disabled={busy === "reset"}
                       onClick={resetShipment}
                     >
-                      {busy === "reset" ? "Resetting…" : "Reset Shipment"}
+                      {busy === "reset" ? "Resetting…" : "Reset shipment"}
                     </Button>
-                    <Text size="small" style={{ color: "#666" }}>
-                      Made a mistake — AWB generated or marked ready to ship too soon? This voids
-                      it at Shiprocket and lets you redo AWB/label/ready-to-ship for this order.
-                    </Text>
                   </div>
                 )}
 

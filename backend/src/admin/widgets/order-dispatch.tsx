@@ -8,6 +8,7 @@ import {
   Select,
   Text,
   Tooltip,
+  usePrompt,
 } from "@medusajs/ui"
 import { useCallback, useEffect, useState } from "react"
 
@@ -144,6 +145,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
   const [wrappers, setWrappers] = useState("1")
   /** Confirmation for an explicit wallet refresh — see loadWallet. */
   const [walletNote, setWalletNote] = useState<string | null>(null)
+  const prompt = usePrompt()
 
   const load = useCallback(async () => {
     try {
@@ -343,6 +345,27 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
       await loadWallet(true)
       return r
     })
+
+  /** Voids the AWB/courier assignment at Shiprocket and clears the label and
+   *  ready-to-ship state so packing can be redone. Confirms first — this
+   *  spends money that a reset does not get back. */
+  const resetShipment = async () => {
+    const confirmed = await prompt({
+      title: "Reset this shipment?",
+      description:
+        "Voids the AWB and courier assignment at Shiprocket and clears the label and ready-to-ship state, so AWB/label/ready-to-ship can be redone for this order. The order itself is NOT cancelled and no payment is touched. Shiprocket charges at assignment, so the AWB you are voiding has already been paid for and is not automatically refunded. Only do this if the courier has not actually picked the parcel up yet.",
+      confirmText: "Reset shipment",
+      cancelText: "Cancel",
+    })
+    if (!confirmed) return
+    await run("reset", async () => {
+      await api(`/admin/orders/${data.id}/fulfillments/${fid}/shiprocket`, {
+        method: "POST",
+        body: JSON.stringify({ action: "reset_shipment" }),
+      })
+      await loadWallet(true)
+    })
+  }
 
   const walletBlocks =
     !!wallet && !wallet.can_assign && !step("awb_assigned")?.done
@@ -607,7 +630,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
               })
             }
           >
-            Print invoice
+            {step("invoice_printed")?.done ? "Reprint" : "Print invoice"}
           </Button>
         </StepRow>
 
@@ -671,6 +694,31 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
             onCheckedChange={(v) => attest("handed_over", !!v)}
           />
         </StepRow>
+
+        {/* Escape hatch, deliberately understated: small and right-aligned so
+            it reads as a correction, not a step. Voiding an AWB costs real
+            money (Shiprocket debits at assignment and a reset does not refund
+            it), so it always confirms first. Only offered once there is
+            something to undo, and never after the parcel has shipped. */}
+        {(detail.fulfillment?.awb_code || step("ready_to_ship")?.done) &&
+          !detail.fulfillment?.shipped_at && (
+            <div className="py-3 flex flex-col items-end gap-1">
+              <Button
+                size="small"
+                variant="transparent"
+                className="text-ui-fg-subtle"
+                disabled={busy === "reset"}
+                onClick={resetShipment}
+              >
+                {busy === "reset" ? "Resetting…" : "Reset shipment"}
+              </Button>
+              {errors.reset && (
+                <Text size="xsmall" className="text-ui-fg-error text-right">
+                  {errors.reset}
+                </Text>
+              )}
+            </div>
+          )}
       </div>
 
       {/* Manifest — batch-level and optional. Shown once a pickup exists, and
