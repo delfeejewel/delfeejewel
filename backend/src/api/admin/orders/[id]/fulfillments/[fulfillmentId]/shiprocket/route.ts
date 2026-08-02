@@ -8,6 +8,7 @@ import { updateFulfillmentWorkflow } from "@medusajs/medusa/core-flows"
 import { actorHasPermission } from "../../../../../../../lib/rbac"
 import { resolveActor, appendPackingHistory } from "../../../../../../../lib/packing-log"
 import { resolveShiprocketProvider } from "../../../../../../../lib/shiprocket-provider"
+import { flattenCourierCharges } from "../../../../../../../modules/shiprocket/service"
 import {
   walletAssignmentAllowed,
   REENABLE_ABOVE,
@@ -240,9 +241,15 @@ export async function POST(
             // This manual retry path previously recorded neither the rate nor
             // the charge breakdown, so an order assigned from here had no
             // shipping cost at all in the margin widget.
+            //
+            // Kept FLAT deliberately — a nested object here makes
+            // updateFulfillmentWorkflow's follow-up read treat the key as a
+            // relation and throw, AFTER the courier was assigned and the
+            // wallet charged. See flattenCourierCharges.
             courier_rate: awb.courier_rate ?? data.courier_rate ?? null,
-            courier_charges: awb.charges ?? data.courier_charges ?? null,
-            cod_charges: awb.charges?.cod ?? data.cod_charges ?? null,
+            ...(awb.charges
+              ? flattenCourierCharges(awb.charges)
+              : { cod_charges: data.cod_charges ?? null }),
           },
         } as any,
       })
@@ -344,12 +351,44 @@ export async function POST(
       }
     }
 
+    // Money already spent on the AWB we just voided. Shiprocket charges at
+    // assignment, so a reset does not undo the debit — that spend is sunk
+    // unless they credit it back, and it belongs in the order's P&L rather
+    // than vanishing with the ids below. Accumulated (not overwritten) so a
+    // second reset adds to the first.
+    //
+    // FLAT scalars only — a nested object or array here breaks
+    // updateFulfillmentWorkflow's follow-up read. See flattenCourierCharges.
+    if (previousAwbCode) {
+      const spent =
+        (Number(data.courier_charge_total) || Number(data.courier_rate) || 0) +
+        (Number(data.courier_whatsapp_charge) || 0)
+      data.cancelled_awb_charges =
+        Math.round(((Number(data.cancelled_awb_charges) || 0) + spent) * 100) / 100
+      data.cancelled_awb_count = (Number(data.cancelled_awb_count) || 0) + 1
+      data.cancelled_awb_codes = [data.cancelled_awb_codes, previousAwbCode]
+        .filter(Boolean)
+        .join(",")
+    }
+
     delete data.shiprocket_order_id
     delete data.shiprocket_shipment_id
     delete data.awb_code
     delete data.courier_name
     delete data.pickup_requested_at
     delete data.pickup_scheduled_date
+    // The charge keys describe the shipment being voided, not the next one.
+    // Leaving them behind is how order #9 kept reporting Blue Dart's ₹148.95
+    // freight after it had been reassigned to Ekart.
+    delete data.courier_rate
+    delete data.cod_charges
+    delete data.courier_freight_charge
+    delete data.courier_rto_charge
+    delete data.courier_whatsapp_charge
+    delete data.courier_other_charge
+    delete data.courier_coverage_charge
+    delete data.courier_charge_weight
+    delete data.courier_charge_total
     // shiprocket_attempt is intentionally kept — it's what keeps the next
     // createFreshShipment() call from getting handed back this same
     // (now-cancelled) Shiprocket order again.

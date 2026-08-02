@@ -294,8 +294,31 @@ export async function GET(
     const shippingMargin =
       shippingActual !== null ? round2(shippingCharged - shippingActual) : null
 
+    // Courier extras and sunk spend, read off whichever fulfilment carries
+    // them. Both are real money out, so they join knownCosts rather than only
+    // appearing as display rows.
+    const fulfilData = (order.fulfillments || []).map((f: any) => f?.data || {})
+    const sumKey = (key: string) =>
+      round2(fulfilData.reduce((s: number, d: any) => s + (Number(d?.[key]) || 0), 0))
+
+    const whatsappCharge = sumKey("courier_whatsapp_charge")
+    const cancelledCharges = sumKey("cancelled_awb_charges")
+    const cancelledCount = fulfilData.reduce(
+      (s: number, d: any) => s + (Number(d?.cancelled_awb_count) || 0),
+      0
+    )
+    const cancelledCodes = fulfilData
+      .map((d: any) => d?.cancelled_awb_codes)
+      .filter(Boolean)
+      .join(", ")
+
     const knownCosts =
-      cogs + (shippingActual ?? 0) + gatewayFee + codCharge
+      cogs +
+      (shippingActual ?? 0) +
+      gatewayFee +
+      codCharge +
+      whatsappCharge +
+      cancelledCharges
     const grossProfit = round2(
       merchandiseRevenueNet + servicesRevenueNet + shippingCharged - knownCosts
     )
@@ -370,6 +393,42 @@ export async function GET(
         margin: round2(-gatewayFee),
       },
     ]
+
+    if (whatsappCharge > 0) {
+      costGroups.push({
+        key: "whatsapp",
+        label: "Courier WhatsApp updates",
+        cost: whatsappCharge,
+        cost_known: true,
+        cost_hint: "per-shipment charge for customer tracking notifications",
+        cost_label: "Paid to courier",
+        collected_label: null,
+        collected_net: null,
+        collected_tax: 0,
+        margin: round2(-whatsappCharge),
+      })
+    }
+
+    if (cancelledCharges > 0) {
+      costGroups.push({
+        key: "cancelled",
+        label: "Cancelled labels",
+        cost: cancelledCharges,
+        cost_known: true,
+        // Shiprocket debits at assignment, so a cancelled AWB is money already
+        // gone. Whether they credit it back is not visible from the API — only
+        // the wallet passbook shows a refund, so this is stated as spent.
+        cost_hint:
+          `${cancelledCount} voided AWB${cancelledCount === 1 ? "" : "s"}` +
+          (cancelledCodes ? ` (${cancelledCodes})` : "") +
+          ` — charged at assignment; check the passbook for any credit`,
+        cost_label: "Spent and written off",
+        collected_label: null,
+        collected_net: null,
+        collected_tax: 0,
+        margin: round2(-cancelledCharges),
+      })
+    }
 
     if (isCod) {
       costGroups.push({

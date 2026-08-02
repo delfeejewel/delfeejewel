@@ -142,6 +142,8 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
    *  caused it, not as one vague banner at the top of the card. */
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({})
   const [wrappers, setWrappers] = useState("1")
+  /** Confirmation for an explicit wallet refresh — see loadWallet. */
+  const [walletNote, setWalletNote] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -153,12 +155,40 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
     }
   }, [data.id])
 
+  /**
+   * `force` distinguishes a deliberate click from the passive page-load read,
+   * and the two want opposite failure behaviour.
+   *
+   * On load the wallet is advisory — an outage must not halt dispatch, so a
+   * failure is swallowed and simply doesn't block. But when a packer clicks
+   * Refresh after topping up, silence is the worst possible answer: the block
+   * is LATCHED in store metadata and only a successful read clears it, so a
+   * failed refresh leaves a stale "wallet too low" quoting a balance from days
+   * ago, with nothing on screen to say the refresh never happened.
+   */
   const loadWallet = useCallback(async (force = false) => {
+    if (force) setErrors((s) => ({ ...s, wallet: undefined }))
     try {
-      setWallet(await api(`/admin/shiprocket/wallet${force ? "?force=true" : ""}`))
-    } catch {
-      // Wallet is advisory. If it can't be read we simply don't block.
+      const w = await api(
+        `/admin/shiprocket/wallet${force ? "?force=true" : ""}`
+      )
+      setWallet(w)
+      if (force) {
+        setWalletNote(
+          w?.blocked
+            ? `Still blocked — balance ₹${w?.balance ?? "?"}, needs to clear ₹${w?.reenable_above}.`
+            : `Wallet ₹${w?.balance ?? "?"} — courier assignment enabled.`
+        )
+      }
+    } catch (e: any) {
       setWallet(null)
+      if (force) {
+        // Explicit action: say it failed, and that the old block still stands.
+        setErrors((s) => ({
+          ...s,
+          wallet: `Could not refresh the wallet: ${e.message}. The previous block still applies.`,
+        }))
+      }
     }
   }, [])
 
@@ -227,14 +257,29 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
     id,
     children,
     hint,
+    repeatable,
   }: {
     id: StepId
     children?: React.ReactNode
     hint?: string
+    /**
+     * Keep the control visible after the step is done.
+     *
+     * True for the two kinds of control that stay meaningful once complete:
+     * attestation checkboxes (state, not an action — a packer must be able to
+     * untick a mistake) and re-runnable actions like reprinting a label.
+     *
+     * One-shot actions leave this off, so their button disappears when done.
+     * Without it every completed step kept offering its button — an order
+     * mid-pack still showed "Start packing", and one with an AWB already
+     * assigned still showed "Assign courier".
+     */
+    repeatable?: boolean
   }) => {
     const s = step(id)
     if (!s || !s.applicable) return null
     const locked = !!s.blockedBy && !s.done
+    const showControl = !locked && (!s.done || !!repeatable)
     return (
       <div className="py-3">
         <div className="flex items-start justify-between gap-3">
@@ -267,7 +312,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
               )}
             </div>
           </div>
-          <div className="shrink-0">{!locked && children}</div>
+          <div className="shrink-0">{showControl && children}</div>
         </div>
         {errors[id] && (
           <Text size="xsmall" className="text-ui-fg-error mt-1 pl-6">
@@ -384,6 +429,11 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
               {errors.wallet}
             </Text>
           )}
+          {!errors.wallet && walletNote && (
+            <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+              {walletNote}
+            </Text>
+          )}
         </div>
       )}
 
@@ -449,7 +499,11 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
           </div>
         </div>
 
-        <StepRow id="gift_wrapped" hint="Gift wrap was purchased for this order">
+        <StepRow
+          id="gift_wrapped"
+          repeatable
+          hint="Gift wrap was purchased for this order"
+        >
           <div className="flex items-center gap-2">
             <Select value={wrappers} onValueChange={setWrappers}>
               <Select.Trigger className="w-20">
@@ -502,7 +556,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
           )}
         </StepRow>
 
-        <StepRow id="label_printed">
+        <StepRow id="label_printed" repeatable>
           <div className="flex gap-2">
             <Button
               size="small"
@@ -526,7 +580,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
           </div>
         </StepRow>
 
-        <StepRow id="label_pasted">
+        <StepRow id="label_pasted" repeatable>
           <Checkbox
             checked={!!step("label_pasted")?.done}
             disabled={busy === "label_pasted"}
@@ -534,7 +588,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
           />
         </StepRow>
 
-        <StepRow id="invoice_printed">
+        <StepRow id="invoice_printed" repeatable>
           <Button
             size="small"
             variant="secondary"
@@ -557,7 +611,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
           </Button>
         </StepRow>
 
-        <StepRow id="invoice_added">
+        <StepRow id="invoice_added" repeatable>
           <Checkbox
             checked={!!step("invoice_added")?.done}
             disabled={busy === "invoice_added"}
@@ -572,7 +626,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
           />
         </StepRow>
 
-        <StepRow id="parcel_sealed">
+        <StepRow id="parcel_sealed" repeatable>
           <Checkbox
             checked={!!step("parcel_sealed")?.done}
             disabled={busy === "parcel_sealed"}
@@ -582,6 +636,7 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
 
         <StepRow
           id="ready_to_ship"
+          repeatable
           hint={
             detail.fulfillment?.pickup_scheduled_date
               ? `Pickup scheduled ${detail.fulfillment.pickup_scheduled_date}`
@@ -599,11 +654,17 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
               )
             }
           >
-            Mark ready &amp; call pickup
+            {step("ready_to_ship")?.done
+              ? "Call pickup again"
+              : "Mark ready & call pickup"}
           </Button>
         </StepRow>
 
-        <StepRow id="handed_over" hint="Parcel physically collected by the courier">
+        <StepRow
+          id="handed_over"
+          repeatable
+          hint="Parcel physically collected by the courier"
+        >
           <Checkbox
             checked={!!step("handed_over")?.done}
             disabled={busy === "handed_over"}

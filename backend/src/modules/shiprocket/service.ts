@@ -68,6 +68,30 @@ export type CourierCharges = {
   total: number
 }
 
+/**
+ * Flatten a charge breakdown into scalar keys for a fulfillment's `data`.
+ *
+ * `data` MUST stay flat. updateFulfillmentWorkflow re-reads the entity
+ * afterwards and derives MikroORM populate hints from the keys of this object;
+ * a nested object is taken for a dot-path RELATION, MikroORM finds no metadata
+ * for it and dies on `undefined.properties` deep inside expandNestedPopulate.
+ * The write still lands at the API before that read blows up, which is what
+ * makes it so nasty: on the AWB path the courier was assigned and the wallet
+ * charged, then the persist threw and Medusa kept no record of either.
+ */
+export const flattenCourierCharges = (
+  c: CourierCharges | null
+): Record<string, number | null> => ({
+  cod_charges: c?.cod ?? null,
+  courier_freight_charge: c?.freight ?? null,
+  courier_rto_charge: c?.rto ?? null,
+  courier_whatsapp_charge: c?.whatsapp ?? null,
+  courier_other_charge: c?.other ?? null,
+  courier_coverage_charge: c?.coverage ?? null,
+  courier_charge_weight: c?.charge_weight ?? null,
+  courier_charge_total: c?.total ?? null,
+})
+
 /** Shiprocket rejects a shipment with zero/absent weight or dimensions. */
 const MIN_WEIGHT_KG = 0.05
 const FALLBACK_DIMENSIONS = { length: 10, breadth: 8, height: 5 }
@@ -803,13 +827,12 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         courier_name: awb.courier_name,
         // What the shipment cost US (₹). Paired with the order's shipping_total
         // (what the customer paid), this is the per-order shipping margin.
-        // NOTE: freight ONLY — see courier_charges for the rest.
+        // NOTE: freight ONLY — see the courier_* keys for the rest.
         courier_rate: awb.courier_rate,
-        // Full quoted breakdown (freight, COD, RTO, whatsapp…). `cod_charges`
-        // is the courier's real COD fee, which the margin widget would
-        // otherwise have to estimate.
-        courier_charges: awb.charges,
-        cod_charges: awb.charges?.cod ?? null,
+        // Quoted breakdown, FLAT (see flattenCourierCharges — nested objects
+        // break the fulfillment update). `cod_charges` is the courier's real
+        // COD fee, which the margin widget would otherwise have to estimate.
+        ...flattenCourierCharges(awb.charges),
       },
       labels: awb.awb_code
         ? [
