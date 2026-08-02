@@ -100,6 +100,47 @@ export default function ProductCard({
     setActive(index)
   }
 
+  // ── Swipe (touch) ──────────────────────────────────────────────────────
+  // Dots alone aren't how anyone browses photos on a phone. A horizontal drag
+  // across the image steps through the slides; a vertical one is left alone so
+  // the page still scrolls normally.
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  // A swipe ends in a click on the surrounding link. This suppresses that one
+  // click so flicking through photos doesn't open the product page.
+  const swiped = useRef(false)
+
+  const SWIPE_MIN_PX = 40
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+    swiped.current = false
+  }
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start || slides.length < 2) return
+
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    // Horizontal intent only — a diagonal drag while scrolling isn't a swipe.
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) <= Math.abs(dy)) return
+
+    swiped.current = true
+    setActive((i) =>
+      dx < 0 ? Math.min(i + 1, slides.length - 1) : Math.max(i - 1, 0)
+    )
+  }
+
+  const suppressClickAfterSwipe = (e: React.MouseEvent) => {
+    if (!swiped.current) return
+    swiped.current = false
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   // 3D tilt effect
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
@@ -216,7 +257,15 @@ export default function ProductCard({
         onMouseLeave={handleMouseLeave}
       >
         {/* Image */}
-        <div className="relative overflow-hidden" style={{ aspectRatio: "3/4" }}>
+        <div
+          className="relative overflow-hidden"
+          // touch-action: pan-y lets the browser keep vertical scrolling while
+          // leaving horizontal gestures to the swipe handler.
+          style={{ aspectRatio: "3/4", touchAction: "pan-y" }}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onClickCapture={suppressClickAfterSwipe}
+        >
           <Image
             src={primaryImage}
             alt={product.title || "Product"}

@@ -2,7 +2,7 @@
 
 import { clx } from "@medusajs/ui"
 import Image from "next/image"
-import React, { useState } from "react"
+import React, { useRef, useState } from "react"
 
 const FALLBACK_IMAGE = "/images/fallback-no-image.png"
 const MAX_SLIDES = 5
@@ -56,6 +56,40 @@ const ThumbnailCarousel: React.FC<ThumbnailCarouselProps> = ({
     setActive(index)
   }
 
+  // Horizontal drag steps through the photos on touch; vertical is left to the
+  // page so scrolling still works. The click a swipe ends in is swallowed so
+  // flicking through photos doesn't open the product page.
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const swiped = useRef(false)
+  const SWIPE_MIN_PX = 40
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+    swiped.current = false
+  }
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start || slides.length < 2) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) <= Math.abs(dy)) return
+    swiped.current = true
+    setActive((i) =>
+      dx < 0 ? Math.min(i + 1, slides.length - 1) : Math.max(i - 1, 0)
+    )
+  }
+
+  const suppressClickAfterSwipe = (e: React.MouseEvent) => {
+    if (!swiped.current) return
+    swiped.current = false
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   return (
     <div
       className={clx(
@@ -63,8 +97,11 @@ const ThumbnailCarousel: React.FC<ThumbnailCarouselProps> = ({
         isFeatured ? "aspect-[11/14]" : "aspect-square",
         className
       )}
-      style={{ background: "var(--color-bg-secondary)" }}
+      style={{ background: "var(--color-bg-secondary)", touchAction: "pan-y" }}
       data-testid={dataTestid}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onClickCapture={suppressClickAfterSwipe}
     >
       {slides.map((url, i) => (
         <Image
