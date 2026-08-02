@@ -65,7 +65,7 @@ export default function ReviewForm({
     return (
       <div className="rounded-2xl bg-white border border-[var(--color-lavender)] p-6 flex flex-col items-center text-center gap-2">
         <CheckCircle2 className="w-9 h-9 text-green-600" />
-        <p className="font-wittgenstein text-[16px] font-semibold text-[var(--color-plum)]">
+        <p className="font-wittgenstein text-[1rem] font-semibold text-[var(--color-plum)]">
           Thanks for your review!
         </p>
       </div>
@@ -89,7 +89,7 @@ export default function ReviewForm({
             sizes="48px"
           />
         </div>
-        <p className="text-[14px] font-semibold text-[var(--color-text-primary)] capitalize line-clamp-2">
+        <p className="text-[0.875rem] font-semibold text-[var(--color-text-primary)] capitalize line-clamp-2">
           {productTitle}
         </p>
       </div>
@@ -130,17 +130,17 @@ export default function ReviewForm({
           rows={3}
           maxLength={2000}
           placeholder="What did you love about it? How's the quality, finish and fit?"
-          className="w-full px-4 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
+          className="w-full px-4 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
         />
 
         {error && (
-          <p className="mt-2 text-[12.5px] text-red-500">{error}</p>
+          <p className="mt-2 text-[0.78125rem] text-red-500">{error}</p>
         )}
 
         <button
           type="submit"
           disabled={status === "sending"}
-          className="mt-3 w-full py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-50 transition-all"
+          className="mt-3 w-full py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-50 transition-all"
         >
           {status === "sending" ? "Submitting..." : "Submit Review"}
         </button>

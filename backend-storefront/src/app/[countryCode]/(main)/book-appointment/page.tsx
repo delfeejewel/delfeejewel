@@ -40,10 +40,10 @@ export default async function BookAppointmentPage({ params }: Props) {
         <div className="grid grid-cols-1 medium:grid-cols-[1fr_340px] gap-8 small:gap-10">
           {/* Form */}
           <div>
-            <h2 className="font-wittgenstein text-[22px] small:text-[26px] font-bold text-[var(--color-plum)] mb-1.5">
+            <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.625rem] font-bold text-[var(--color-plum)] mb-1.5">
               Choose your visit
             </h2>
-            <p className="text-[14px] text-[var(--color-text-muted)] mb-6">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-6">
               Tell us a little about your visit and pick a time. You'll get an
               email confirmation with your reference.
             </p>
@@ -57,9 +57,9 @@ export default async function BookAppointmentPage({ params }: Props) {
                 <MapPin size={20} className="text-[var(--color-plum)]" />
               </div>
               <div>
-                <p className="font-semibold text-[14px] text-[var(--color-text-primary)]">Our store</p>
-                <p className="text-[13.5px] text-[var(--color-plum)] font-medium mt-0.5">Chandigarh</p>
-                <p className="text-[12.5px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                <p className="font-semibold text-[0.875rem] text-[var(--color-text-primary)]">Our store</p>
+                <p className="text-[0.84375rem] text-[var(--color-plum)] font-medium mt-0.5">Chandigarh</p>
+                <p className="text-[0.78125rem] text-[var(--color-text-muted)] mt-1 leading-relaxed">
                   The exact address is shared in your confirmation email.
                 </p>
               </div>
@@ -73,8 +73,8 @@ export default async function BookAppointmentPage({ params }: Props) {
                     <Icon size={20} className="text-[var(--color-plum)]" />
                   </div>
                   <div>
-                    <p className="font-semibold text-[14px] text-[var(--color-text-primary)]">{p.title}</p>
-                    <p className="text-[12.5px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{p.text}</p>
+                    <p className="font-semibold text-[0.875rem] text-[var(--color-text-primary)]">{p.title}</p>
+                    <p className="text-[0.78125rem] text-[var(--color-text-muted)] mt-1 leading-relaxed">{p.text}</p>
                   </div>
                 </div>
               )

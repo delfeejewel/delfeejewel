@@ -198,12 +198,14 @@ export default function ProductListingClient({
     router.push(`${pathname}?${params.toString()}`, { scroll: true })
   }
 
+  // One card per row on a phone (< 512px): a 3:4 photo split two-up on a 390px
+  // screen is too small to judge a piece of jewellery by.
   const gridClass =
     gridCols === 2
-      ? "grid-cols-2"
+      ? "grid-cols-1 xsmall:grid-cols-2"
       : gridCols === 3
-      ? "grid-cols-2 small:grid-cols-3"
-      : "grid-cols-2 small:grid-cols-3 medium:grid-cols-4"
+      ? "grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3"
+      : "grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3 medium:grid-cols-4"
 
   return (
     <>
@@ -264,7 +266,7 @@ export default function ProductListingClient({
                       <span
                         key={`gap-${i}`}
                         aria-hidden="true"
-                        className="w-5 h-9 flex items-end justify-center text-[13px] select-none"
+                        className="w-5 h-9 flex items-end justify-center text-[0.8125rem] select-none"
                         style={{ color: "var(--color-text-secondary)" }}
                       >
                         …
@@ -275,7 +277,7 @@ export default function ProductListingClient({
                         onClick={() => goToPage(item)}
                         aria-label={`Go to page ${item}`}
                         aria-current={item === currentPage ? "page" : undefined}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-medium transition-all duration-200"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-[0.8125rem] font-medium transition-all duration-200"
                         style={{
                           background:
                             item === currentPage

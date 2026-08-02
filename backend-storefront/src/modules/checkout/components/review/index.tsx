@@ -30,10 +30,10 @@ const Review = ({ cart }: { cart: any }) => {
       )}
     >
       <div className="flex flex-col mb-5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
           Step 3
         </span>
-        <h2 className="font-wittgenstein text-[22px] small:text-[24px] font-bold text-[var(--color-plum)] mt-0.5">
+        <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.5rem] font-bold text-[var(--color-plum)] mt-0.5">
           Review &amp; place order
         </h2>
       </div>
@@ -48,7 +48,7 @@ const Review = ({ cart }: { cart: any }) => {
               data-testid="terms-agree-checkbox"
               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[var(--color-border)] text-[var(--color-plum)] accent-[var(--color-plum)] focus:ring-[var(--color-plum)]/30"
             />
-            <span className="text-[12.5px] text-[var(--color-text-secondary)] leading-relaxed">
+            <span className="text-[0.78125rem] text-[var(--color-text-secondary)] leading-relaxed">
               I have read and accept the Terms of Use, Terms of Sale and Returns
               Policy, and acknowledge that I have read {BRAND.name}&apos;s
               Privacy Policy.
@@ -57,7 +57,7 @@ const Review = ({ cart }: { cart: any }) => {
           {agreed ? (
             <PaymentButton cart={cart} data-testid="submit-order-button" />
           ) : (
-            <p className="text-[12px] text-[var(--color-text-muted)] italic">
+            <p className="text-[0.75rem] text-[var(--color-text-muted)] italic">
               Please accept the terms above to place your order.
             </p>
           )}

@@ -87,10 +87,10 @@ export default function PromoBanners({
               />
               <div className="banner-scrim-left-plum absolute inset-0" />
               <div className="relative h-full flex flex-col justify-center p-8">
-                <h3 className="font-wittgenstein text-[28px] small:text-[34px] font-bold text-white leading-[1.1] mb-4">
+                <h3 className="font-wittgenstein text-[1.75rem] small:text-[2.125rem] font-bold text-white leading-[1.1] mb-4">
                   {BANNERS.topLeft.title}
                 </h3>
-                <span className="inline-block self-start px-5 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-[12px] font-semibold border border-white/30 group-hover:bg-white group-hover:text-[var(--color-plum)] transition-all duration-300">
+                <span className="inline-block self-start px-5 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-[0.75rem] font-semibold border border-white/30 group-hover:bg-white group-hover:text-[var(--color-plum)] transition-all duration-300">
                   {BANNERS.topLeft.cta}
                 </span>
               </div>
@@ -110,10 +110,10 @@ export default function PromoBanners({
               />
               <div className="banner-scrim-left-lavender absolute inset-0" />
               <div className="relative h-full flex flex-col justify-center p-8">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[rgba(93,46,70,0.65)] mb-1">
+                <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.15em] text-[rgba(93,46,70,0.65)] mb-1">
                   {BANNERS.bottomLeft.subtitle}
                 </p>
-                <h3 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] leading-tight mb-4">
+                <h3 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)] leading-tight mb-4">
                   {BANNERS.bottomLeft.title}
                 </h3>
                 {/*
@@ -122,7 +122,7 @@ export default function PromoBanners({
                   silently emits nothing, which left this pill with no fill or
                   border at all.
                 */}
-                <span className="inline-block self-start px-5 py-2 rounded-full bg-[rgba(93,46,70,0.10)] text-[var(--color-plum)] text-[12px] font-semibold border border-[rgba(93,46,70,0.22)] group-hover:bg-[var(--color-plum)] group-hover:text-white group-hover:border-[var(--color-plum)] transition-all duration-300">
+                <span className="inline-block self-start px-5 py-2 rounded-full bg-[rgba(93,46,70,0.10)] text-[var(--color-plum)] text-[0.75rem] font-semibold border border-[rgba(93,46,70,0.22)] group-hover:bg-[var(--color-plum)] group-hover:text-white group-hover:border-[var(--color-plum)] transition-all duration-300">
                   {BANNERS.bottomLeft.cta}
                 </span>
               </div>
@@ -143,13 +143,13 @@ export default function PromoBanners({
             />
             <div className="banner-scrim-bottom-plum absolute inset-0" />
             <div className="relative h-full flex flex-col justify-end p-8 small:p-10">
-              <h3 className="font-wittgenstein text-[36px] small:text-[44px] font-bold text-white leading-[1.1] mb-2">
+              <h3 className="font-wittgenstein text-[2.25rem] small:text-[2.75rem] font-bold text-white leading-[1.1] mb-2">
                 {BANNERS.right.title}
               </h3>
-              <p className="text-white/70 text-[14px] small:text-[16px] mb-6">
+              <p className="text-white/70 text-[0.875rem] small:text-[1rem] mb-6">
                 {BANNERS.right.subtitle}
               </p>
-              <span className="inline-block self-start px-6 py-2.5 rounded-full [background:var(--color-gold)] text-[var(--color-plum-deep)] text-[13px] font-semibold group-hover:bg-white transition-all duration-300 shadow-lg">
+              <span className="inline-block self-start px-6 py-2.5 rounded-full [background:var(--color-gold)] text-[var(--color-plum-deep)] text-[0.8125rem] font-semibold group-hover:bg-white transition-all duration-300 shadow-lg">
                 {BANNERS.right.cta}
               </span>
             </div>

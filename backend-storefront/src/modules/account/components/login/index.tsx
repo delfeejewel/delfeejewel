@@ -52,7 +52,7 @@ export default function Login({ setCurrentView }: Props) {
         <div className="space-y-1.5">
           <label
             htmlFor="login-email"
-            className="block text-[11px] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]"
+            className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]"
           >
             Email Address
           </label>
@@ -62,7 +62,7 @@ export default function Login({ setCurrentView }: Props) {
             autoComplete="email"
             placeholder="name@example.com"
             {...register("email")}
-            className={`w-full px-0 py-3.5 bg-transparent border-0 border-b-2 transition-colors placeholder:text-[var(--color-text-muted)]/50 text-[14px] text-[var(--color-text-primary)] focus:outline-none focus:ring-0 ${
+            className={`w-full px-0 py-3.5 bg-transparent border-0 border-b-2 transition-colors placeholder:text-[var(--color-text-muted)]/50 text-[0.875rem] text-[var(--color-text-primary)] focus:outline-none focus:ring-0 ${
               errors.email
                 ? "border-red-400 focus:border-red-500"
                 : "border-[var(--color-border)] focus:border-[var(--color-plum)]"
@@ -70,7 +70,7 @@ export default function Login({ setCurrentView }: Props) {
             data-testid="email-input"
           />
           {errors.email && (
-            <p className="text-[11px] text-red-500 mt-1">{errors.email.message}</p>
+            <p className="text-[0.6875rem] text-red-500 mt-1">{errors.email.message}</p>
           )}
         </div>
 
@@ -79,14 +79,14 @@ export default function Login({ setCurrentView }: Props) {
           <div className="flex justify-between items-center">
             <label
               htmlFor="login-password"
-              className="block text-[11px] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]"
+              className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]"
             >
               Password
             </label>
             <button
               type="button"
               onClick={() => setCurrentView(LOGIN_VIEW.FORGOT_PASSWORD)}
-              className="text-[11px] text-[var(--color-plum)] hover:underline underline-offset-2 transition-colors"
+              className="text-[0.6875rem] text-[var(--color-plum)] hover:underline underline-offset-2 transition-colors"
             >
               Forgot?
             </button>
@@ -98,7 +98,7 @@ export default function Login({ setCurrentView }: Props) {
               autoComplete="current-password"
               placeholder="••••••••"
               {...register("password")}
-              className={`w-full px-0 py-3.5 pr-8 bg-transparent border-0 border-b-2 transition-colors placeholder:text-[var(--color-text-muted)]/50 text-[14px] text-[var(--color-text-primary)] focus:outline-none focus:ring-0 ${
+              className={`w-full px-0 py-3.5 pr-8 bg-transparent border-0 border-b-2 transition-colors placeholder:text-[var(--color-text-muted)]/50 text-[0.875rem] text-[var(--color-text-primary)] focus:outline-none focus:ring-0 ${
                 errors.password
                   ? "border-red-400 focus:border-red-500"
                   : "border-[var(--color-border)] focus:border-[var(--color-plum)]"
@@ -114,13 +114,13 @@ export default function Login({ setCurrentView }: Props) {
             </button>
           </div>
           {errors.password && (
-            <p className="text-[11px] text-red-500 mt-1">{errors.password.message}</p>
+            <p className="text-[0.6875rem] text-red-500 mt-1">{errors.password.message}</p>
           )}
         </div>
 
         {/* Server error */}
         {serverError && (
-          <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-[12px] text-red-600">
+          <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-[0.75rem] text-red-600">
             {serverError}
           </div>
         )}
@@ -129,7 +129,7 @@ export default function Login({ setCurrentView }: Props) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 mt-2 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[11px] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 mt-2 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[0.6875rem] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           data-testid="sign-in-button"
         >
           {isSubmitting ? (
@@ -146,13 +146,13 @@ export default function Login({ setCurrentView }: Props) {
       {/* Divider + switch */}
       <div className="relative my-7 flex items-center">
         <div className="flex-grow border-t border-[var(--color-border)]" />
-        <span className="flex-shrink mx-4 text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">
+        <span className="flex-shrink mx-4 text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-widest">
           Or
         </span>
         <div className="flex-grow border-t border-[var(--color-border)]" />
       </div>
 
-      <p className="text-center text-[13px] text-[var(--color-text-muted)]">
+      <p className="text-center text-[0.8125rem] text-[var(--color-text-muted)]">
         Don&apos;t have an account?{" "}
         <button
           type="button"

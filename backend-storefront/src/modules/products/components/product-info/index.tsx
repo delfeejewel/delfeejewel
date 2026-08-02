@@ -430,10 +430,10 @@ export default function ProductInfo({
           {/* Gift badge with tooltip — only when this product is gift ready */}
           {giftReady && (
             <div className="relative group/gift">
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--color-gold)]/[0.08] text-[10px] font-semibold text-[var(--color-gold)] tracking-[0.03em] cursor-default">
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--color-gold)]/[0.08] text-[0.625rem] font-semibold text-[var(--color-gold)] tracking-[0.03em] cursor-default">
                 <Gift size={12} /> Gift Ready
               </span>
-              <div className="absolute top-full right-0 mt-2 w-56 px-3 py-2.5 rounded-lg bg-[var(--color-plum)] text-white text-[11px] leading-[1.5] shadow-lg opacity-0 invisible group-hover/gift:opacity-100 group-hover/gift:visible transition-all duration-200 z-20 pointer-events-none">
+              <div className="absolute top-full right-0 mt-2 w-56 px-3 py-2.5 rounded-lg bg-[var(--color-plum)] text-white text-[0.6875rem] leading-[1.5] shadow-lg opacity-0 invisible group-hover/gift:opacity-100 group-hover/gift:visible transition-all duration-200 z-20 pointer-events-none">
                 This product is gift ready and will be delivered in a premium velvet box.
                 <div className="absolute -top-1 right-6 w-2 h-2 bg-[var(--color-plum)] rotate-45" />
               </div>
@@ -451,7 +451,7 @@ export default function ProductInfo({
       </div>
 
       {/* Title */}
-      <h1 className="font-wittgenstein text-[24px] small:text-[30px] medium:text-[36px] font-bold leading-tight text-[var(--color-text-primary)] mb-3 capitalize">
+      <h1 className="font-wittgenstein text-[1.5rem] small:text-[1.875rem] medium:text-[2.25rem] font-bold leading-tight text-[var(--color-text-primary)] mb-3 capitalize">
         {product.title}
       </h1>
 
@@ -467,7 +467,7 @@ export default function ProductInfo({
               <Star key={s} size={14} fill={s <= Math.round(avgRating) ? "var(--color-gold)" : "none"} stroke={s <= Math.round(avgRating) ? "var(--color-gold)" : "var(--color-border)"} strokeWidth={1.5} />
             ))}
           </div>
-          <span className="text-[12px] text-[var(--color-text-muted)] group-hover:text-[var(--color-plum)] group-hover:underline underline-offset-2 transition-colors">
+          <span className="text-[0.75rem] text-[var(--color-text-muted)] group-hover:text-[var(--color-plum)] group-hover:underline underline-offset-2 transition-colors">
             {avgRating.toFixed(1)} ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
           </span>
         </button>
@@ -479,15 +479,15 @@ export default function ProductInfo({
       <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1 mb-1">
         {price ? (
           <>
-            <span className="font-wittgenstein text-[26px] small:text-[28px] font-bold text-[var(--color-plum)]">
-              {!selectedVariant && cheapestPrice ? <><span className="text-[14px] font-normal text-[var(--color-text-muted)]">From </span>{cheapestPrice.calculated_price}</> : price.calculated_price}
+            <span className="font-wittgenstein text-[1.625rem] small:text-[1.75rem] font-bold text-[var(--color-plum)]">
+              {!selectedVariant && cheapestPrice ? <><span className="text-[0.875rem] font-normal text-[var(--color-text-muted)]">From </span>{cheapestPrice.calculated_price}</> : price.calculated_price}
             </span>
             {price.price_type === "sale" && (
               <>
-                <span className="text-[15px] line-through text-[var(--color-text-muted)]">
+                <span className="text-[0.9375rem] line-through text-[var(--color-text-muted)]">
                   {price.original_price}
                 </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-green-50 text-green-700">
+                <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded bg-green-50 text-green-700">
                   Save {price.percentage_diff}%
                 </span>
               </>
@@ -506,15 +506,15 @@ export default function ProductInfo({
           className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1 rounded px-2 py-1 bg-green-50"
           data-testid="pdp-coupon-price"
         >
-          <span className="text-[12px] font-semibold text-green-700">
+          <span className="text-[0.75rem] font-semibold text-green-700">
             With {couponPrice.code}
             {couponPrice.isProjected ? " at checkout" : ""}:
           </span>
-          <span className="text-[15px] font-bold text-green-700">
+          <span className="text-[0.9375rem] font-bold text-green-700">
             {couponPrice.isFrom ? "from " : ""}
             {couponPrice.effective}
           </span>
-          <span className="text-[11.5px] text-green-700/80">
+          <span className="text-[0.71875rem] text-green-700/80">
             (you save {couponPrice.saving})
           </span>
         </div>
@@ -527,7 +527,7 @@ export default function ProductInfo({
           data-testid="pdp-final-sale"
         >
           <ShieldCheck size={14} className="text-[var(--color-plum)] shrink-0 mt-0.5" />
-          <p className="text-[11.5px] leading-snug text-[var(--color-text-secondary)]">
+          <p className="text-[0.71875rem] leading-snug text-[var(--color-text-secondary)]">
             <span className="font-semibold text-[var(--color-text-primary)]">Final sale.</span>{" "}
             Priced on the live metal rate — not eligible for return, exchange or
             coupons, and excluded from free shipping.
@@ -537,9 +537,9 @@ export default function ProductInfo({
 
       {/* Tax + stock */}
       <div className="flex items-center gap-4 mb-6">
-        <span className="text-[11px] text-[var(--color-text-muted)]">Inclusive of all taxes</span>
+        <span className="text-[0.6875rem] text-[var(--color-text-muted)]">Inclusive of all taxes</span>
         {selectedVariant && inStock && (
-          <span className="text-[11px] font-semibold tracking-[0.05em] flex items-center gap-1 text-green-600">
+          <span className="text-[0.6875rem] font-semibold tracking-[0.05em] flex items-center gap-1 text-green-600">
             <CheckCircle size={12} /> In Stock
           </span>
         )}
@@ -549,7 +549,7 @@ export default function ProductInfo({
       {lowStock && (
         <div className="flex items-center gap-2 mb-5 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
           <Clock size={14} className="text-amber-600" />
-          <span className="text-[12px] font-semibold text-amber-700">
+          <span className="text-[0.75rem] font-semibold text-amber-700">
             Only {stockQty} left — order soon
           </span>
         </div>
@@ -637,7 +637,7 @@ export default function ProductInfo({
               onChange={(e) => { setPincode(e.target.value.replace(/\D/g, "").slice(0, 6)); setDelivery(null) }}
               placeholder="Enter 6-digit pincode"
               maxLength={6}
-              className="flex-1 h-10 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+              className="flex-1 h-10 px-3 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !checkingDelivery) runDeliveryCheck()
               }}
@@ -653,35 +653,35 @@ export default function ProductInfo({
 
           {delivery?.serviceable && (
             <div className="space-y-1.5 pt-1">
-              <p className="text-[12px] flex items-center gap-1.5 text-green-600 font-medium">
+              <p className="text-[0.75rem] flex items-center gap-1.5 text-green-600 font-medium">
                 <CheckCircle size={13} /> Delivery available{delivery.city ? ` to ${delivery.city}, ${delivery.state}` : ` to ${pincode}`}
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] pl-5">
                 {delivery.etdDays
                   ? `Estimated delivery in ${delivery.etdDays}–${delivery.etdDays + 2} business days`
                   : "Standard: 3–5 business days"}
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] pl-5">
                 {delivery.cod ? "Cash on Delivery available*" : "Prepaid only (COD not available here)"}
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] pl-5">Free shipping on orders above ₹5,000</p>
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] pl-5">Free shipping on orders above ₹5,000</p>
               {delivery.cod && (
-                <p className="text-[10px] text-[var(--color-text-muted)]/80 pl-5 italic">
+                <p className="text-[0.625rem] text-[var(--color-text-muted)]/80 pl-5 italic">
                   *COD is subject to courier availability at your address and may vary by order value.
                 </p>
               )}
             </div>
           )}
           {delivery && !delivery.serviceable && delivery.invalid && (
-            <p className="text-[12px] text-red-500 pt-1">Please enter a valid 6-digit pincode</p>
+            <p className="text-[0.75rem] text-red-500 pt-1">Please enter a valid 6-digit pincode</p>
           )}
           {delivery && !delivery.serviceable && !delivery.invalid && !delivery.error && (
-            <p className="text-[12px] text-amber-600 pt-1">
+            <p className="text-[0.75rem] text-amber-600 pt-1">
               Sorry, we don&apos;t deliver to {delivery.city ? `${delivery.city}, ${delivery.state}` : `pincode ${pincode}`} yet.
             </p>
           )}
           {delivery?.error && (
-            <p className="text-[12px] text-red-500 pt-1">Couldn&apos;t check right now — please try again.</p>
+            <p className="text-[0.75rem] text-red-500 pt-1">Couldn&apos;t check right now — please try again.</p>
           )}
         </div>
 
@@ -694,7 +694,7 @@ export default function ProductInfo({
               onChange={(e) => setGiftWrap(e.target.checked)}
               className="w-5 h-5 rounded border-2 border-[var(--color-lavender)] text-[var(--color-plum)] focus:ring-[var(--color-plum)]/20 focus:ring-offset-0 cursor-pointer accent-[var(--color-plum)]"
             />
-            <span className="text-[14px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
+            <span className="text-[0.875rem] text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
               Is this a <span className="font-semibold text-[var(--color-plum)]">Gift</span>? 🎁 Wrap it for just (<span className="font-semibold">₹50</span>)
             </span>
           </label>
@@ -729,7 +729,7 @@ export default function ProductInfo({
               >
                 <Minus size={14} className="text-[var(--color-text-secondary)]" />
               </button>
-              <span className="w-9 text-center text-[14px] font-semibold text-[var(--color-text-primary)]">{quantity}</span>
+              <span className="w-9 text-center text-[0.875rem] font-semibold text-[var(--color-text-primary)]">{quantity}</span>
               <button
                 className="w-10 h-full flex items-center justify-center hover:bg-[var(--color-bg-secondary)] transition-colors rounded-r-lg disabled:opacity-40"
                 onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
@@ -766,7 +766,7 @@ export default function ProductInfo({
           </div>
 
           {addError && (
-            <p className="text-[13px] text-red-500" role="alert">
+            <p className="text-[0.8125rem] text-red-500" role="alert">
               {addError}
             </p>
           )}
@@ -794,7 +794,7 @@ export default function ProductInfo({
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex flex-col items-center text-center gap-1.5 py-2">
               <Icon size={18} strokeWidth={1.3} className="text-[var(--color-silver)]" />
-              <span className="text-[9px] font-semibold tracking-[0.08em] uppercase text-[var(--color-text-secondary)] leading-tight">{label}</span>
+              <span className="text-[0.5625rem] font-semibold tracking-[0.08em] uppercase text-[var(--color-text-secondary)] leading-tight">{label}</span>
             </div>
           ))}
         </div>
@@ -821,8 +821,8 @@ export default function ProductInfo({
                 <X size={20} className="text-[var(--color-text-muted)]" />
               </button>
 
-              <h3 className="font-wittgenstein text-[18px] font-semibold text-[var(--color-text-primary)] mb-1">Share this product</h3>
-              <p className="text-[12px] text-[var(--color-text-muted)] mb-5">{product.title}</p>
+              <h3 className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-text-primary)] mb-1">Share this product</h3>
+              <p className="text-[0.75rem] text-[var(--color-text-muted)] mb-5">{product.title}</p>
 
               {/* QR Code */}
               <div className="flex justify-center mb-5">
@@ -835,7 +835,7 @@ export default function ProductInfo({
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-center text-[var(--color-text-muted)] mb-5">Scan to view on mobile</p>
+              <p className="text-[0.6875rem] text-center text-[var(--color-text-muted)] mb-5">Scan to view on mobile</p>
 
               {/* Social buttons */}
               <div className="grid grid-cols-4 gap-3 mb-5">
@@ -857,7 +857,7 @@ export default function ProductInfo({
                     ) : (
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                     )}
-                    <span className="text-[10px] font-medium text-[var(--color-text-secondary)]">{label}</span>
+                    <span className="text-[0.625rem] font-medium text-[var(--color-text-secondary)]">{label}</span>
                   </a>
                 ))}
               </div>
@@ -865,7 +865,7 @@ export default function ProductInfo({
               {/* Copy link */}
               <button
                 onClick={copyLink}
-                className={`w-full h-10 flex items-center justify-center gap-2 text-[12px] font-semibold rounded-lg border transition-all duration-200 ${
+                className={`w-full h-10 flex items-center justify-center gap-2 text-[0.75rem] font-semibold rounded-lg border transition-all duration-200 ${
                   copied
                     ? "border-green-300 text-green-600 bg-green-50"
                     : "border-[var(--color-lavender)] text-[var(--color-text-secondary)] bg-white hover:border-[var(--color-plum)]"
@@ -912,16 +912,16 @@ export default function ProductInfo({
                   </div>
                 </div>
 
-                <h3 className="font-wittgenstein text-[20px] font-semibold text-center text-[var(--color-text-primary)] mb-1">
+                <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-center text-[var(--color-text-primary)] mb-1">
                   {authMode === "login" ? "Welcome Back" : "Create Account"}
                 </h3>
-                <p className="text-[12px] text-center text-[var(--color-text-muted)] mb-5">
+                <p className="text-[0.75rem] text-center text-[var(--color-text-muted)] mb-5">
                   {authMode === "login" ? "Sign in to save to your wishlist" : "Join Delfee to save your favourites"}
                 </p>
 
                 {/* Error */}
                 {authError && (
-                  <div className="mb-4 px-3 py-2 rounded-lg text-[12px] bg-red-50 text-red-600 border border-red-100">
+                  <div className="mb-4 px-3 py-2 rounded-lg text-[0.75rem] bg-red-50 text-red-600 border border-red-100">
                     {authError}
                   </div>
                 )}
@@ -935,14 +935,14 @@ export default function ProductInfo({
                         placeholder="First Name *"
                         value={authForm.first_name}
                         onChange={(e) => { setAuthForm((f) => ({ ...f, first_name: e.target.value })); setAuthError("") }}
-                        className="h-11 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                        className="h-11 px-3 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
                       />
                       <input
                         type="text"
                         placeholder="Last Name *"
                         value={authForm.last_name}
                         onChange={(e) => { setAuthForm((f) => ({ ...f, last_name: e.target.value })); setAuthError("") }}
-                        className="h-11 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                        className="h-11 px-3 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
                       />
                     </div>
                   )}
@@ -951,14 +951,14 @@ export default function ProductInfo({
                     placeholder="Email Address *"
                     value={authForm.email}
                     onChange={(e) => { setAuthForm((f) => ({ ...f, email: e.target.value })); setAuthError("") }}
-                    className="h-11 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all w-full"
+                    className="h-11 px-3 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all w-full"
                   />
                   <input
                     type="password"
                     placeholder="Password *"
                     value={authForm.password}
                     onChange={(e) => { setAuthForm((f) => ({ ...f, password: e.target.value })); setAuthError("") }}
-                    className="h-11 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all w-full"
+                    className="h-11 px-3 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all w-full"
                     onKeyDown={(e) => e.key === "Enter" && handleAuth()}
                   />
                   {authMode === "signup" && (
@@ -967,7 +967,7 @@ export default function ProductInfo({
                       placeholder="Phone Number"
                       value={authForm.phone}
                       onChange={(e) => setAuthForm((f) => ({ ...f, phone: e.target.value }))}
-                      className="h-11 px-3 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all w-full"
+                      className="h-11 px-3 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all w-full"
                     />
                   )}
                 </div>
@@ -976,13 +976,13 @@ export default function ProductInfo({
                 <button
                   onClick={handleAuth}
                   disabled={authLoading}
-                  className="w-full h-11 flex items-center justify-center text-[13px] font-semibold uppercase tracking-[0.08em] text-white rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 bg-[var(--color-plum)]"
+                  className="w-full h-11 flex items-center justify-center text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-white rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 bg-[var(--color-plum)]"
                 >
                   {authLoading ? "Please wait..." : authMode === "login" ? "Login" : "Create Account"}
                 </button>
 
                 {/* Toggle */}
-                <p className="text-center mt-4 text-[12px] text-[var(--color-text-muted)]">
+                <p className="text-center mt-4 text-[0.75rem] text-[var(--color-text-muted)]">
                   {authMode === "login" ? "Don't have an account? " : "Already have an account? "}
                   <button
                     onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError("") }}
@@ -994,7 +994,7 @@ export default function ProductInfo({
 
                 <button
                   onClick={() => setWishlistAuthOpen(false)}
-                  className="w-full mt-3 text-[11px] text-center text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
+                  className="w-full mt-3 text-[0.6875rem] text-center text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
                 >
                   Continue browsing
                 </button>

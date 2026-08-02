@@ -42,10 +42,10 @@ const Addresses = ({
     <div className="bg-white rounded-2xl border border-[var(--color-lavender)] p-5 small:p-7">
       <div className="flex flex-row items-center justify-between mb-5">
         <div className="flex flex-col">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
             Step 1
           </span>
-          <h2 className="font-wittgenstein text-[22px] small:text-[24px] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
+          <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.5rem] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
             Shipping Address
             {!isOpen && (
               <CheckCircle2
@@ -59,7 +59,7 @@ const Addresses = ({
         {!isOpen && cart?.shipping_address && (
           <button
             onClick={handleEdit}
-            className="text-[12px] font-semibold uppercase tracking-wider text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] underline-offset-4 hover:underline"
+            className="text-[0.75rem] font-semibold uppercase tracking-wider text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] underline-offset-4 hover:underline"
             data-testid="edit-address-button"
           >
             Edit
@@ -78,7 +78,7 @@ const Addresses = ({
 
             {!sameAsBilling && (
               <div>
-                <h3 className="font-wittgenstein text-[18px] font-bold text-[var(--color-plum)] pb-4 pt-6">
+                <h3 className="font-wittgenstein text-[1.125rem] font-bold text-[var(--color-plum)] pb-4 pt-6">
                   Billing address
                 </h3>
                 <BillingAddress cart={cart} />
@@ -97,9 +97,9 @@ const Addresses = ({
       ) : (
         <div>
           {cart && cart.shipping_address ? (
-            <div className="grid grid-cols-1 small:grid-cols-3 gap-5 text-[13px]">
+            <div className="grid grid-cols-1 small:grid-cols-3 gap-5 text-[0.8125rem]">
               <div data-testid="shipping-address-summary">
-                <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+                <p className="text-[0.65625rem] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
                   Ship to
                 </p>
                 <p className="text-[var(--color-text-primary)] font-medium leading-relaxed">
@@ -117,7 +117,7 @@ const Addresses = ({
               </div>
 
               <div data-testid="shipping-contact-summary">
-                <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+                <p className="text-[0.65625rem] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
                   Contact
                 </p>
                 <p className="text-[var(--color-text-primary)] font-medium leading-relaxed">
@@ -128,7 +128,7 @@ const Addresses = ({
               </div>
 
               <div data-testid="billing-address-summary">
-                <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+                <p className="text-[0.65625rem] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
                   Bill to
                 </p>
                 {sameAsBilling ? (

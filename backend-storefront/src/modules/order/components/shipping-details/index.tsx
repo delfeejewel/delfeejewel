@@ -6,7 +6,7 @@ type ShippingDetailsProps = {
 }
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+  <p className="text-[0.65625rem] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
     {children}
   </p>
 )
@@ -16,10 +16,10 @@ const ShippingDetails = ({ order }: ShippingDetailsProps) => {
 
   return (
     <div>
-      <h2 className="font-wittgenstein text-[18px] small:text-[20px] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
+      <h2 className="font-wittgenstein text-[1.125rem] small:text-[1.25rem] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
         Delivery
       </h2>
-      <div className="grid grid-cols-1 small:grid-cols-3 gap-5 text-[13px]">
+      <div className="grid grid-cols-1 small:grid-cols-3 gap-5 text-[0.8125rem]">
         <div data-testid="shipping-address-summary">
           <Label>Ship to</Label>
           <p className="text-[var(--color-text-primary)] leading-relaxed">

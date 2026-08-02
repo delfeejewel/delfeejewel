@@ -86,17 +86,17 @@ export default async function SizeGuidePage({ params }: Props) {
                   <div className="w-11 h-11 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center">
                     <Icon size={20} className="text-[var(--color-plum)]" />
                   </div>
-                  <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+                  <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
                     {m.title}
                   </h2>
                 </div>
                 <ol className="flex flex-col gap-3">
                   {m.steps.map((s, i) => (
                     <li key={s} className="flex gap-3">
-                      <span className="w-6 h-6 shrink-0 rounded-full bg-[var(--color-plum)] text-white text-[12px] font-bold flex items-center justify-center mt-0.5">
+                      <span className="w-6 h-6 shrink-0 rounded-full bg-[var(--color-plum)] text-white text-[0.75rem] font-bold flex items-center justify-center mt-0.5">
                         {i + 1}
                       </span>
-                      <span className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                      <span className="text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)]">
                         {s}
                       </span>
                     </li>
@@ -112,10 +112,10 @@ export default async function SizeGuidePage({ params }: Props) {
       <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border)]">
         <div className="page-container py-12 small:py-16">
           <div className="text-center max-w-2xl mx-auto mb-8">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               Reference chart
             </span>
-            <h2 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] mt-2">
+            <h2 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)] mt-2">
               Indian Ring Size Chart
             </h2>
           </div>
@@ -123,13 +123,13 @@ export default async function SizeGuidePage({ params }: Props) {
             <table className="w-full text-center">
               <thead>
                 <tr className="bg-[var(--color-plum)] text-white">
-                  <th className="py-3.5 px-4 text-[12px] font-semibold uppercase tracking-[0.08em]">
+                  <th className="py-3.5 px-4 text-[0.75rem] font-semibold uppercase tracking-[0.08em]">
                     Indian Size
                   </th>
-                  <th className="py-3.5 px-4 text-[12px] font-semibold uppercase tracking-[0.08em]">
+                  <th className="py-3.5 px-4 text-[0.75rem] font-semibold uppercase tracking-[0.08em]">
                     Diameter (mm)
                   </th>
-                  <th className="py-3.5 px-4 text-[12px] font-semibold uppercase tracking-[0.08em]">
+                  <th className="py-3.5 px-4 text-[0.75rem] font-semibold uppercase tracking-[0.08em]">
                     Circumference (mm)
                   </th>
                 </tr>
@@ -140,13 +140,13 @@ export default async function SizeGuidePage({ params }: Props) {
                     key={row.indian}
                     className="border-t border-[var(--color-lavender)]"
                   >
-                    <td className="py-3 px-4 text-[14px] font-semibold text-[var(--color-plum)]">
+                    <td className="py-3 px-4 text-[0.875rem] font-semibold text-[var(--color-plum)]">
                       {row.indian}
                     </td>
-                    <td className="py-3 px-4 text-[14px] text-[var(--color-text-secondary)]">
+                    <td className="py-3 px-4 text-[0.875rem] text-[var(--color-text-secondary)]">
                       {row.dia}
                     </td>
-                    <td className="py-3 px-4 text-[14px] text-[var(--color-text-secondary)]">
+                    <td className="py-3 px-4 text-[0.875rem] text-[var(--color-text-secondary)]">
                       {row.circ}
                     </td>
                   </tr>
@@ -154,7 +154,7 @@ export default async function SizeGuidePage({ params }: Props) {
               </tbody>
             </table>
           </div>
-          <p className="text-center text-[12px] text-[var(--color-text-muted)] mt-4">
+          <p className="text-center text-[0.75rem] text-[var(--color-text-muted)] mt-4">
             Values are approximate. If you're between sizes, we recommend the
             larger one.
           </p>
@@ -168,7 +168,7 @@ export default async function SizeGuidePage({ params }: Props) {
             <div className="w-11 h-11 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center">
               <Lightbulb size={20} className="text-[var(--color-plum)]" />
             </div>
-            <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+            <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
               Tips for an accurate fit
             </h2>
           </div>
@@ -176,7 +176,7 @@ export default async function SizeGuidePage({ params }: Props) {
             {TIPS.map((t) => (
               <li
                 key={t}
-                className="flex gap-2.5 text-[14px] leading-relaxed text-[var(--color-text-secondary)]"
+                className="flex gap-2.5 text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)]"
               >
                 <span className="text-[var(--color-gold)] font-bold">•</span>
                 {t}
@@ -186,12 +186,12 @@ export default async function SizeGuidePage({ params }: Props) {
         </div>
 
         <div className="max-w-3xl mx-auto mt-6 text-center">
-          <p className="text-[14px] text-[var(--color-text-muted)] mb-4">
+          <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-4">
             Still unsure about your size? We're happy to help you get it right.
           </p>
           <LocalizedClientLink
             href="/contact"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
           >
             Ask Our Team
             <ArrowRight size={15} />

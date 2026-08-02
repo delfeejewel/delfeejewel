@@ -771,3 +771,122 @@ export function giftCardPurchasedTemplate(data: GiftCardEmailData) {
     `),
   }
 }
+
+export interface OrderAdminNotificationData {
+  /** Internal recipient — the shop's own inbox, never the customer. */
+  to: string
+  order_id: string
+  order_number: string | number
+  placed_at: string
+  customer_name: string
+  customer_email: string
+  customer_phone?: string | null
+  /** "Guest" or "Registered", so the team knows if there's an account behind it. */
+  customer_type: string
+  shipping_address_lines: string[]
+  payment_method?: string | null
+  /** Set only for COD orders that collected an upfront token. */
+  cod_paid?: string
+  cod_due?: string
+  items: {
+    title: string
+    variant?: string | null
+    sku?: string | null
+    quantity: number
+    price: string
+  }[]
+  subtotal?: string
+  shipping?: string
+  discount?: string
+  total: string
+  admin_url?: string | null
+}
+
+/**
+ * The shop's own copy of a placed order — items, customer, address, totals —
+ * so orders can be actioned from the inbox without opening Admin first.
+ *
+ * Separate from the customer's `order.placed` template on purpose: this one
+ * carries SKUs, phone number, payment method and the Admin deep link, none of
+ * which belong in a customer-facing confirmation.
+ */
+export function orderPlacedAdminTemplate(data: OrderAdminNotificationData) {
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding:5px 16px 5px 0;font-size:13px;color:#999;white-space:nowrap;vertical-align:top;">${label}</td>
+      <td style="padding:5px 0;font-size:13.5px;color:#2a2a2a;">${value}</td>
+    </tr>`
+
+  const itemRows = data.items
+    .map(
+      (it) => `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid #efece7;font-size:13.5px;color:#2a2a2a;">
+        ${it.title}
+        ${it.variant ? `<br><span style="font-size:12px;color:#9b9b9b;">${it.variant}</span>` : ""}
+        ${it.sku ? `<br><span style="font-size:12px;color:#9b9b9b;">SKU: ${it.sku}</span>` : ""}
+      </td>
+      <td style="padding:12px 8px;border-bottom:1px solid #efece7;font-size:13.5px;color:#2a2a2a;text-align:center;white-space:nowrap;">× ${it.quantity}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #efece7;font-size:13.5px;color:#2a2a2a;font-weight:600;text-align:right;white-space:nowrap;">${it.price}</td>
+    </tr>`
+    )
+    .join("")
+
+  const totalLine = (label: string, value: string, strong = false) => `
+    <tr>
+      <td colspan="2" style="padding:6px 8px 6px 0;font-size:13px;color:${strong ? "#5D2E46" : "#666"};${strong ? "font-weight:700;border-top:2px solid #e7e3dd;padding-top:12px;" : ""}text-align:right;">${label}</td>
+      <td style="padding:6px 0;font-size:${strong ? "15px" : "13px"};color:${strong ? "#5D2E46" : "#2a2a2a"};${strong ? "font-weight:700;border-top:2px solid #e7e3dd;padding-top:12px;" : ""}text-align:right;white-space:nowrap;">${value}</td>
+    </tr>`
+
+  return {
+    subject: `[New Order] #${data.order_number} — ${data.customer_name} — ${data.total}`,
+    html: baseLayout(
+      `
+      <h2>New order #${data.order_number}</h2>
+      <p><strong>${data.customer_name}</strong> placed an order for <strong>${data.total}</strong>.</p>
+
+      <h3>Customer</h3>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        ${row("Name", data.customer_name)}
+        ${row("Email", `<a href="mailto:${data.customer_email}" style="color:#5D2E46;">${data.customer_email}</a>`)}
+        ${data.customer_phone ? row("Phone", `<a href="tel:${data.customer_phone}" style="color:#5D2E46;">${data.customer_phone}</a>`) : ""}
+        ${row("Account", data.customer_type)}
+        ${row("Placed", data.placed_at)}
+        ${data.payment_method ? row("Payment", data.payment_method) : ""}
+      </table>
+
+      <h3>Ship to</h3>
+      <p style="font-size:13.5px;line-height:1.7;color:#2a2a2a;margin:0;">
+        ${data.shipping_address_lines.filter(Boolean).join("<br>") || "—"}
+      </p>
+
+      <h3>Items</h3>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        ${itemRows}
+        ${data.subtotal ? totalLine("Subtotal", data.subtotal) : ""}
+        ${data.shipping ? totalLine("Shipping", data.shipping) : ""}
+        ${data.discount ? totalLine("Discount", data.discount) : ""}
+        ${totalLine("Total", data.total, true)}
+      </table>
+
+      ${
+        data.cod_paid
+          ? `<div style="margin-top:18px;padding:14px 16px;border-radius:10px;background:#faf8f5;border:1px solid #ece8e2;">
+               <p style="margin:0 0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#5D2E46;">Cash on Delivery</p>
+               <p style="margin:0;font-size:13.5px;color:#2a2a2a;">Advance paid: <strong>${data.cod_paid}</strong> &nbsp;·&nbsp; To collect on delivery: <strong>${data.cod_due}</strong></p>
+             </div>`
+          : ""
+      }
+
+      ${
+        data.admin_url
+          ? `<div style="text-align:center;margin-top:28px;">
+               <a href="${data.admin_url}" class="btn">Open in Admin</a>
+             </div>`
+          : ""
+      }
+    `,
+      true /* internal — goes to our team, not the customer */
+    ),
+  }
+}

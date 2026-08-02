@@ -159,21 +159,21 @@ export default function QuickView({
 
               <div className="p-6 flex flex-col gap-4">
                 <div>
-                  <h2 className="font-wittgenstein text-[22px] font-bold leading-tight text-[var(--color-text-primary)]">
+                  <h2 className="font-wittgenstein text-[1.375rem] font-bold leading-tight text-[var(--color-text-primary)]">
                     {product.title}
                   </h2>
                   {product.subtitle && (
-                    <p className="mt-1 text-[12.5px] text-[var(--color-text-muted)]">
+                    <p className="mt-1 text-[0.78125rem] text-[var(--color-text-muted)]">
                       {product.subtitle}
                     </p>
                   )}
                 </div>
 
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-wittgenstein text-[24px] font-bold text-[var(--color-plum)]">
+                  <span className="font-wittgenstein text-[1.5rem] font-bold text-[var(--color-plum)]">
                     {!activeVariant && !singleVariant && cheapestPrice ? (
                       <>
-                        <span className="text-[13px] font-normal text-[var(--color-text-muted)]">
+                        <span className="text-[0.8125rem] font-normal text-[var(--color-text-muted)]">
                           From{" "}
                         </span>
                         {cheapestPrice.calculated_price}
@@ -183,17 +183,17 @@ export default function QuickView({
                     )}
                   </span>
                   {price?.price_type === "sale" && (
-                    <span className="text-[13px] line-through text-[var(--color-text-muted)]">
+                    <span className="text-[0.8125rem] line-through text-[var(--color-text-muted)]">
                       {price.original_price}
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] text-[var(--color-text-muted)] -mt-3">
+                <span className="text-[0.6875rem] text-[var(--color-text-muted)] -mt-3">
                   Inclusive of all taxes
                 </span>
 
                 {isFinalSale && (
-                  <p className="text-[11.5px] leading-snug rounded-lg bg-[var(--color-bg-secondary)] px-3 py-2 text-[var(--color-text-secondary)]">
+                  <p className="text-[0.71875rem] leading-snug rounded-lg bg-[var(--color-bg-secondary)] px-3 py-2 text-[var(--color-text-secondary)]">
                     <span className="font-semibold text-[var(--color-text-primary)]">
                       Final sale.
                     </span>{" "}
@@ -205,7 +205,7 @@ export default function QuickView({
                 {!singleVariant &&
                   options.map((opt) => (
                     <div key={opt.id} className="flex flex-col gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+                      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
                         {opt.title}
                       </span>
                       <div className="flex flex-wrap gap-2">
@@ -221,7 +221,7 @@ export default function QuickView({
                                   [opt.id!]: val.value,
                                 }))
                               }
-                              className={`min-w-[44px] px-3 h-10 rounded-lg border text-[13px] transition-colors ${
+                              className={`min-w-[44px] px-3 h-10 rounded-lg border text-[0.8125rem] transition-colors ${
                                 isOn
                                   ? "border-[var(--color-plum)] bg-[var(--color-plum)] text-white"
                                   : "border-[var(--color-border)] hover:border-[var(--color-plum)]"
@@ -237,7 +237,7 @@ export default function QuickView({
                   ))}
 
                 {activeVariant && !inStock(activeVariant) && (
-                  <p className="text-[12px] font-medium text-red-500">
+                  <p className="text-[0.75rem] font-medium text-red-500">
                     This option is out of stock.
                   </p>
                 )}
@@ -248,7 +248,7 @@ export default function QuickView({
                   disabled={
                     adding || added || (!!activeVariant && !inStock(activeVariant))
                   }
-                  className="mt-auto h-12 rounded-lg font-semibold text-[14px] tracking-wide text-[var(--color-plum-deep)] [background:var(--color-gold)] hover:bg-white hover:text-[var(--color-plum)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="mt-auto h-12 rounded-lg font-semibold text-[0.875rem] tracking-wide text-[var(--color-plum-deep)] [background:var(--color-gold)] hover:bg-white hover:text-[var(--color-plum)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                   data-testid="quick-view-add"
                 >
                   {added ? (
@@ -266,14 +266,14 @@ export default function QuickView({
                 </button>
 
                 {error && (
-                  <p className="text-[12px] text-red-500" role="alert">
+                  <p className="text-[0.75rem] text-red-500" role="alert">
                     {error}
                   </p>
                 )}
 
                 <LocalizedClientLink
                   href={`/products/${product.handle}`}
-                  className="text-center text-[12.5px] font-medium text-[var(--color-plum)] hover:underline underline-offset-2"
+                  className="text-center text-[0.78125rem] font-medium text-[var(--color-plum)] hover:underline underline-offset-2"
                 >
                   View full details
                 </LocalizedClientLink>

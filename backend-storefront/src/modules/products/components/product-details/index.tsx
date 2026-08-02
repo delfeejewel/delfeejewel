@@ -25,7 +25,7 @@ function FeatureCard({ icon: Icon, title, desc, delay }: { icon: any; title: str
       </div>
       <div>
         <p className="text-xs font-semibold tracking-[0.05em] text-[var(--color-text-primary)]">{title}</p>
-        <p className="text-[11px] text-[var(--color-text-muted)]">{desc}</p>
+        <p className="text-[0.6875rem] text-[var(--color-text-muted)]">{desc}</p>
       </div>
     </motion.div>
   )
@@ -35,8 +35,8 @@ function FeatureCard({ icon: Icon, title, desc, delay }: { icon: any; title: str
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
     <li className="flex justify-between items-center py-3 border-b border-[var(--color-lavender)]/60 last:border-b-0">
-      <span className="text-[14px] text-[var(--color-text-secondary)]">{label}</span>
-      <span className="text-[14px] font-medium text-[var(--color-text-primary)]">{value}</span>
+      <span className="text-[0.875rem] text-[var(--color-text-secondary)]">{label}</span>
+      <span className="text-[0.875rem] font-medium text-[var(--color-text-primary)]">{value}</span>
     </li>
   )
 }
@@ -77,11 +77,11 @@ function CollapsibleDescription({ description }: { description?: string | null }
       >
         {isHtml(description) ? (
           <div
-            className="text-[16px] small:text-[18px] leading-[1.8] text-[var(--color-text-secondary)] [&_a]:text-[var(--color-plum)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--color-gold)] [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h2]:font-wittgenstein [&_h2]:text-[20px] [&_h2]:small:text-[22px] [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:text-[var(--color-text-primary)] [&_h3]:mt-4 [&_h3]:mb-2 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_p]:mb-4 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4"
+            className="text-[1rem] small:text-[1.125rem] leading-[1.8] text-[var(--color-text-secondary)] [&_a]:text-[var(--color-plum)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--color-gold)] [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h2]:font-wittgenstein [&_h2]:text-[1.25rem] [&_h2]:small:text-[1.375rem] [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:text-[var(--color-text-primary)] [&_h3]:mt-4 [&_h3]:mb-2 [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_p]:mb-4 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
           />
         ) : (
-          <p className="text-[16px] small:text-[18px] leading-[1.8] text-[var(--color-text-secondary)]">
+          <p className="text-[1rem] small:text-[1.125rem] leading-[1.8] text-[var(--color-text-secondary)]">
             {description || DESCRIPTION_FALLBACK}
           </p>
         )}
@@ -95,7 +95,7 @@ function CollapsibleDescription({ description }: { description?: string | null }
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold tracking-[0.02em] text-[var(--color-plum)] hover:text-[var(--color-gold)] transition-colors"
+          className="mt-4 inline-flex items-center gap-1.5 text-[0.875rem] font-semibold tracking-[0.02em] text-[var(--color-plum)] hover:text-[var(--color-gold)] transition-colors"
         >
           {expanded ? "Show less" : "Show more"}
           {expanded ? (
@@ -134,7 +134,7 @@ export default function ProductDetails({ product }: Props) {
         <div className="space-y-12">
           {/* Description */}
           <section>
-            <h2 className="font-wittgenstein text-[24px] small:text-[26px] font-semibold text-[var(--color-text-primary)] mb-6">
+            <h2 className="font-wittgenstein text-[1.5rem] small:text-[1.625rem] font-semibold text-[var(--color-text-primary)] mb-6">
               Description
             </h2>
             <CollapsibleDescription description={product.description} />
@@ -142,7 +142,8 @@ export default function ProductDetails({ product }: Props) {
 
           {/* Feature cards grid */}
           <section>
-            <div className="grid grid-cols-1 xsmall:grid-cols-2 medium:grid-cols-3 gap-3">
+            {/* Five across once the block spans the full page width. */}
+            <div className="grid grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3 medium:grid-cols-5 gap-3">
               {[
                 { icon: HandMetal, title: "Handcrafted", desc: "Made by master artisans" },
                 { icon: Droplets, title: "Hypoallergenic", desc: "Safe for sensitive skin" },
@@ -157,11 +158,12 @@ export default function ProductDetails({ product }: Props) {
 
         </div>
 
-        {/* Artisanal story + badges */}
-        <div className="grid grid-cols-1 medium:grid-cols-2 gap-6">
+        {/* Artisanal story + badges. Two-thirds / one-third at full page width —
+            an even split leaves the two small badge cards adrift in white. */}
+        <div className="grid grid-cols-1 medium:grid-cols-3 gap-6">
           {/* Designer quote card — contrasted premium styling */}
           <motion.div
-            className="relative overflow-hidden rounded-2xl border-l-4 border-[var(--color-gold)]"
+            className="relative overflow-hidden rounded-2xl border-l-4 border-[var(--color-gold)] medium:col-span-2"
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -171,14 +173,14 @@ export default function ProductDetails({ product }: Props) {
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-plum)] to-[var(--color-plum-deep)]" />
             <div className="relative p-8">
               {/* Decorative quote mark */}
-              <span className="block font-wittgenstein text-[48px] leading-none text-[var(--color-gold)] opacity-30 mb-2">"</span>
-              <h3 className="font-wittgenstein text-[20px] font-semibold text-white mb-4">
+              <span className="block font-wittgenstein text-[3rem] leading-none text-[var(--color-gold)] opacity-30 mb-2">"</span>
+              <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-white mb-4">
                 The Artisanal Story
               </h3>
-              <p className="text-[15px] leading-[1.7] text-white/80 italic mb-5">
+              <p className="text-[0.9375rem] leading-[1.7] text-white/80 italic mb-5">
                 "Each piece is designed to feel like it was crafted just for you — delicate yet enduring, modern yet timeless."
               </p>
-              <span className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[var(--color-gold)]">
+              <span className="text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-[var(--color-gold)]">
                 — Delfee Design Studio
               </span>
             </div>
@@ -201,7 +203,7 @@ export default function ProductDetails({ product }: Props) {
                 <Icon size={20} strokeWidth={1.5} className="text-[var(--color-gold)] shrink-0" />
                 <div>
                   <p className="text-xs font-semibold tracking-[0.05em] text-[var(--color-text-primary)]">{title}</p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">{desc}</p>
+                  <p className="text-[0.6875rem] text-[var(--color-text-muted)]">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -214,7 +216,9 @@ export default function ProductDetails({ product }: Props) {
         <h3 className="text-xs font-semibold tracking-[0.12em] uppercase text-[var(--color-plum)] mb-6">
           Product Details & Specifications
         </h3>
-        <ul>
+        {/* Two columns of rows on wide screens — a single column would leave a
+            label and its value at opposite ends of 1400px. */}
+        <ul className="grid grid-cols-1 medium:grid-cols-2 medium:gap-x-16">
           {specs.map(({ label, value }) => (
             <SpecRow key={label} label={label} value={value} />
           ))}

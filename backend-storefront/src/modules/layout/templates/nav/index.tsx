@@ -61,7 +61,7 @@ export default async function Nav() {
             {showContact && (
               <>
                 {showEmail && (
-                  <a href={`mailto:${email}`} className="flex items-center gap-1.5 text-[11px] opacity-70 hover:opacity-100 transition-opacity duration-200">
+                  <a href={`mailto:${email}`} className="flex items-center gap-1.5 text-[0.6875rem] opacity-70 hover:opacity-100 transition-opacity duration-200">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                     </svg>
@@ -70,7 +70,7 @@ export default async function Nav() {
                 )}
                 {showEmail && showPhone && <span className="opacity-30">|</span>}
                 {showPhone && (
-                  <a href={`tel:${phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-[11px] opacity-70 hover:opacity-100 transition-opacity duration-200">
+                  <a href={`tel:${phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-[0.6875rem] opacity-70 hover:opacity-100 transition-opacity duration-200">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                     </svg>
@@ -82,7 +82,7 @@ export default async function Nav() {
           </div>
 
           {/* Center: announcement — absolutely positioned for true center */}
-          <p className="small:absolute small:left-1/2 small:-translate-x-1/2 text-[10px] small:text-[11px] font-medium tracking-wide text-center w-full small:w-auto small:whitespace-nowrap">
+          <p className="small:absolute small:left-1/2 small:-translate-x-1/2 text-[0.625rem] small:text-[0.6875rem] font-medium tracking-wide text-center w-full small:w-auto small:whitespace-nowrap">
             {announcementText ? (
               announcementText
             ) : (
@@ -97,7 +97,7 @@ export default async function Nav() {
             {quickLinks.map((link, i) => (
               <span key={`${link.href}-${i}`} className="flex items-center gap-3">
                 {i > 0 && <span className="opacity-30">|</span>}
-                <LocalizedClientLink href={link.href} className="text-[11px] opacity-70 hover:opacity-100 transition-opacity duration-200">
+                <LocalizedClientLink href={link.href} className="text-[0.6875rem] opacity-70 hover:opacity-100 transition-opacity duration-200">
                   {link.label}
                 </LocalizedClientLink>
               </span>
@@ -199,7 +199,7 @@ export default async function Nav() {
                 <li key={category.id}>
                   <LocalizedClientLink
                     href={`/categories/${category.handle}`}
-                    className="text-[13px] font-medium tracking-wide whitespace-nowrap text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] transition-colors duration-300"
+                    className="text-[0.8125rem] font-medium tracking-wide whitespace-nowrap text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] transition-colors duration-300"
                   >
                     {category.name}
                   </LocalizedClientLink>

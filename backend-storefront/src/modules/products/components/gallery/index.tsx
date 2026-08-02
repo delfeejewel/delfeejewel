@@ -33,8 +33,6 @@ export default function ProductGallery({ media, title }: GalleryProps) {
 
   const [selected, setSelected] = useState(firstImageIndex)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [zoomed, setZoomed] = useState(false)
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
   const [mounted, setMounted] = useState(false)
   // Natural aspect ratio (w/h) per video, read from metadata — used to size the lightbox
   const [aspects, setAspects] = useState<Record<string, number>>({})
@@ -47,14 +45,6 @@ export default function ProductGallery({ media, title }: GalleryProps) {
   const isVideo = current.type === "video"
   // Only videos drive the popup's shape; images stay square
   const lightboxAspect = isVideo ? aspects[current.id] : undefined
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    setMousePos({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
-    })
-  }
 
   const rememberAspect = (id: string) => (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const v = e.currentTarget
@@ -75,7 +65,7 @@ export default function ProductGallery({ media, title }: GalleryProps) {
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.5 }}
       >
-        {/* Vertical thumbnails */}
+        {/* Thumbnail rail — scrolls horizontally */}
         {allMedia.length > 1 && (
           <div className="flex gap-3 overflow-x-auto no-scrollbar shrink-0 p-1">
             {allMedia.map((m, i) => (
@@ -120,12 +110,15 @@ export default function ProductGallery({ media, title }: GalleryProps) {
             }}
           />
 
-          <div
-            className="relative aspect-square rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(93,46,70,0.08)]"
-            onMouseEnter={() => !isVideo && setZoomed(true)}
-            onMouseLeave={() => setZoomed(false)}
-            onMouseMove={isVideo ? undefined : handleMouseMove}
-          >
+          {/*
+            No hover zoom: the photo holds still until clicked. "Expand" opens
+            the lightbox, which is where a closer look belongs.
+
+            `pdp-gallery-main` caps the square by viewport HEIGHT on desktop, so
+            on a short screen the image shrinks instead of pushing the thumbnail
+            rail below the fold.
+          */}
+          <div className="pdp-gallery-main relative aspect-square mx-auto rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(93,46,70,0.08)]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current.id}
@@ -151,11 +144,8 @@ export default function ProductGallery({ media, title }: GalleryProps) {
                     alt={title}
                     width={800}
                     height={800}
-                    className="w-full h-full object-cover transition-transform duration-300 ease-out cursor-zoom-in"
-                    style={{
-                      transform: zoomed ? "scale(2)" : "scale(1)",
-                      transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
-                    }}
+                    className="w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setLightboxOpen(true)}
                     priority
                     sizes="(max-width: 768px) 100vw, 58vw"
                   />
@@ -166,7 +156,7 @@ export default function ProductGallery({ media, title }: GalleryProps) {
             {/* Expand button — opens lightbox (videos open at their own aspect ratio) */}
             <button
               onClick={() => setLightboxOpen(true)}
-              className={`absolute ${isVideo ? "bottom-16" : "bottom-5"} right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[11px] font-medium text-[var(--color-text-secondary)] hover:bg-white hover:shadow-md z-10`}
+              className={`absolute ${isVideo ? "bottom-16" : "bottom-5"} right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[0.6875rem] font-medium text-[var(--color-text-secondary)] hover:bg-white hover:shadow-md z-10`}
             >
               <ZoomIn size={13} /> Expand
             </button>
@@ -191,7 +181,7 @@ export default function ProductGallery({ media, title }: GalleryProps) {
 
             {/* Media counter */}
             {allMedia.length > 1 && (
-              <div className="absolute bottom-5 left-5 px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm text-[11px] font-medium text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-5 left-5 px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm text-[0.6875rem] font-medium text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
                 {selected + 1} / {allMedia.length}
               </div>
             )}
@@ -211,11 +201,14 @@ export default function ProductGallery({ media, title }: GalleryProps) {
         >
           <motion.div
             className="relative w-[92vw] max-w-[800px] rounded-2xl overflow-hidden bg-white shadow-2xl"
-            style={
-              lightboxAspect
-                ? { width: `min(92vw, 800px, calc(${MEDIA_MAX_VH}vh * ${lightboxAspect}))` }
-                : undefined
-            }
+            // The panel is sized to the media, not the other way round. Images
+            // are square, so on a short window the height limit has to come off
+            // the panel's WIDTH — otherwise the square shrank inside a panel
+            // that stayed 800px wide and the photo sat against the left edge
+            // with a band of empty white beside it.
+            style={{
+              width: `min(92vw, 800px, calc(${MEDIA_MAX_VH}vh * ${lightboxAspect ?? 1}))`,
+            }}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -235,7 +228,7 @@ export default function ProductGallery({ media, title }: GalleryProps) {
 
             {/* Media area — square for images, the video's own aspect ratio for videos */}
             <div
-              className={`relative bg-[var(--color-bg-primary)] ${lightboxAspect ? "" : "aspect-square max-h-[75vh]"}`}
+              className={`relative bg-[var(--color-bg-primary)] ${lightboxAspect ? "" : "aspect-square"}`}
               style={lightboxAspect ? { aspectRatio: String(lightboxAspect) } : undefined}
             >
               <AnimatePresence mode="wait">
@@ -313,7 +306,7 @@ export default function ProductGallery({ media, title }: GalleryProps) {
                     )}
                   </button>
                 ))}
-                <span className="ml-3 text-[12px] font-medium text-[var(--color-text-muted)] tabular-nums">
+                <span className="ml-3 text-[0.75rem] font-medium text-[var(--color-text-muted)] tabular-nums">
                   {selected + 1} / {allMedia.length}
                 </span>
               </div>

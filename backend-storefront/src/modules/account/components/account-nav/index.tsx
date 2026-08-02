@@ -47,7 +47,7 @@ const AccountNav = ({
         className="hidden small:block sticky top-[120px]"
         data-testid="account-nav"
       >
-        <h2 className="font-wittgenstein text-[22px] font-semibold text-[var(--color-plum)] mb-7">
+        <h2 className="font-wittgenstein text-[1.375rem] font-semibold text-[var(--color-plum)] mb-7">
           My Account
         </h2>
 
@@ -60,7 +60,7 @@ const AccountNav = ({
                 key={link.href}
                 href={link.href}
                 data-testid={link.testId}
-                className={`relative flex items-center gap-3 pl-4 py-2.5 text-[14px] transition-colors duration-200 ${
+                className={`relative flex items-center gap-3 pl-4 py-2.5 text-[0.875rem] transition-colors duration-200 ${
                   active
                     ? "text-[var(--color-plum)] font-semibold"
                     : "text-[var(--color-text-secondary)] hover:text-[var(--color-plum)]"
@@ -80,7 +80,7 @@ const AccountNav = ({
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-3 pl-4 text-[14px] text-red-500 hover:opacity-70 transition-opacity"
+            className="flex items-center gap-3 pl-4 text-[0.875rem] text-red-500 hover:opacity-70 transition-opacity"
             data-testid="logout-button"
           >
             <LogOut size={19} />
@@ -100,7 +100,7 @@ const AccountNav = ({
                 key={link.href}
                 href={link.href}
                 data-testid={link.testId}
-                className={`shrink-0 flex items-center gap-2 px-4 h-10 rounded-full text-[13px] font-medium transition-colors ${
+                className={`shrink-0 flex items-center gap-2 px-4 h-10 rounded-full text-[0.8125rem] font-medium transition-colors ${
                   active
                     ? "bg-[var(--color-plum)] text-white"
                     : "bg-white border border-[var(--color-lavender)] text-[var(--color-text-secondary)]"
@@ -114,7 +114,7 @@ const AccountNav = ({
           <button
             type="button"
             onClick={handleLogout}
-            className="shrink-0 flex items-center gap-2 px-4 h-10 rounded-full text-[13px] font-medium bg-white border border-red-200 text-red-500"
+            className="shrink-0 flex items-center gap-2 px-4 h-10 rounded-full text-[0.8125rem] font-medium bg-white border border-red-200 text-red-500"
             data-testid="logout-button"
           >
             <LogOut size={15} />

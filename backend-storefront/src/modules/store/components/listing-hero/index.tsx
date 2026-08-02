@@ -114,7 +114,7 @@ export default function ListingHero({
       <div className="relative z-10 content-container py-10 small:py-12">
         {eyebrow && (
           <motion.p
-            className="text-[11px] uppercase tracking-[0.18em] font-semibold mb-2"
+            className="text-[0.6875rem] uppercase tracking-[0.18em] font-semibold mb-2"
             style={{ color: "var(--color-plum)" }}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -125,7 +125,7 @@ export default function ListingHero({
         )}
 
         <motion.h1
-          className="font-wittgenstein text-3xl small:text-[44px] tracking-tight leading-[1.1] mb-3"
+          className="font-wittgenstein text-3xl small:text-[2.75rem] tracking-tight leading-[1.1] mb-3"
           style={{ color: "var(--color-text-primary)" }}
           initial="hidden"
           animate="visible"
@@ -165,7 +165,7 @@ export default function ListingHero({
             transition={{ duration: 0.4, delay: 0.5 }}
           >
             <span
-              className="text-[12px] px-3.5 py-1.5 rounded-full font-medium"
+              className="text-[0.75rem] px-3.5 py-1.5 rounded-full font-medium"
               style={{
                 background: "var(--color-lavender)",
                 color: "var(--color-plum)",

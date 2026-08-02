@@ -80,10 +80,10 @@ export default async function JewelleryCarePage({ params }: Props) {
             <Sparkles size={22} className="text-[var(--color-plum)]" />
           </div>
           <div>
-            <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-1.5">
+            <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-1.5">
               Why does silver tarnish?
             </h2>
-            <p className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+            <p className="text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)]">
               Tarnish is a natural reaction between silver and the air around it
               — not a defect. The good news: it's easily prevented with mindful
               wear and reversed with gentle cleaning. Worn often and stored
@@ -97,7 +97,7 @@ export default async function JewelleryCarePage({ params }: Props) {
       <section className="page-container pb-12 small:pb-16">
         <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5">
           <div className="rounded-2xl bg-white border border-[var(--color-lavender)] p-6 small:p-7">
-            <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-4">
+            <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-4">
               Everyday do's
             </h3>
             <ul className="flex flex-col gap-3">
@@ -106,7 +106,7 @@ export default async function JewelleryCarePage({ params }: Props) {
                   <span className="w-6 h-6 shrink-0 rounded-full bg-green-50 flex items-center justify-center mt-0.5">
                     <Check size={14} className="text-green-600" />
                   </span>
-                  <span className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                  <span className="text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)]">
                     {d}
                   </span>
                 </li>
@@ -114,7 +114,7 @@ export default async function JewelleryCarePage({ params }: Props) {
             </ul>
           </div>
           <div className="rounded-2xl bg-white border border-[var(--color-lavender)] p-6 small:p-7">
-            <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-4">
+            <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-4">
               Best to avoid
             </h3>
             <ul className="flex flex-col gap-3">
@@ -123,7 +123,7 @@ export default async function JewelleryCarePage({ params }: Props) {
                   <span className="w-6 h-6 shrink-0 rounded-full bg-red-50 flex items-center justify-center mt-0.5">
                     <X size={14} className="text-red-500" />
                   </span>
-                  <span className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+                  <span className="text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)]">
                     {d}
                   </span>
                 </li>
@@ -137,10 +137,10 @@ export default async function JewelleryCarePage({ params }: Props) {
       <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border)]">
         <div className="page-container py-12 small:py-16">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               In four simple steps
             </span>
-            <h2 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] mt-2">
+            <h2 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)] mt-2">
               Cleaning silver at home
             </h2>
           </div>
@@ -150,13 +150,13 @@ export default async function JewelleryCarePage({ params }: Props) {
                 key={s.title}
                 className="relative rounded-2xl bg-white border border-[var(--color-lavender)] p-6"
               >
-                <span className="font-wittgenstein text-[32px] font-bold text-[var(--color-gold)] leading-none">
+                <span className="font-wittgenstein text-[2rem] font-bold text-[var(--color-gold)] leading-none">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="font-wittgenstein text-[17px] font-semibold text-[var(--color-plum)] mt-3 mb-1.5">
+                <h3 className="font-wittgenstein text-[1.0625rem] font-semibold text-[var(--color-plum)] mt-3 mb-1.5">
                   {s.title}
                 </h3>
-                <p className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                <p className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                   {s.text}
                 </p>
               </div>
@@ -169,10 +169,10 @@ export default async function JewelleryCarePage({ params }: Props) {
       <section className="page-container py-12 small:py-16">
         <div className="grid grid-cols-1 tablet:grid-cols-[260px_1fr] gap-8 small:gap-12 items-start">
           <div>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               Keep it lasting
             </span>
-            <h2 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] mt-2">
+            <h2 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)] mt-2">
               Storing your jewellery
             </h2>
           </div>
@@ -186,7 +186,7 @@ export default async function JewelleryCarePage({ params }: Props) {
                   size={18}
                   className="text-[var(--color-plum)] shrink-0 mt-0.5"
                 />
-                <span className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                <span className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                   {s}
                 </span>
               </li>
@@ -198,16 +198,16 @@ export default async function JewelleryCarePage({ params }: Props) {
       {/* CTA */}
       <section className="page-container pb-14 small:pb-20">
         <div className="rounded-3xl bg-[var(--color-plum)] px-8 small:px-14 py-12 text-center">
-          <h2 className="font-wittgenstein text-[24px] small:text-[30px] font-bold text-white mb-3">
+          <h2 className="font-wittgenstein text-[1.5rem] small:text-[1.875rem] font-bold text-white mb-3">
             Ready to add to your collection?
           </h2>
-          <p className="text-[14px] text-white/70 max-w-lg mx-auto mb-6">
+          <p className="text-[0.875rem] text-white/70 max-w-lg mx-auto mb-6">
             Explore handcrafted sterling silver pieces, made to be worn and
             loved every day.
           </p>
           <LocalizedClientLink
             href="/store"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
           >
             Shop the Collection
             <ArrowRight size={15} />

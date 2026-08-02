@@ -58,7 +58,7 @@ export default function ProductCarousel({
                 <div className="relative rounded-lg overflow-hidden mb-4 aspect-square bg-[var(--color-bg-secondary)]">
                   {badge && (
                     <span
-                      className={`absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                      className={`absolute top-2 left-2 z-10 px-2.5 py-1 rounded-full text-[0.625rem] font-bold uppercase tracking-wide ${
                         badge === "BESTSELLER"
                           ? "bg-emerald-100 text-emerald-800"
                           : badge === "NEW"
@@ -76,7 +76,7 @@ export default function ProductCarousel({
                       src={thumbnail}
                       alt={product.title || ""}
                       fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="object-cover"
                       sizes="280px"
                     />
                   </LocalizedClientLink>
@@ -100,7 +100,7 @@ export default function ProductCarousel({
                       {cheapestPrice?.calculated_price || ""}
                     </span>
                     {cheapestPrice?.price_type === "sale" && (
-                      <span className="text-[13px] line-through text-[var(--color-text-muted)]">
+                      <span className="text-[0.8125rem] line-through text-[var(--color-text-muted)]">
                         {cheapestPrice.original_price}
                       </span>
                     )}

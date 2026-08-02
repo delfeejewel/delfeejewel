@@ -67,6 +67,8 @@ type Detail = {
     title: string
     variant_title: string | null
     variant_sku?: string | null
+    /** Null for service lines (gift wrap, COD fee) — those get no product link. */
+    product_id?: string | null
     quantity: number
     packed: boolean
     product_handle?: string
@@ -371,7 +373,9 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
     !!wallet && !wallet.can_assign && !step("awb_assigned")?.done
 
   return (
-    <Container className="p-0 divide-y">
+    // Marked so order-item-links skips this subtree — the pick list below
+    // renders its own product links.
+    <Container className="p-0 divide-y" data-delfee-widget="dispatch">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-2">
           <Heading level="h2">Dispatch</Heading>
@@ -504,7 +508,23 @@ const OrderDispatch = ({ data }: { data: { id: string } }) => {
                   }
                 />
                 <Text size="small">
-                  {it.title}
+                  {/* Opens the product in a new tab — checking a piece against
+                      its photos or SKU shouldn't lose the dispatch panel's
+                      place. Stops the click reaching the wrapping <label>,
+                      which would otherwise toggle the packed checkbox. */}
+                  {it.product_id ? (
+                    <a
+                      href={`/app/products/${it.product_id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="underline"
+                    >
+                      {it.title}
+                    </a>
+                  ) : (
+                    it.title
+                  )}
                   {it.variant_title ? ` · ${it.variant_title}` : ""}
                   {it.variant_sku ? ` · ${it.variant_sku}` : ""}
                   <span className="text-ui-fg-subtle"> ×{it.quantity}</span>

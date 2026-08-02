@@ -27,7 +27,7 @@ function Row({
   accent?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between text-[13.5px]">
+    <div className="flex items-center justify-between text-[0.84375rem]">
       <span
         className={
           accent
@@ -122,11 +122,11 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
       <div className="h-px w-full bg-[var(--color-border)] my-2" />
 
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-[var(--color-plum)]">
+        <span className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-plum)]">
           Total
         </span>
         <span
-          className="font-wittgenstein text-[24px] font-bold text-[var(--color-plum)] tabular-nums"
+          className="font-wittgenstein text-[1.5rem] font-bold text-[var(--color-plum)] tabular-nums"
           data-testid="cart-total"
           data-value={total || 0}
         >

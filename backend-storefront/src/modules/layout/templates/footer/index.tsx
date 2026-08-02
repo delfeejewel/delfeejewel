@@ -267,7 +267,7 @@ export default async function Footer() {
               height={48}
               className="h-10 small:h-12 w-auto object-contain"
             />
-            <p className="text-[13px] small:text-[14px] text-white/50 mt-3 max-w-sm leading-relaxed">
+            <p className="text-[0.8125rem] small:text-[0.875rem] text-white/50 mt-3 max-w-sm leading-relaxed">
               {tagline}. Timeless pieces crafted with love, designed to be treasured forever.
             </p>
           </div>
@@ -278,7 +278,7 @@ export default async function Footer() {
           {/* Dynamic categories column */}
           {topLevelCategories.length > 0 && (
             <div className="flex flex-col gap-y-3">
-              <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)] mb-1">
+              <span className="text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)] mb-1">
                 Shop by Category
               </span>
               <ul className="space-y-2.5">
@@ -288,7 +288,7 @@ export default async function Footer() {
                 {topLevelCategories.map((c) => (
                   <li key={c.id}>
                     <LocalizedClientLink
-                      className="text-[13px] text-white/50 hover:text-white transition-colors duration-300"
+                      className="text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-300"
                       href={`/categories/${c.handle}`}
                     >
                       {c.name}
@@ -302,14 +302,14 @@ export default async function Footer() {
           {/* Link columns — CMS menus with hardcoded fallback */}
           {linkColumns.map((column) => (
             <div key={column.title} className="flex flex-col gap-y-3">
-              <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)] mb-1">
+              <span className="text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)] mb-1">
                 {column.title}
               </span>
               <ul className="space-y-2.5">
                 {column.links.map((link) => (
                   <li key={`${column.title}-${link.name}`}>
                     <LocalizedClientLink
-                      className="text-[13px] text-white/50 hover:text-white transition-colors duration-300"
+                      className="text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-300"
                       href={link.href}
                     >
                       {link.name}
@@ -322,10 +322,10 @@ export default async function Footer() {
 
           {/* Contact Us column */}
           <div className="flex flex-col gap-y-3 col-span-2 xsmall:col-span-3 small:col-span-1">
-            <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)] mb-1">
+            <span className="text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)] mb-1">
               Contact Us
             </span>
-            <div className="text-[13px] text-white/50 leading-relaxed space-y-2">
+            <div className="text-[0.8125rem] text-white/50 leading-relaxed space-y-2">
               <p className="text-white/80 font-medium">
                 {BRAND.legalName} ({BRAND.name})
               </p>
@@ -455,29 +455,29 @@ export default async function Footer() {
         {/* ─── Copyright ──────────────────────────── */}
         <div className="pb-8 small:pb-10 flex flex-col small:flex-row items-start small:items-center justify-between gap-4 border-t border-white/[0.05] pt-6">
           <p
-            className="text-[11px] text-white/25 tracking-wide"
+            className="text-[0.6875rem] text-white/25 tracking-wide"
             suppressHydrationWarning
           >
             {BRAND.copyright(new Date().getFullYear())}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <LocalizedClientLink href="/privacy-policy" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+            <LocalizedClientLink href="/privacy-policy" className="text-[0.6875rem] text-white/25 hover:text-white/50 transition-colors duration-300">
               Privacy Policy
             </LocalizedClientLink>
             <span className="text-white/10">|</span>
-            <LocalizedClientLink href="/terms-and-conditions" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+            <LocalizedClientLink href="/terms-and-conditions" className="text-[0.6875rem] text-white/25 hover:text-white/50 transition-colors duration-300">
               Terms & Conditions
             </LocalizedClientLink>
             <span className="text-white/10">|</span>
-            <LocalizedClientLink href="/returns-and-exchange" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+            <LocalizedClientLink href="/returns-and-exchange" className="text-[0.6875rem] text-white/25 hover:text-white/50 transition-colors duration-300">
               Refund & Cancellation
             </LocalizedClientLink>
             <span className="text-white/10">|</span>
-            <LocalizedClientLink href="/shipping-policy" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+            <LocalizedClientLink href="/shipping-policy" className="text-[0.6875rem] text-white/25 hover:text-white/50 transition-colors duration-300">
               Shipping Policy
             </LocalizedClientLink>
             <span className="text-white/10">|</span>
-            <LocalizedClientLink href="/contact" className="text-[11px] text-white/25 hover:text-white/50 transition-colors duration-300">
+            <LocalizedClientLink href="/contact" className="text-[0.6875rem] text-white/25 hover:text-white/50 transition-colors duration-300">
               Contact Us
             </LocalizedClientLink>
           </div>

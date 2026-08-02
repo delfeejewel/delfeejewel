@@ -32,7 +32,7 @@ const links = [
 const Help = () => {
   return (
     <div>
-      <h2 className="font-wittgenstein text-[18px] small:text-[22px] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
+      <h2 className="font-wittgenstein text-[1.125rem] small:text-[1.375rem] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
         Need help?
       </h2>
       <div className="grid grid-cols-1 small:grid-cols-2 large:grid-cols-4 gap-3">
@@ -46,10 +46,10 @@ const Help = () => {
               <Icon size={17} />
             </span>
             <span className="flex flex-col">
-              <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+              <span className="text-[0.875rem] font-semibold text-[var(--color-text-primary)]">
                 {label}
               </span>
-              <span className="text-[12px] text-[var(--color-text-muted)]">
+              <span className="text-[0.75rem] text-[var(--color-text-muted)]">
                 {desc}
               </span>
             </span>

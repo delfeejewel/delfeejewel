@@ -59,13 +59,14 @@ export default async function RelatedProducts({
         <span className="text-xs font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
           Curated for you
         </span>
-        <h2 className="font-wittgenstein text-[28px] small:text-[32px] font-semibold text-[var(--color-text-primary)] mt-2">
+        <h2 className="font-wittgenstein text-[1.75rem] small:text-[2rem] font-semibold text-[var(--color-text-primary)] mt-2">
           Complete the Look
         </h2>
       </div>
 
       {/* Product grid */}
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+      {/* One card per row on a phone (< 512px), matching the listing grids. */}
+      <ul className="grid grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((product) => (
           <li key={product.id}>
             <Product region={region} product={product} />

@@ -19,10 +19,10 @@ const GuestTrackPrompt = ({ order }: { order: HttpTypes.StoreOrder }) => {
             <PackageSearch size={18} />
           </span>
           <div>
-            <h3 className="font-wittgenstein text-[17px] small:text-[19px] font-bold text-[var(--color-plum)] leading-snug">
+            <h3 className="font-wittgenstein text-[1.0625rem] small:text-[1.1875rem] font-bold text-[var(--color-plum)] leading-snug">
               Track your order — no account needed
             </h3>
-            <p className="text-[12.5px] small:text-[13px] text-[var(--color-text-secondary)] mt-1 leading-relaxed max-w-xl">
+            <p className="text-[0.78125rem] small:text-[0.8125rem] text-[var(--color-text-secondary)] mt-1 leading-relaxed max-w-xl">
               We&apos;ve emailed a confirmation with a one-tap{" "}
               <span className="font-semibold text-[var(--color-text-primary)]">
                 Track Your Order
@@ -44,7 +44,7 @@ const GuestTrackPrompt = ({ order }: { order: HttpTypes.StoreOrder }) => {
         <div className="shrink-0">
           <LocalizedClientLink
             href="/track-order"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all whitespace-nowrap"
           >
             <PackageSearch size={15} />
             Track Your Order

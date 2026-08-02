@@ -12,6 +12,7 @@ import { productRating, filledStars } from "@lib/util/product-rating"
 import { addWishlistItem, removeWishlistItem } from "@lib/data/wishlist"
 import { addToCart } from "@lib/data/cart"
 import QuickView from "@modules/products/components/quick-view"
+import { useCanHover } from "@lib/hooks/use-can-hover"
 import {
   loadWishlistIds,
   isWishlisted as isWishlistedInStore,
@@ -48,6 +49,9 @@ export default function ProductCard({
   const cardRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { countryCode } = useParams() as { countryCode?: string }
+  // Touch devices fire hover on tap and hold it, which would zoom the photo and
+  // slide the quick-action bar up as the shopper heads for the product page.
+  const canHover = useCanHover()
 
   // Reflect the wishlist the customer already has. Shared across every card on
   // the page, so this costs one request per page load rather than one per card.
@@ -68,9 +72,33 @@ export default function ProductCard({
   const rating = productRating(product.id)
   const stars = filledStars(rating)
 
-  const primaryImage = product.thumbnail || product.images?.[0]?.url || FALLBACK
-  const secondaryImage = product.images?.[1]?.url || primaryImage
+  // Every photo the card can page through: thumbnail first, then the gallery
+  // minus that same file and minus videos (a card must never render an mp4).
+  const slides = (() => {
+    const gallery = (product.images ?? [])
+      .map((i) => i?.url)
+      .filter(
+        (url): url is string =>
+          Boolean(url) && !/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(url)
+      )
+    const first = product.thumbnail || gallery[0] || FALLBACK
+    return [first, ...gallery.filter((url) => url !== first)].slice(0, 5)
+  })()
+
+  const [active, setActive] = useState(0)
+
+  const primaryImage = slides[active] ?? FALLBACK
+  // Hovering still peeks at the *next* photo, as it always has — with dots that
+  // simply means the one after whichever the shopper is currently looking at.
+  const secondaryImage = slides[(active + 1) % slides.length] ?? primaryImage
   const hasSecondary = secondaryImage !== primaryImage
+
+  const goTo = (index: number) => (e: React.MouseEvent) => {
+    // The whole card is a link; without this a dot click opens the PDP.
+    e.preventDefault()
+    e.stopPropagation()
+    setActive(index)
+  }
 
   // 3D tilt effect
   const mouseX = useMotionValue(0)
@@ -79,7 +107,7 @@ export default function ProductCard({
   const rotateY = useTransform(mouseX, [-0.5, 0.5], [-2, 2])
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return
+    if (!canHover || !cardRef.current) return
     const rect = cardRef.current.getBoundingClientRect()
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5)
     mouseY.set((e.clientY - rect.top) / rect.height - 0.5)
@@ -184,7 +212,7 @@ export default function ProductCard({
           boxShadow: hovered ? "0 12px 30px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.03)",
         }}
         onMouseMove={handleMouseMove}
-        onMouseEnter={() => setHovered(true)}
+        onMouseEnter={() => canHover && setHovered(true)}
         onMouseLeave={handleMouseLeave}
       >
         {/* Image */}
@@ -194,10 +222,9 @@ export default function ProductCard({
             alt={product.title || "Product"}
             fill
             className="object-cover transition-all duration-700"
-            style={{
-              opacity: hovered && hasSecondary ? 0 : 1,
-              transform: hovered ? "scale(1.05)" : "scale(1)",
-            }}
+            // No zoom on hover — the photo cross-fades to the next one and
+            // holds its size, so the framing never shifts under the cursor.
+            style={{ opacity: hovered && hasSecondary ? 0 : 1 }}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           {hasSecondary && (
@@ -206,7 +233,7 @@ export default function ProductCard({
               alt={product.title || "Product"}
               fill
               className="object-cover transition-all duration-700"
-              style={{ opacity: hovered ? 1 : 0, transform: hovered ? "scale(1)" : "scale(1.05)" }}
+              style={{ opacity: hovered ? 1 : 0 }}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
           )}
@@ -232,7 +259,7 @@ export default function ProductCard({
               {badges.map((badge, i) => (
                 <motion.span
                   key={badge.label}
-                  className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-sm"
+                  className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-semibold text-white shadow-sm"
                   style={{ background: badge.color }}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -275,7 +302,7 @@ export default function ProductCard({
             transition={{ duration: 0.25 }}
           >
             <motion.button
-              className="px-4 py-2 rounded-full text-[11px] font-semibold text-white flex items-center gap-1.5"
+              className="px-4 py-2 rounded-full text-[0.6875rem] font-semibold text-white flex items-center gap-1.5"
               style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.25)" }}
               onClick={openQuickView}
               whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.25)" }}
@@ -303,12 +330,60 @@ export default function ProductCard({
               )}
             </motion.button>
           </motion.div>
+
+          {/* Image dots. Lifted out of the way while the quick-action bar is
+              showing, so the two never sit on top of each other. */}
+          {slides.length > 1 && (
+            <motion.div
+              className="absolute inset-x-0 bottom-2 z-20 flex items-center justify-center"
+              initial={false}
+              animate={{ y: hovered ? -46 : 0 }}
+              transition={{ duration: 0.25 }}
+              data-testid="card-image-dots"
+            >
+              {/* A pill behind the dots: product photography runs from white
+                  packshots to near-black model shots, and no single dot colour
+                  stays legible across both. */}
+              <span
+                className="flex items-center rounded-full px-1"
+                style={{
+                  background: "rgba(255,255,255,0.62)",
+                  backdropFilter: "blur(6px)",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                }}
+              >
+              {slides.map((_, i) => (
+                // Padding rather than size: the dot stays small while the tap
+                // target clears the touch minimum.
+                <button
+                  key={i}
+                  type="button"
+                  onClick={goTo(i)}
+                  aria-label={`Show image ${i + 1} of ${slides.length}`}
+                  aria-current={i === active}
+                  className="flex items-center justify-center px-1.5 py-2"
+                >
+                  <span
+                    className="block h-1.5 rounded-full transition-all duration-300 ease-out"
+                    style={{
+                      width: i === active ? 16 : 6,
+                      background:
+                        i === active
+                          ? "var(--color-accent)"
+                          : "rgba(0,0,0,0.28)",
+                    }}
+                  />
+                </button>
+              ))}
+              </span>
+            </motion.div>
+          )}
         </div>
 
         {/* Info */}
         <div className="p-3 small:p-4">
           <h3
-            className="text-[13px] small:text-sm font-medium leading-snug mb-1.5 line-clamp-2 transition-colors duration-300"
+            className="text-[0.8125rem] small:text-sm font-medium leading-snug mb-1.5 line-clamp-2 transition-colors duration-300"
             style={{ color: hovered ? "var(--color-accent-dark)" : "var(--color-text-primary)" }}
           >
             {product.title}
@@ -318,7 +393,7 @@ export default function ProductCard({
             {Array.from({ length: 5 }, (_, i) => (
               <Star key={i} size={10} fill={i < stars ? "#f59e0b" : "none"} stroke={i < stars ? "#f59e0b" : "#ddd"} strokeWidth={1.5} />
             ))}
-            <span className="text-[10px] ml-0.5" style={{ color: "var(--color-text-muted)" }}>({rating.toFixed(1)})</span>
+            <span className="text-[0.625rem] ml-0.5" style={{ color: "var(--color-text-muted)" }}>({rating.toFixed(1)})</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -328,7 +403,7 @@ export default function ProductCard({
                   {cheapestPrice.calculated_price}
                 </span>
                 {cheapestPrice.price_type === "sale" && (
-                  <span className="text-[12px] line-through" style={{ color: "var(--color-text-muted)" }}>
+                  <span className="text-[0.75rem] line-through" style={{ color: "var(--color-text-muted)" }}>
                     {cheapestPrice.original_price}
                   </span>
                 )}

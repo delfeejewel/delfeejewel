@@ -46,11 +46,11 @@ const OrderCard = ({ order }: OrderCardProps) => {
         {/* Top row — order meta + status */}
         <div className="flex flex-wrap justify-between items-start gap-4 mb-7">
           <div className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-plum)]">
+            <span className="text-[0.75rem] font-bold uppercase tracking-wider text-[var(--color-plum)]">
               Order #<span data-testid="order-display-id">{order.display_id}</span>
             </span>
             <span
-              className="text-[13px] text-[var(--color-text-muted)]"
+              className="text-[0.8125rem] text-[var(--color-text-muted)]"
               data-testid="order-created-at"
             >
               Placed on{" "}
@@ -65,7 +65,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
             className={`flex items-center gap-2 px-4 py-1.5 rounded-full ${meta.cls}`}
           >
             <StatusIcon size={15} />
-            <span className="text-[11px] font-bold uppercase tracking-widest">
+            <span className="text-[0.6875rem] font-bold uppercase tracking-widest">
               {meta.label}
             </span>
           </div>
@@ -88,10 +88,10 @@ const OrderCard = ({ order }: OrderCardProps) => {
 
           {/* Product info */}
           <div className="tablet:col-span-6">
-            <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-text-primary)] mb-1">
+            <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-text-primary)] mb-1">
               {firstItem?.title || "Order items"}
             </h3>
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[0.8125rem] text-[var(--color-text-muted)]">
               {itemCount} {itemCount === 1 ? "item" : "items"}
               {order.items && order.items.length > 1
                 ? ` across ${order.items.length} products`
@@ -101,11 +101,11 @@ const OrderCard = ({ order }: OrderCardProps) => {
 
           {/* Order total */}
           <div className="tablet:col-span-4 flex flex-col tablet:items-end gap-0.5">
-            <span className="text-[12px] text-[var(--color-text-muted)]">
+            <span className="text-[0.75rem] text-[var(--color-text-muted)]">
               Order Total
             </span>
             <span
-              className="font-wittgenstein text-[22px] font-bold text-[var(--color-plum)]"
+              className="font-wittgenstein text-[1.375rem] font-bold text-[var(--color-plum)]"
               data-testid="order-amount"
             >
               {convertToLocale({
@@ -120,7 +120,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
         <div className="flex flex-wrap items-center gap-3 pt-5 border-t border-[var(--color-lavender)]">
           <LocalizedClientLink
             href={`/account/orders/details/${order.id}`}
-            className="px-6 py-2.5 rounded-xl bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold hover:brightness-105 active:scale-95 transition-all"
+            className="px-6 py-2.5 rounded-xl bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold hover:brightness-105 active:scale-95 transition-all"
             data-testid="order-details-link"
           >
             View Details
@@ -130,7 +130,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
             href={`/api/orders/${order.id}/invoice`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] transition-colors"
+            className="ml-auto flex items-center gap-2 text-[0.8125rem] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] transition-colors"
           >
             <Download size={16} />
             Invoice

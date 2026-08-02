@@ -45,7 +45,7 @@ function RatingBar({
   const pct = total > 0 ? (count / total) * 100 : 0
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[12px] text-[var(--color-text-secondary)] w-8 text-right">
+      <span className="text-[0.75rem] text-[var(--color-text-secondary)] w-8 text-right">
         {stars}&#9733;
       </span>
       <div className="flex-1 h-2 rounded-full bg-[var(--color-lavender)] overflow-hidden">
@@ -54,7 +54,7 @@ function RatingBar({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[11px] text-[var(--color-text-muted)] w-8">
+      <span className="text-[0.6875rem] text-[var(--color-text-muted)] w-8">
         {count}
       </span>
     </div>
@@ -77,7 +77,7 @@ function Avatar({ name, index }: { name: string; index: number }) {
   const bg = AVATAR_COLORS[index % AVATAR_COLORS.length]
   return (
     <div
-      className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0"
+      className="w-9 h-9 rounded-full flex items-center justify-center text-[0.75rem] font-bold text-white shrink-0"
       style={{ background: bg }}
     >
       {initials}
@@ -115,12 +115,12 @@ function ReviewCard({
     >
       <div className="flex items-center justify-between mb-3">
         <Stars rating={review.rating} />
-        <span className="text-[11px] text-[var(--color-text-muted)]">
+        <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
           {fmtDate(review.created_at)}
         </span>
       </div>
 
-      <p className="text-[13px] leading-[1.7] text-[var(--color-text-secondary)] mb-4">
+      <p className="text-[0.8125rem] leading-[1.7] text-[var(--color-text-secondary)] mb-4">
         {review.content}
       </p>
 
@@ -128,10 +128,10 @@ function ReviewCard({
         <div className="flex items-center gap-3">
           <Avatar name={review.customer_name} index={index} />
           <div>
-            <span className="text-[12px] font-semibold text-[var(--color-text-primary)] block leading-tight">
+            <span className="text-[0.75rem] font-semibold text-[var(--color-text-primary)] block leading-tight">
               {review.customer_name}
             </span>
-            <span className="flex items-center gap-1 text-[10px] text-green-600 font-medium mt-0.5">
+            <span className="flex items-center gap-1 text-[0.625rem] text-green-600 font-medium mt-0.5">
               <CheckCircle size={10} /> Verified Purchase
             </span>
           </div>
@@ -189,7 +189,7 @@ export default function ProductReviews({
           <span className="text-xs font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
             What customers say
           </span>
-          <h2 className="font-wittgenstein text-[22px] small:text-[28px] medium:text-[32px] font-semibold text-[var(--color-text-primary)] mt-2">
+          <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.75rem] medium:text-[2rem] font-semibold text-[var(--color-text-primary)] mt-2">
             Customer Reviews
           </h2>
         </div>
@@ -200,10 +200,10 @@ export default function ProductReviews({
               className="text-[var(--color-plum)]"
             />
           </div>
-          <p className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)]">
+          <p className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)]">
             No reviews yet
           </p>
-          <p className="text-[13.5px] text-[var(--color-text-muted)] max-w-sm">
+          <p className="text-[0.84375rem] text-[var(--color-text-muted)] max-w-sm">
             This piece is waiting for its first review. Verified reviews appear
             here once customers receive their order.
           </p>
@@ -219,7 +219,7 @@ export default function ProductReviews({
         <span className="text-xs font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
           What customers say
         </span>
-        <h2 className="font-wittgenstein text-[22px] small:text-[28px] medium:text-[32px] font-semibold text-[var(--color-text-primary)] mt-2">
+        <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.75rem] medium:text-[2rem] font-semibold text-[var(--color-text-primary)] mt-2">
           Customer Reviews
         </h2>
       </div>
@@ -232,13 +232,13 @@ export default function ProductReviews({
         transition={{ duration: 0.5 }}
       >
         <div className="flex flex-col items-center justify-center text-center">
-          <span className="font-wittgenstein text-[52px] font-bold text-[var(--color-text-primary)] leading-none">
+          <span className="font-wittgenstein text-[3.25rem] font-bold text-[var(--color-text-primary)] leading-none">
             {avgRating}
           </span>
           <div className="mt-2 mb-1">
             <Stars rating={Math.round(Number(avgRating))} size={18} />
           </div>
-          <span className="text-[13px] text-[var(--color-text-muted)]">
+          <span className="text-[0.8125rem] text-[var(--color-text-muted)]">
             {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
           </span>
         </div>
@@ -268,7 +268,7 @@ export default function ProductReviews({
             size={14}
             className="text-[var(--color-text-muted)]"
           />
-          <span className="text-[12px] text-[var(--color-text-muted)]">
+          <span className="text-[0.75rem] text-[var(--color-text-muted)]">
             {filterRating
               ? `Showing ${filterRating}★ reviews`
               : `All reviews`}
@@ -283,14 +283,14 @@ export default function ProductReviews({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-[var(--color-text-muted)]">
+          <span className="text-[0.6875rem] text-[var(--color-text-muted)]">
             Sort:
           </span>
           {(["recent", "highest", "lowest"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSortBy(s)}
-              className={`text-[11px] font-semibold px-3 py-1 rounded-full transition-all duration-200 ${
+              className={`text-[0.6875rem] font-semibold px-3 py-1 rounded-full transition-all duration-200 ${
                 sortBy === s
                   ? "bg-[var(--color-plum)] text-white"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-lavender)]"
@@ -320,7 +320,7 @@ export default function ProductReviews({
         {hasMore && (
           <button
             onClick={() => setVisibleCount((c) => c + REVIEWS_PER_PAGE)}
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-[13px] font-semibold border border-[var(--color-lavender)] text-[var(--color-text-secondary)] hover:border-[var(--color-plum)] hover:text-[var(--color-plum)] transition-all duration-200"
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-[0.8125rem] font-semibold border border-[var(--color-lavender)] text-[var(--color-text-secondary)] hover:border-[var(--color-plum)] hover:text-[var(--color-plum)] transition-all duration-200"
           >
             Show More Reviews <ChevronDown size={14} />
           </button>
@@ -328,12 +328,12 @@ export default function ProductReviews({
         {!hasMore && visibleCount > REVIEWS_PER_PAGE && (
           <button
             onClick={() => setVisibleCount(REVIEWS_PER_PAGE)}
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-[13px] font-semibold border border-[var(--color-lavender)] text-[var(--color-text-secondary)] hover:border-[var(--color-plum)] hover:text-[var(--color-plum)] transition-all duration-200"
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-lg text-[0.8125rem] font-semibold border border-[var(--color-lavender)] text-[var(--color-text-secondary)] hover:border-[var(--color-plum)] hover:text-[var(--color-plum)] transition-all duration-200"
           >
             Show Less <ChevronUp size={14} />
           </button>
         )}
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-2">
+        <p className="text-[0.6875rem] text-[var(--color-text-muted)] mt-2">
           Showing {visibleReviews.length} of {filteredReviews.length}
         </p>
       </div>

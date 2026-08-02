@@ -91,7 +91,7 @@ export default function FaqAccordion({
               aria-expanded={isOpen}
               className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
             >
-              <span className="text-[14px] small:text-[15px] font-semibold text-[var(--color-text-primary)]">
+              <span className="text-[0.875rem] small:text-[0.9375rem] font-semibold text-[var(--color-text-primary)]">
                 {item.question}
               </span>
               <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center text-[var(--color-plum)]">
@@ -99,7 +99,7 @@ export default function FaqAccordion({
               </span>
             </button>
             {isOpen && (
-              <div className="px-5 pb-5 text-[14px] leading-[1.7] text-[var(--color-text-secondary)]">
+              <div className="px-5 pb-5 text-[0.875rem] leading-[1.7] text-[var(--color-text-secondary)]">
                 <AnswerBody answer={item.answer} />
               </div>
             )}

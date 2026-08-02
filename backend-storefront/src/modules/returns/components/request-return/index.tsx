@@ -175,10 +175,10 @@ export default function RequestReturn({ order }: Props) {
             <Undo2 className="w-5 h-5 text-[var(--color-plum)]" />
           </div>
           <div className="flex-1">
-            <p className="font-wittgenstein text-[16px] font-semibold text-[var(--color-plum)]">
+            <p className="font-wittgenstein text-[1rem] font-semibold text-[var(--color-plum)]">
               Not quite right? Start a return or exchange.
             </p>
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
+            <p className="text-[0.8125rem] text-[var(--color-text-muted)] mt-0.5">
               {daysRemaining > 0
                 ? `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left in your return window.`
                 : "Return window closed."}
@@ -187,7 +187,7 @@ export default function RequestReturn({ order }: Props) {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="px-5 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[11.5px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+            className="px-5 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.71875rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
             data-testid="request-return-button"
           >
             Return / Exchange
@@ -216,12 +216,12 @@ export default function RequestReturn({ order }: Props) {
             {done ? (
               <div className="p-8 text-center flex flex-col items-center gap-3">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
-                <h3 className="font-wittgenstein text-[22px] font-semibold text-[var(--color-plum)]">
+                <h3 className="font-wittgenstein text-[1.375rem] font-semibold text-[var(--color-plum)]">
                   {requestType === "exchange"
                     ? "Exchange request submitted"
                     : "Return request submitted"}
                 </h3>
-                <p className="text-[13.5px] text-[var(--color-text-secondary)] max-w-sm">
+                <p className="text-[0.84375rem] text-[var(--color-text-secondary)] max-w-sm">
                   We&apos;ll review and email you next steps within 1–2
                   business days. You can track its status under{" "}
                   <strong>My Account → Returns</strong>.
@@ -235,7 +235,7 @@ export default function RequestReturn({ order }: Props) {
                     setReason("")
                     setMessage("")
                   }}
-                  className="mt-2 px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[11.5px] font-bold uppercase tracking-wider"
+                  className="mt-2 px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.71875rem] font-bold uppercase tracking-wider"
                 >
                   Done
                 </button>
@@ -243,12 +243,12 @@ export default function RequestReturn({ order }: Props) {
             ) : (
               <>
                 <header className="px-6 small:px-7 pt-6 pb-4 border-b border-[var(--color-border)]">
-                  <h3 className="font-wittgenstein text-[22px] font-bold text-[var(--color-plum)]">
+                  <h3 className="font-wittgenstein text-[1.375rem] font-bold text-[var(--color-plum)]">
                     {requestType === "exchange"
                       ? "Request an Exchange"
                       : "Request a Return"}
                   </h3>
-                  <p className="text-[12.5px] text-[var(--color-text-muted)] mt-1">
+                  <p className="text-[0.78125rem] text-[var(--color-text-muted)] mt-1">
                     {requestType === "exchange"
                       ? "Swap for a different size or colour of the same product."
                       : "Pick the items you'd like to send back."}
@@ -268,7 +268,7 @@ export default function RequestReturn({ order }: Props) {
                         role="tab"
                         aria-selected={requestType === t}
                         onClick={() => setRequestType(t)}
-                        className={`px-4 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-wider transition-all ${
+                        className={`px-4 py-1.5 rounded-full text-[0.71875rem] font-bold uppercase tracking-wider transition-all ${
                           requestType === t
                             ? "bg-[var(--color-plum)] text-white"
                             : "text-[var(--color-text-secondary)] hover:text-[var(--color-plum)]"
@@ -314,10 +314,10 @@ export default function RequestReturn({ order }: Props) {
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13.5px] font-semibold text-[var(--color-text-primary)] capitalize truncate">
+                              <p className="text-[0.84375rem] font-semibold text-[var(--color-text-primary)] capitalize truncate">
                                 {it.title}
                               </p>
-                              <p className="text-[12px] text-[var(--color-text-muted)]">
+                              <p className="text-[0.75rem] text-[var(--color-text-muted)]">
                                 Bought: {it.quantity} ·{" "}
                                 {convertToLocale({
                                   amount: Number(it.unit_price) || 0,
@@ -340,7 +340,7 @@ export default function RequestReturn({ order }: Props) {
                                 >
                                   <Minus size={11} />
                                 </button>
-                                <span className="w-6 text-center text-[13px] font-semibold tabular-nums">
+                                <span className="w-6 text-center text-[0.8125rem] font-semibold tabular-nums">
                                   {sel.quantity}
                                 </span>
                                 <button
@@ -358,15 +358,15 @@ export default function RequestReturn({ order }: Props) {
                           </label>
                           {requestType === "exchange" && checked && (
                             <div className="px-3 pb-3 -mt-1">
-                              <label className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-1.5 block">
+                              <label className="text-[0.65625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-1.5 block">
                                 Exchange for
                               </label>
                               {variantsLoading ? (
-                                <p className="text-[12px] text-[var(--color-text-muted)] italic">
+                                <p className="text-[0.75rem] text-[var(--color-text-muted)] italic">
                                   Loading options…
                                 </p>
                               ) : eligible.length === 0 ? (
-                                <p className="text-[12px] text-amber-700">
+                                <p className="text-[0.75rem] text-amber-700">
                                   No same-price variants in stock right now. Try
                                   a refund instead.
                                 </p>
@@ -383,7 +383,7 @@ export default function RequestReturn({ order }: Props) {
                                       },
                                     }))
                                   }
-                                  className="w-full px-3 py-2 rounded-lg text-[13px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                                  className="w-full px-3 py-2 rounded-lg text-[0.8125rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
                                 >
                                   <option value="">Pick a variant…</option>
                                   {eligible.map((v) => (
@@ -402,13 +402,13 @@ export default function RequestReturn({ order }: Props) {
 
                   {/* Reason */}
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-1.5 block">
+                    <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-1.5 block">
                       Reason
                     </label>
                     <select
                       value={reason}
                       onChange={(e) => setReason(e.target.value as ReturnReason)}
-                      className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                      className="w-full px-3.5 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
                     >
                       <option value="">Pick a reason…</option>
                       {Object.entries(RETURN_REASON_LABELS).map(([k, label]) => (
@@ -421,7 +421,7 @@ export default function RequestReturn({ order }: Props) {
 
                   {/* Message */}
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-1.5 block">
+                    <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-1.5 block">
                       Additional details (optional)
                     </label>
                     <textarea
@@ -430,16 +430,16 @@ export default function RequestReturn({ order }: Props) {
                       rows={3}
                       maxLength={500}
                       placeholder="Anything we should know?"
-                      className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
+                      className="w-full px-3.5 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
                     />
                   </div>
 
                   {total > 0 && requestType === "refund" && (
                     <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-secondary)]">
-                      <span className="text-[12.5px] text-[var(--color-text-secondary)]">
+                      <span className="text-[0.78125rem] text-[var(--color-text-secondary)]">
                         Estimated refund
                       </span>
-                      <span className="text-[15px] font-bold text-[var(--color-plum)] tabular-nums">
+                      <span className="text-[0.9375rem] font-bold text-[var(--color-plum)] tabular-nums">
                         {convertToLocale({
                           amount: total,
                           currency_code: order.currency_code,
@@ -454,7 +454,7 @@ export default function RequestReturn({ order }: Props) {
                         size={14}
                         className="text-red-500 mt-0.5 shrink-0"
                       />
-                      <p className="text-[12.5px] text-red-600">{error}</p>
+                      <p className="text-[0.78125rem] text-red-600">{error}</p>
                     </div>
                   )}
                 </div>
@@ -464,7 +464,7 @@ export default function RequestReturn({ order }: Props) {
                     type="button"
                     onClick={() => setOpen(false)}
                     disabled={submitting}
-                    className="flex-1 py-3 rounded-full border border-[var(--color-border)] text-[12px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] transition-all"
+                    className="flex-1 py-3 rounded-full border border-[var(--color-border)] text-[0.75rem] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] transition-all"
                   >
                     Cancel
                   </button>
@@ -472,7 +472,7 @@ export default function RequestReturn({ order }: Props) {
                     type="button"
                     onClick={submit}
                     disabled={submitting}
-                    className="flex-1 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-50 transition-all"
+                    className="flex-1 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-50 transition-all"
                   >
                     {submitting
                       ? "Submitting..."

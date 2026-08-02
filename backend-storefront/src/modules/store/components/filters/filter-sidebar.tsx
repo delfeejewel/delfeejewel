@@ -35,14 +35,14 @@ function PriceFilter({
       {/* Current range display */}
       <div className="flex items-center justify-between mb-4">
         <div
-          className="px-3 py-1.5 rounded-lg text-[13px] font-medium"
+          className="px-3 py-1.5 rounded-lg text-[0.8125rem] font-medium"
           style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-primary)" }}
         >
           ₹{current[0].toLocaleString("en-IN")}
         </div>
         <div className="h-[1px] flex-1 mx-3" style={{ background: "var(--color-border)" }} />
         <div
-          className="px-3 py-1.5 rounded-lg text-[13px] font-medium"
+          className="px-3 py-1.5 rounded-lg text-[0.8125rem] font-medium"
           style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-primary)" }}
         >
           {current[1] >= max ? "₹50,000+" : `₹${current[1].toLocaleString("en-IN")}`}
@@ -89,7 +89,7 @@ function PriceFilter({
             return (
               <button
                 key={preset.label}
-                className="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
+                className="px-2.5 py-1 rounded-full text-[0.6875rem] font-medium transition-all duration-200"
                 style={{
                   background: active ? "var(--color-accent)" : "transparent",
                   color: active ? "#fff" : "var(--color-text-secondary)",
@@ -130,7 +130,7 @@ function ChipFilter({
         return (
           <button
             key={opt.value}
-            className="px-3 py-1.5 rounded-full text-[12px] font-medium transition-all duration-200 hover:shadow-sm"
+            className="px-3 py-1.5 rounded-full text-[0.75rem] font-medium transition-all duration-200 hover:shadow-sm"
             style={{
               background: active ? "var(--color-accent)" : "var(--color-bg-secondary)",
               color: active ? "#fff" : "var(--color-text-secondary)",
@@ -164,7 +164,7 @@ function GridFilter({
           <button
             key={opt.value}
             onClick={() => onToggle(opt.value)}
-            className="h-9 rounded-lg text-[12px] font-medium transition-all duration-150 hover:shadow-sm"
+            className="h-9 rounded-lg text-[0.75rem] font-medium transition-all duration-150 hover:shadow-sm"
             style={{
               background: active ? "var(--color-accent)" : "var(--color-bg-secondary)",
               color: active ? "#fff" : "var(--color-text-secondary)",
@@ -222,7 +222,7 @@ function CheckboxFilter({
                 )}
               </div>
               <span
-                className="text-[13px]"
+                className="text-[0.8125rem]"
                 style={{ color: checked ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}
               >
                 {opt.label}
@@ -233,7 +233,7 @@ function CheckboxFilter({
       </div>
       {hasMore && (
         <button
-          className="text-[12px] font-medium mt-1 pl-2"
+          className="text-[0.75rem] font-medium mt-1 pl-2"
           style={{ color: "var(--color-accent-dark)", background: "none", border: "none", cursor: "pointer" }}
           onClick={() => setShowAll(!showAll)}
         >
@@ -268,7 +268,7 @@ function RatingFilter({
                 <Star key={i} size={14} fill={i < min ? "#f59e0b" : "none"} stroke={i < min ? "#f59e0b" : "#ddd"} strokeWidth={1.5} />
               ))}
             </div>
-            <span className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>& above</span>
+            <span className="text-[0.75rem]" style={{ color: "var(--color-text-muted)" }}>& above</span>
           </button>
         )
       })}
@@ -314,7 +314,7 @@ function ColorDotFilter({
                 boxShadow: active ? "0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-accent)" : opt.value === "white" ? "inset 0 0 0 1px #ddd" : "none",
               }}
             />
-            <span className="text-[10px]" style={{ color: active ? "var(--color-text-primary)" : "var(--color-text-muted)" }}>
+            <span className="text-[0.625rem]" style={{ color: active ? "var(--color-text-primary)" : "var(--color-text-muted)" }}>
               {opt.label.split(" / ")[0]}
             </span>
           </button>
@@ -347,7 +347,7 @@ function ToggleFilter({
     >
       <div className="flex items-center gap-2">
         {icon}
-        <span className="text-[13px] font-medium" style={{ color: active ? "var(--color-accent-dark)" : "var(--color-text-secondary)" }}>
+        <span className="text-[0.8125rem] font-medium" style={{ color: active ? "var(--color-accent-dark)" : "var(--color-text-secondary)" }}>
           {label}
         </span>
       </div>
@@ -398,12 +398,12 @@ function FilterGroupWrapper({
         style={{ background: "none", border: "none", cursor: "pointer" }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold" style={{ color: "var(--color-text-primary)" }}>
+          <span className="text-[0.8125rem] font-semibold" style={{ color: "var(--color-text-primary)" }}>
             {group.label}
           </span>
           {hasActive && (
             <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold"
               style={{ background: "var(--color-accent)", color: "#fff" }}
             >
               {(values as string[]).length}
@@ -521,11 +521,11 @@ function ActiveFilterPills({
   return (
     <div className="mb-4 p-3 rounded-xl" style={{ background: "var(--color-bg-secondary)" }}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
           Active Filters
         </span>
         <button
-          className="flex items-center gap-1 text-[11px] font-medium"
+          className="flex items-center gap-1 text-[0.6875rem] font-medium"
           style={{ color: "var(--color-accent-dark)", background: "none", border: "none", cursor: "pointer" }}
           onClick={onClear}
         >
@@ -537,7 +537,7 @@ function ActiveFilterPills({
         {pills.map((pill) => (
           <button
             key={`${pill.key}-${pill.value}`}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 hover:opacity-80"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6875rem] font-medium transition-all duration-200 hover:opacity-80"
             style={{
               background: "var(--color-bg-primary)",
               border: "1px solid var(--color-border)",
@@ -607,7 +607,7 @@ export default function FilterSidebar({
           <span className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Filters</span>
           {activeCount > 0 && (
             <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold"
               style={{ background: "var(--color-accent)", color: "#fff" }}
             >
               {activeCount}
@@ -616,7 +616,7 @@ export default function FilterSidebar({
         </div>
         {activeCount > 0 && (
           <button
-            className="flex items-center gap-1 text-[12px] font-medium"
+            className="flex items-center gap-1 text-[0.75rem] font-medium"
             style={{ color: "var(--color-accent-dark)", background: "none", border: "none", cursor: "pointer" }}
             onClick={() => onChange({})}
           >
@@ -628,7 +628,7 @@ export default function FilterSidebar({
 
       {/* Count */}
       {productCount !== undefined && (
-        <div className="text-[12px] mb-3" style={{ color: "var(--color-text-muted)" }}>
+        <div className="text-[0.75rem] mb-3" style={{ color: "var(--color-text-muted)" }}>
           Showing {productCount} product{productCount !== 1 ? "s" : ""}
         </div>
       )}
@@ -677,7 +677,7 @@ export default function FilterSidebar({
         <SlidersHorizontal size={16} />
         Filters
         {activeCount > 0 && (
-          <span className="bg-white text-[11px] w-5 h-5 rounded-full flex items-center justify-center font-bold" style={{ color: "var(--color-accent-dark)" }}>
+          <span className="bg-white text-[0.6875rem] w-5 h-5 rounded-full flex items-center justify-center font-bold" style={{ color: "var(--color-accent-dark)" }}>
             {activeCount}
           </span>
         )}

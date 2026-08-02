@@ -19,7 +19,7 @@ const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
   })
 
   return (
-    <div className="text-[13px] small:text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
+    <div className="text-[0.8125rem] small:text-[0.875rem] text-[var(--color-text-secondary)] leading-relaxed">
       <p>
         We&apos;ve sent the order confirmation to{" "}
         <span

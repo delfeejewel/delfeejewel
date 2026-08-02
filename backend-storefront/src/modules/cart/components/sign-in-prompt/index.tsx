@@ -10,17 +10,17 @@ const SignInPrompt = () => {
           <UserRound size={18} strokeWidth={1.6} className="text-[var(--color-plum)]" />
         </div>
         <div>
-          <p className="font-wittgenstein text-[16px] font-semibold text-[var(--color-plum)] leading-tight">
+          <p className="font-wittgenstein text-[1rem] font-semibold text-[var(--color-plum)] leading-tight">
             Already have an account?
           </p>
-          <p className="text-[12.5px] text-[var(--color-text-secondary)] mt-0.5">
+          <p className="text-[0.78125rem] text-[var(--color-text-secondary)] mt-0.5">
             Sign in to use your saved addresses and reorder faster.
           </p>
         </div>
       </div>
       <LocalizedClientLink
         href="/account"
-        className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[11.5px] font-bold uppercase tracking-wider text-[var(--color-plum)] border-2 border-[var(--color-plum)] hover:bg-[var(--color-plum)] hover:text-white transition-all shrink-0"
+        className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[0.71875rem] font-bold uppercase tracking-wider text-[var(--color-plum)] border-2 border-[var(--color-plum)] hover:bg-[var(--color-plum)] hover:text-white transition-all shrink-0"
         data-testid="sign-in-button"
       >
         Sign in

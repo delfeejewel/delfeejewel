@@ -136,10 +136,10 @@ const Payment = ({
     >
       <div className="flex flex-row items-center justify-between mb-5">
         <div className="flex flex-col">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
             Step 2
           </span>
-          <h2 className="font-wittgenstein text-[22px] small:text-[24px] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
+          <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.5rem] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
             Payment
             {!isOpen && paymentReady && (
               <CheckCircle2
@@ -153,7 +153,7 @@ const Payment = ({
         {!isOpen && paymentReady && (
           <button
             onClick={handleEdit}
-            className="text-[12px] font-semibold uppercase tracking-wider text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] underline-offset-4 hover:underline"
+            className="text-[0.75rem] font-semibold uppercase tracking-wider text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] underline-offset-4 hover:underline"
             data-testid="edit-payment-button"
           >
             Edit
@@ -194,7 +194,7 @@ const Payment = ({
           )}
 
           {!paidByGiftcard && !codAllowed && (
-            <Text className="text-[12px] text-ui-fg-subtle mt-3">
+            <Text className="text-[0.75rem] text-ui-fg-subtle mt-3">
               Cash on Delivery isn’t available on orders above ₹
               {codMaxOrderValue.toLocaleString("en-IN")}.
             </Text>
@@ -210,7 +210,7 @@ const Payment = ({
             onClick={handleSubmit}
             disabled={isLoading || (!selectedPaymentMethod && !paidByGiftcard)}
             data-testid="submit-payment-button"
-            className="mt-6 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="mt-6 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? "Working…" : "Continue to review"}
           </button>

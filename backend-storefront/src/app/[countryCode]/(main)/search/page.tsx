@@ -41,11 +41,11 @@ export default async function SearchPage({ params, searchParams }: Props) {
     <div className="bg-[var(--color-bg-primary)] font-outfit min-h-screen">
       <div className="content-container py-8 small:py-10">
         <header className="mb-6">
-          <h1 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)]">
+          <h1 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)]">
             {query ? "Search Results" : "Search"}
           </h1>
           {query && (
-            <p className="text-[14px] text-[var(--color-text-muted)] mt-1">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] mt-1">
               Showing results for{" "}
               <span className="font-semibold text-[var(--color-text-secondary)]">
                 &ldquo;{query}&rdquo;
@@ -66,10 +66,10 @@ export default async function SearchPage({ params, searchParams }: Props) {
             <div className="w-16 h-16 rounded-full bg-[var(--color-lavender)] flex items-center justify-center mb-5">
               <SearchIcon size={28} className="text-[var(--color-plum)]" />
             </div>
-            <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-2">
+            <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-2">
               What are you looking for?
             </h2>
-            <p className="text-[14px] text-[var(--color-text-muted)] mb-6 max-w-sm">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-6 max-w-sm">
               Use the search bar above, or start with one of these popular
               searches.
             </p>
@@ -78,7 +78,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
                 <LocalizedClientLink
                   key={term}
                   href={`/search?q=${encodeURIComponent(term)}`}
-                  className="px-4 py-2 rounded-full text-[13px] font-medium border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50 hover:text-[var(--color-plum)] transition-colors"
+                  className="px-4 py-2 rounded-full text-[0.8125rem] font-medium border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50 hover:text-[var(--color-plum)] transition-colors"
                 >
                   {term}
                 </LocalizedClientLink>

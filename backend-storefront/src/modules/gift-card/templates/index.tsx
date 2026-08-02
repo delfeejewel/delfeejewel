@@ -106,27 +106,27 @@ export default function GiftCardTemplate({
           <div className="relative h-[2px] w-full [background:linear-gradient(90deg,transparent,var(--color-gold),transparent)]" />
           <div className="relative flex items-center gap-3">
             <Sparkles size={18} className="text-[var(--color-gold)]" />
-            <span className="text-[11px] uppercase tracking-[0.2em] text-white/70">
+            <span className="text-[0.6875rem] uppercase tracking-[0.2em] text-white/70">
               {BRAND.name}
             </span>
           </div>
           <div className="relative flex-1 flex flex-col items-center justify-center text-center gap-3">
             <Gift size={56} className="text-[var(--color-gold)]" strokeWidth={1} />
-            <p className="font-wittgenstein text-[40px] small:text-[52px] font-bold leading-tight">
+            <p className="font-wittgenstein text-[2.5rem] small:text-[3.25rem] font-bold leading-tight">
               Gift Card
             </p>
             {selected && (
-              <p className="font-wittgenstein text-[28px] text-[var(--color-gold)] font-semibold">
+              <p className="font-wittgenstein text-[1.75rem] text-[var(--color-gold)] font-semibold">
                 {fmt(value)}
               </p>
             )}
             {recipientName && (
-              <p className="text-[13px] text-white/70 mt-2">
+              <p className="text-[0.8125rem] text-white/70 mt-2">
                 For <span className="text-white font-medium">{recipientName}</span>
               </p>
             )}
           </div>
-          <div className="relative text-[10.5px] uppercase tracking-[0.2em] text-white/40 text-center">
+          <div className="relative text-[0.65625rem] uppercase tracking-[0.2em] text-white/40 text-center">
             Delivered instantly · Valid for 1 year
           </div>
         </div>
@@ -134,13 +134,13 @@ export default function GiftCardTemplate({
         {/* ── Form ───────────────────────────────────── */}
         <div className="flex flex-col gap-6">
           <header>
-            <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
               Digital · Instant delivery
             </span>
-            <h1 className="font-wittgenstein text-[32px] tablet:text-[44px] font-bold text-[var(--color-plum)] mt-2 mb-2">
+            <h1 className="font-wittgenstein text-[2rem] tablet:text-[2.75rem] font-bold text-[var(--color-plum)] mt-2 mb-2">
               The Gift of Choice
             </h1>
-            <p className="text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+            <p className="text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)]">
               {product.description ||
                 "Let them pick the piece they'll treasure forever. Delivered by email, redeemable anytime within a year."}
             </p>
@@ -148,7 +148,7 @@ export default function GiftCardTemplate({
 
           {/* Denomination chips */}
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2.5">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2.5">
               Choose value
             </p>
             <div className="grid grid-cols-2 xsmall:grid-cols-4 gap-2.5">
@@ -159,7 +159,7 @@ export default function GiftCardTemplate({
                     key={v.id}
                     type="button"
                     onClick={() => setVariantId(v.id)}
-                    className={`relative py-3 rounded-xl text-[14px] font-semibold transition-all border ${
+                    className={`relative py-3 rounded-xl text-[0.875rem] font-semibold transition-all border ${
                       active
                         ? "bg-[var(--color-plum)] text-white border-[var(--color-plum)]"
                         : "bg-white text-[var(--color-text-primary)] border-[var(--color-border)] hover:border-[var(--color-plum)]"
@@ -181,7 +181,7 @@ export default function GiftCardTemplate({
           {/* Form */}
           <form onSubmit={submit} className="flex flex-col gap-3.5">
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
+              <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                 <Mail size={11} /> Recipient&apos;s email
               </label>
               <input
@@ -193,13 +193,13 @@ export default function GiftCardTemplate({
                   setError("")
                 }}
                 placeholder="them@example.com"
-                className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
               />
             </div>
 
             <div className="grid grid-cols-1 xsmall:grid-cols-2 gap-3.5">
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
+                <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                   <User size={11} /> Recipient&apos;s name
                 </label>
                 <input
@@ -207,11 +207,11 @@ export default function GiftCardTemplate({
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder="Optional"
-                  className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
+                <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                   <User size={11} /> From
                 </label>
                 <input
@@ -219,13 +219,13 @@ export default function GiftCardTemplate({
                   value={purchaserName}
                   onChange={(e) => setPurchaserName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
+              <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                 <MessageSquare size={11} /> Personal message
               </label>
               <textarea
@@ -234,21 +234,21 @@ export default function GiftCardTemplate({
                 rows={3}
                 maxLength={250}
                 placeholder="Optional — a few words for them"
-                className="w-full px-3.5 py-2.5 rounded-lg text-[13.5px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[0.84375rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all resize-y"
               />
-              <p className="text-[10.5px] text-[var(--color-text-muted)] mt-1 text-right">
+              <p className="text-[0.65625rem] text-[var(--color-text-muted)] mt-1 text-right">
                 {message.length}/250
               </p>
             </div>
 
             {error && (
-              <p className="text-[12.5px] text-red-500">{error}</p>
+              <p className="text-[0.78125rem] text-red-500">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={status === "adding" || !variantId}
-              className={`inline-flex items-center justify-center gap-2 py-3.5 rounded-full text-[12px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 ${
+              className={`inline-flex items-center justify-center gap-2 py-3.5 rounded-full text-[0.75rem] font-bold uppercase tracking-wider transition-all disabled:opacity-50 ${
                 status === "done"
                   ? "bg-green-600 text-white"
                   : "bg-[var(--color-gold)] text-[var(--color-plum-deep)] hover:brightness-105 active:scale-[0.98]"
@@ -271,24 +271,24 @@ export default function GiftCardTemplate({
 
           {/* How it works */}
           <div className="bg-[var(--color-bg-secondary)] rounded-2xl p-5 small:p-6 border border-[var(--color-border)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-plum)] mb-3">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-plum)] mb-3">
               How it works
             </p>
-            <ol className="space-y-2.5 text-[13px] text-[var(--color-text-secondary)]">
+            <ol className="space-y-2.5 text-[0.8125rem] text-[var(--color-text-secondary)]">
               <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[10.5px] font-bold flex items-center justify-center">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[0.65625rem] font-bold flex items-center justify-center">
                   1
                 </span>
                 Pick a value, write a note, and check out.
               </li>
               <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[10.5px] font-bold flex items-center justify-center">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[0.65625rem] font-bold flex items-center justify-center">
                   2
                 </span>
                 Your recipient gets a unique code by email — instantly.
               </li>
               <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[10.5px] font-bold flex items-center justify-center">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[0.65625rem] font-bold flex items-center justify-center">
                   3
                 </span>
                 They redeem at checkout. Multi-use — leftover balance carries over.

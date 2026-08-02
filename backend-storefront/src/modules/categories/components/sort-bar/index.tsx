@@ -41,7 +41,7 @@ export default function SortBar({
 
   return (
     <div className="flex items-center justify-between mb-5">
-      <span className="text-[13px]" style={{ color: "var(--color-text-muted)" }}>
+      <span className="text-[0.8125rem]" style={{ color: "var(--color-text-muted)" }}>
         {productCount} product{productCount !== 1 ? "s" : ""}
       </span>
 
@@ -50,7 +50,7 @@ export default function SortBar({
         <div ref={ref} className="relative">
           <button
             onClick={() => setOpen(!open)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[0.8125rem] font-medium transition-all duration-200"
             style={{
               background: "var(--color-bg-primary)",
               border: "1px solid var(--color-border)",
@@ -70,7 +70,7 @@ export default function SortBar({
                 <button
                   key={opt.value}
                   onClick={() => { onSort(opt.value); setOpen(false) }}
-                  className="w-full text-left px-4 py-2.5 text-[13px] transition-all duration-150 hover:bg-black/[0.03]"
+                  className="w-full text-left px-4 py-2.5 text-[0.8125rem] transition-all duration-150 hover:bg-black/[0.03]"
                   style={{
                     color: sortBy === opt.value ? "var(--color-accent-dark)" : "var(--color-text-secondary)",
                     fontWeight: sortBy === opt.value ? 600 : 400,

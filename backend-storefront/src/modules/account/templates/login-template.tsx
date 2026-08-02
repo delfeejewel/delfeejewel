@@ -157,10 +157,10 @@ export default function LoginTemplate() {
 
         {/* Heading */}
         <div className="mb-8 text-center">
-          <h2 className="font-wittgenstein text-[28px] font-semibold text-[var(--color-plum)] leading-tight">
+          <h2 className="font-wittgenstein text-[1.75rem] font-semibold text-[var(--color-plum)] leading-tight">
             {heading}
           </h2>
-          <p className="text-[var(--color-text-muted)] text-[13px] mt-1.5 leading-relaxed">
+          <p className="text-[var(--color-text-muted)] text-[0.8125rem] mt-1.5 leading-relaxed">
             {subtitle}
           </p>
         </div>
@@ -173,7 +173,7 @@ export default function LoginTemplate() {
         >
           <button
             onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
-            className={`flex-1 py-2.5 px-3 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all duration-200 ${
+            className={`flex-1 py-2.5 px-3 rounded-md text-[0.6875rem] font-bold uppercase tracking-widest transition-all duration-200 ${
               currentView === LOGIN_VIEW.SIGN_IN
                 ? "bg-white text-[var(--color-text-primary)] shadow-sm"
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
@@ -183,7 +183,7 @@ export default function LoginTemplate() {
           </button>
           <button
             onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
-            className={`flex-1 py-2.5 px-3 rounded-md text-[11px] font-bold uppercase tracking-widest transition-all duration-200 ${
+            className={`flex-1 py-2.5 px-3 rounded-md text-[0.6875rem] font-bold uppercase tracking-widest transition-all duration-200 ${
               currentView === LOGIN_VIEW.REGISTER
                 ? "bg-white text-[var(--color-text-primary)] shadow-sm"
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"

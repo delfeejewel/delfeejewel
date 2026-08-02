@@ -33,13 +33,13 @@ export default async function BrowseCategories() {
       <header className="flex items-baseline justify-between mb-4">
         <div>
           <p
-            className="text-[11px] uppercase tracking-[0.18em] font-semibold"
+            className="text-[0.6875rem] uppercase tracking-[0.18em] font-semibold"
             style={{ color: "var(--color-plum)" }}
           >
             Browse by category
           </p>
           <h2
-            className="font-wittgenstein text-[22px] small:text-[26px] font-bold mt-0.5"
+            className="font-wittgenstein text-[1.375rem] small:text-[1.625rem] font-bold mt-0.5"
             style={{ color: "var(--color-text-primary)" }}
           >
             Find your shape
@@ -72,7 +72,7 @@ export default async function BrowseCategories() {
                 />
               </div>
               <p
-                className="text-[12.5px] small:text-[13.5px] font-medium mt-2 text-center transition-colors"
+                className="text-[0.78125rem] small:text-[0.84375rem] font-medium mt-2 text-center transition-colors"
                 style={{ color: "var(--color-text-primary)" }}
               >
                 {c.name}

@@ -241,16 +241,16 @@ export default function SearchAutocomplete({
         />
       </span>
       <span className="flex-1 min-w-0">
-        <span className="block text-[13px] font-medium text-[var(--color-text-primary)] truncate capitalize">
+        <span className="block text-[0.8125rem] font-medium text-[var(--color-text-primary)] truncate capitalize">
           {title}
         </span>
         {price && (
           <span className="flex items-baseline gap-1.5">
-            <span className="text-[12px] font-semibold text-[var(--color-plum)]">
+            <span className="text-[0.75rem] font-semibold text-[var(--color-plum)]">
               {price}
             </span>
             {originalPrice && (
-              <span className="text-[11px] line-through text-[var(--color-text-muted)]">
+              <span className="text-[0.6875rem] line-through text-[var(--color-text-muted)]">
                 {originalPrice}
               </span>
             )}
@@ -284,7 +284,7 @@ export default function SearchAutocomplete({
       <span className="w-8 h-8 shrink-0 rounded-md bg-[var(--color-lavender)] flex items-center justify-center">
         <Icon size={15} className="text-[var(--color-plum)]" />
       </span>
-      <span className="flex-1 text-[13px] text-[var(--color-text-secondary)] capitalize">
+      <span className="flex-1 text-[0.8125rem] text-[var(--color-text-secondary)] capitalize">
         {label}
       </span>
       <ArrowUpRight size={14} className="text-[var(--color-text-muted)]" />
@@ -311,14 +311,14 @@ export default function SearchAutocomplete({
       }`}
     >
       <Icon size={15} className="text-[var(--color-text-muted)] shrink-0" />
-      <span className="flex-1 text-[13px] text-[var(--color-text-secondary)]">
+      <span className="flex-1 text-[0.8125rem] text-[var(--color-text-secondary)]">
         {term}
       </span>
     </button>
   )
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+    <p className="px-3 pt-3 pb-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
       {children}
     </p>
   )
@@ -342,7 +342,7 @@ export default function SearchAutocomplete({
                     clearRecentSearches()
                     setRecent([])
                   }}
-                  className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
+                  className="text-[0.6875rem] text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
                 >
                   Clear
                 </button>
@@ -366,7 +366,7 @@ export default function SearchAutocomplete({
 
       {/* Loading */}
       {showResults && loading && (
-        <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[var(--color-text-muted)]">
+        <div className="flex items-center justify-center gap-2 py-8 text-[0.8125rem] text-[var(--color-text-muted)]">
           <Loader2 size={16} className="animate-spin" />
           Searching...
         </div>
@@ -422,7 +422,7 @@ export default function SearchAutocomplete({
           <button
             type="button"
             onClick={() => submit(query)}
-            className="w-full flex items-center justify-center gap-1.5 mt-1 mb-1 mx-auto px-3 py-2.5 text-[12px] font-semibold text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 mt-1 mb-1 mx-auto px-3 py-2.5 text-[0.75rem] font-semibold text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-colors"
           >
             View all results for &ldquo;{query.trim()}&rdquo;
             <ArrowUpRight size={14} />
@@ -433,7 +433,7 @@ export default function SearchAutocomplete({
       {/* No results */}
       {showResults && !loading && !hasResults && (
         <div className="py-3">
-          <p className="px-3 py-2 text-[13px] text-[var(--color-text-secondary)]">
+          <p className="px-3 py-2 text-[0.8125rem] text-[var(--color-text-secondary)]">
             No matches for{" "}
             <span className="font-semibold text-[var(--color-text-primary)]">
               &ldquo;{query.trim()}&rdquo;
@@ -502,7 +502,7 @@ export default function SearchAutocomplete({
               aria-label="Search products"
               autoComplete="off"
               className={`w-full ${
-                isMobile ? "h-12 text-[15px]" : "h-10 text-[13px]"
+                isMobile ? "h-12 text-[0.9375rem]" : "h-10 text-[0.8125rem]"
               } pl-10 pr-20 rounded-full outline-none transition-all duration-200 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/10`}
             />
             {query && (

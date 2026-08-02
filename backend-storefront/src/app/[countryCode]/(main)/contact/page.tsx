@@ -118,10 +118,10 @@ export default async function ContactPage({ params }: Props) {
         <div className="grid grid-cols-1 medium:grid-cols-[1fr_340px] gap-8 small:gap-10">
           {/* Form */}
           <div>
-            <h2 className="font-wittgenstein text-[22px] small:text-[26px] font-bold text-[var(--color-plum)] mb-1.5">
+            <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.625rem] font-bold text-[var(--color-plum)] mb-1.5">
               {heading}
             </h2>
-            <p className="text-[14px] text-[var(--color-text-muted)] mb-6">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-6">
               {subheading}
             </p>
             <ContactForm
@@ -140,10 +140,10 @@ export default async function ContactPage({ params }: Props) {
                 <MapPin size={20} className="text-[var(--color-plum)]" />
               </div>
               <div>
-                <p className="font-semibold text-[14px] text-[var(--color-text-primary)]">
+                <p className="font-semibold text-[0.875rem] text-[var(--color-text-primary)]">
                   Visit Us
                 </p>
-                <address className="not-italic text-[13.5px] text-[var(--color-plum)] font-medium mt-0.5 leading-relaxed">
+                <address className="not-italic text-[0.84375rem] text-[var(--color-plum)] font-medium mt-0.5 leading-relaxed">
                   {BRAND.legalName} ({BRAND.name})
                   <br />
                   {BRAND.contact.addressLines.map((line, i) => (
@@ -155,7 +155,7 @@ export default async function ContactPage({ params }: Props) {
                 </address>
                 <a
                   href={BRAND.contact.phoneHref}
-                  className="inline-flex items-center gap-1.5 text-[12.5px] text-[var(--color-text-muted)] mt-2 hover:text-[var(--color-plum)] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[0.78125rem] text-[var(--color-text-muted)] mt-2 hover:text-[var(--color-plum)] transition-colors"
                 >
                   <Phone size={13} /> {BRAND.contact.phone}
                 </a>
@@ -169,13 +169,13 @@ export default async function ContactPage({ params }: Props) {
                     <Icon size={20} className="text-[var(--color-plum)]" />
                   </div>
                   <div>
-                    <p className="font-semibold text-[14px] text-[var(--color-text-primary)]">
+                    <p className="font-semibold text-[0.875rem] text-[var(--color-text-primary)]">
                       {c.title}
                     </p>
-                    <p className="text-[13.5px] text-[var(--color-plum)] font-medium mt-0.5">
+                    <p className="text-[0.84375rem] text-[var(--color-plum)] font-medium mt-0.5">
                       {c.text}
                     </p>
-                    <p className="text-[12.5px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                    <p className="text-[0.78125rem] text-[var(--color-text-muted)] mt-1 leading-relaxed">
                       {c.sub}
                     </p>
                   </div>
@@ -206,10 +206,10 @@ export default async function ContactPage({ params }: Props) {
       <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border)]">
         <div className="page-container py-12 small:py-16">
           <div className="text-center max-w-xl mx-auto mb-8">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               Looking for something specific?
             </span>
-            <h2 className="font-wittgenstein text-[24px] small:text-[30px] font-bold text-[var(--color-plum)] mt-2">
+            <h2 className="font-wittgenstein text-[1.5rem] small:text-[1.875rem] font-bold text-[var(--color-plum)] mt-2">
               You might find it faster here
             </h2>
           </div>
@@ -225,7 +225,7 @@ export default async function ContactPage({ params }: Props) {
                   <div className="w-12 h-12 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center">
                     <Icon size={22} className="text-[var(--color-plum)]" />
                   </div>
-                  <span className="text-[13.5px] font-semibold text-[var(--color-text-primary)] flex items-center gap-1">
+                  <span className="text-[0.84375rem] font-semibold text-[var(--color-text-primary)] flex items-center gap-1">
                     {q.label}
                     <ArrowRight
                       size={13}

@@ -33,6 +33,8 @@ import {
   PasswordResetEmailData,
   contactNotificationTemplate,
   ContactNotificationData,
+  orderPlacedAdminTemplate,
+  OrderAdminNotificationData,
 } from "./templates"
 import { Logger } from "@medusajs/framework/types"
 
@@ -344,6 +346,17 @@ export default class EmailNotificationService extends MedusaService({}) {
     await this._send(
       `gift-card ${data.code}`,
       data.recipient_email,
+      subject,
+      html
+    )
+  }
+
+  /** The shop's own copy of a placed order (items + customer details). */
+  async sendOrderAdminNotificationEmail(data: OrderAdminNotificationData) {
+    const { subject, html } = orderPlacedAdminTemplate(data)
+    await this._send(
+      `order.placed.admin #${data.order_number}`,
+      data.to,
       subject,
       html
     )

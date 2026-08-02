@@ -6,7 +6,7 @@ const CheckoutSummary = ({ cart }: { cart: any }) => {
   return (
     <div className="sticky top-40 flex flex-col-reverse small:flex-col gap-y-6 py-8 small:py-0">
       <div className="bg-white rounded-2xl border border-[var(--color-lavender)] p-6 flex flex-col gap-5">
-        <h2 className="font-wittgenstein text-[20px] font-bold text-[var(--color-plum)]">
+        <h2 className="font-wittgenstein text-[1.25rem] font-bold text-[var(--color-plum)]">
           In Your Cart
         </h2>
 

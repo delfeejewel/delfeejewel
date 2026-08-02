@@ -29,7 +29,7 @@ const Summary = ({ cart }: SummaryProps) => {
 
   return (
     <div className="bg-white rounded-2xl border border-[var(--color-lavender)] p-6 small:p-7 flex flex-col gap-6">
-      <h2 className="font-wittgenstein text-[22px] font-bold text-[var(--color-plum)]">
+      <h2 className="font-wittgenstein text-[1.375rem] font-bold text-[var(--color-plum)]">
         Order Summary
       </h2>
 
@@ -44,7 +44,7 @@ const Summary = ({ cart }: SummaryProps) => {
         href={"/checkout?step=" + step}
         data-testid="checkout-button"
       >
-        <button className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all">
+        <button className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all">
           Proceed to Checkout
           <ArrowRight size={15} />
         </button>

@@ -87,13 +87,13 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         <div className="flex-1 min-w-0">
           <LocalizedClientLink
             href={`/products/${item.product_handle}`}
-            className="text-[13px] font-semibold text-[var(--color-text-primary)] line-clamp-1 hover:text-[var(--color-plum)] transition-colors"
+            className="text-[0.8125rem] font-semibold text-[var(--color-text-primary)] line-clamp-1 hover:text-[var(--color-plum)] transition-colors"
             data-testid="product-title"
           >
             {item.product_title}
           </LocalizedClientLink>
           <LineItemOptions variant={item.variant} data-testid="product-variant" />
-          <div className="text-[11.5px] text-[var(--color-text-muted)] mt-0.5 flex items-center gap-1 flex-wrap">
+          <div className="text-[0.71875rem] text-[var(--color-text-muted)] mt-0.5 flex items-center gap-1 flex-wrap">
             <span>{optimisticQty} ×</span>
             <span className="text-[var(--color-text-primary)]">
               <LineItemUnitPrice
@@ -104,7 +104,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             </span>
           </div>
         </div>
-        <div className="text-[13.5px] font-bold text-[var(--color-plum)] tabular-nums shrink-0">
+        <div className="text-[0.84375rem] font-bold text-[var(--color-plum)] tabular-nums shrink-0">
           <LineItemPrice
             item={item}
             style="tight"
@@ -139,18 +139,18 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           <div className="min-w-0">
             <LocalizedClientLink
               href={`/products/${item.product_handle}`}
-              className="text-[14px] small:text-[15px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-plum)] transition-colors line-clamp-2"
+              className="text-[0.875rem] small:text-[0.9375rem] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-plum)] transition-colors line-clamp-2"
               data-testid="product-title"
             >
               {item.product_title}
             </LocalizedClientLink>
-            <div className="mt-1 text-[12px] text-[var(--color-text-muted)]">
+            <div className="mt-1 text-[0.75rem] text-[var(--color-text-muted)]">
               <LineItemOptions
                 variant={item.variant}
                 data-testid="product-variant"
               />
             </div>
-            <div className="text-[11.5px] text-[var(--color-text-muted)] mt-1.5 flex items-center gap-1 flex-wrap">
+            <div className="text-[0.71875rem] text-[var(--color-text-muted)] mt-1.5 flex items-center gap-1 flex-wrap">
               <span>Unit</span>
               <LineItemUnitPrice
                 item={item}
@@ -160,7 +160,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             </div>
           </div>
 
-          <div className="text-[14px] small:text-[15px] font-bold text-[var(--color-plum)] tabular-nums whitespace-nowrap shrink-0">
+          <div className="text-[0.875rem] small:text-[0.9375rem] font-bold text-[var(--color-plum)] tabular-nums whitespace-nowrap shrink-0">
             <LineItemPrice
               item={item}
               style="tight"
@@ -182,7 +182,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             >
               <Minus size={12} />
             </button>
-            <span className="min-w-[28px] text-center text-[13.5px] font-semibold tabular-nums">
+            <span className="min-w-[28px] text-center text-[0.84375rem] font-semibold tabular-nums">
               {optimisticQty}
             </span>
             <button
@@ -204,7 +204,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             type="button"
             onClick={remove}
             disabled={isPending}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[var(--color-text-muted)] hover:text-red-600 transition-colors py-1 px-2 -mx-2 rounded-md disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-[0.71875rem] font-medium text-[var(--color-text-muted)] hover:text-red-600 transition-colors py-1 px-2 -mx-2 rounded-md disabled:opacity-50"
             aria-label="Remove item"
             data-testid="product-delete-button"
           >

@@ -222,7 +222,7 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
         />
         <div className="flex items-center gap-3 xsmall:gap-4">
           <span className="hidden xsmall:block h-3 w-px bg-[var(--color-gold)]/40" />
-          <span className="text-[10px] xsmall:text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)] whitespace-nowrap">
+          <span className="text-[0.625rem] xsmall:text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)] whitespace-nowrap">
             Launching soon
           </span>
         </div>
@@ -239,12 +239,12 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
             <div className="grid grid-cols-1 tablet:grid-cols-2 gap-10 tablet:gap-12 small:gap-16 items-center">
               {/* Left — pitch */}
               <div className="flex flex-col">
-                <span className="inline-flex items-center gap-3 text-[11px] xsmall:text-[12px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)]">
+                <span className="inline-flex items-center gap-3 text-[0.6875rem] xsmall:text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)]">
                   <span className="h-px w-8 bg-[var(--color-gold)]/60" />
                   A new chapter
                 </span>
 
-                <h1 className="font-wittgenstein text-[32px] xsmall:text-[44px] tablet:text-[48px] small:text-[64px] font-bold text-[var(--color-plum)] leading-[1.05] mt-4 xsmall:mt-5">
+                <h1 className="font-wittgenstein text-[2rem] xsmall:text-[2.75rem] tablet:text-[3rem] small:text-[4rem] font-bold text-[var(--color-plum)] leading-[1.05] mt-4 xsmall:mt-5">
                   Something
                   <br />
                   beautiful is
@@ -252,7 +252,7 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
                   <span className="italic text-[var(--color-gold)]">on the way.</span>
                 </h1>
 
-                <p className="text-[14px] small:text-[16px] text-[var(--color-text-secondary)] mt-5 xsmall:mt-6 max-w-md leading-[1.75]">
+                <p className="text-[0.875rem] small:text-[1rem] text-[var(--color-text-secondary)] mt-5 xsmall:mt-6 max-w-md leading-[1.75]">
                   We&apos;re putting the final touches on a fine-jewellery
                   store built around the way you actually wear it — every day,
                   effortlessly. Heirloom craft, honest prices, no compromises.
@@ -272,14 +272,14 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
                   {PROMISES.map((promise) => (
                     <li
                       key={promise}
-                      className="inline-flex items-center px-3.5 xsmall:px-4 h-8 xsmall:h-9 rounded-full bg-white/80 backdrop-blur-sm border border-[var(--color-gold)]/30 text-[10.5px] xsmall:text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-plum)] shadow-[0_1px_0_rgba(196,154,76,0.08)]"
+                      className="inline-flex items-center px-3.5 xsmall:px-4 h-8 xsmall:h-9 rounded-full bg-white/80 backdrop-blur-sm border border-[var(--color-gold)]/30 text-[0.65625rem] xsmall:text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-plum)] shadow-[0_1px_0_rgba(196,154,76,0.08)]"
                     >
                       {promise}
                     </li>
                   ))}
                 </ul>
 
-                <p className="mt-8 xsmall:mt-10 inline-flex items-center gap-3 text-[10.5px] xsmall:text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)]">
+                <p className="mt-8 xsmall:mt-10 inline-flex items-center gap-3 text-[0.65625rem] xsmall:text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-[var(--color-text-muted)]">
                   <span className="h-px w-6 bg-[var(--color-gold)]/40" />
                   Stay tuned · Launching this season
                 </p>
@@ -325,11 +325,11 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
 
                     {/* Slide counter — top right */}
                     <div className="absolute top-4 xsmall:top-5 right-4 xsmall:right-5 flex items-center gap-2">
-                      <span className="text-[10px] xsmall:text-[11px] font-semibold tabular-nums tracking-[0.2em] text-white/90">
+                      <span className="text-[0.625rem] xsmall:text-[0.6875rem] font-semibold tabular-nums tracking-[0.2em] text-white/90">
                         {String(slideIdx + 1).padStart(2, "0")}
                       </span>
                       <span className="h-px w-6 bg-white/50" />
-                      <span className="text-[10px] xsmall:text-[11px] font-semibold tabular-nums tracking-[0.2em] text-white/60">
+                      <span className="text-[0.625rem] xsmall:text-[0.6875rem] font-semibold tabular-nums tracking-[0.2em] text-white/60">
                         {String(SLIDES.length).padStart(2, "0")}
                       </span>
                     </div>
@@ -341,11 +341,11 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
                     >
                       <div className="flex items-center gap-3">
                         <span className="h-px w-8 bg-[var(--color-gold)]" />
-                        <p className="text-[10px] xsmall:text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)]">
+                        <p className="text-[0.625rem] xsmall:text-[0.6875rem] font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)]">
                           {SLIDES[slideIdx].eyebrow}
                         </p>
                       </div>
-                      <p className="font-wittgenstein text-[20px] xsmall:text-[24px] small:text-[28px] font-bold text-white leading-tight mt-2 [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]">
+                      <p className="font-wittgenstein text-[1.25rem] xsmall:text-[1.5rem] small:text-[1.75rem] font-bold text-white leading-tight mt-2 [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]">
                         {SLIDES[slideIdx].title}
                       </p>
 
@@ -382,7 +382,7 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
       </main>
 
       <footer className="relative z-10 content-container pb-6 small:pb-8 pt-5 small:pt-6 border-t border-[var(--color-gold)]/15">
-        <div className="flex items-center justify-center gap-3 text-[10.5px] text-[var(--color-text-muted)] tracking-[0.18em] uppercase font-medium">
+        <div className="flex items-center justify-center gap-3 text-[0.65625rem] text-[var(--color-text-muted)] tracking-[0.18em] uppercase font-medium">
           <span className="h-px w-6 bg-[var(--color-gold)]/35" />
           <p suppressHydrationWarning>
             © {new Date().getFullYear()} {brandName} · Handcrafted in India
@@ -396,7 +396,7 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
             <button
               type="button"
               onClick={() => setAccessOpen(true)}
-              className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)]/70 hover:text-[var(--color-gold)] transition-colors"
+              className="inline-flex items-center gap-1.5 text-[0.625rem] tracking-[0.18em] uppercase text-[var(--color-text-muted)]/70 hover:text-[var(--color-gold)] transition-colors"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="5" y="11" width="14" height="10" rx="2" />
@@ -420,18 +420,18 @@ export default function ComingSoonClient({ brandName }: { brandName: string }) {
                   placeholder="Access code"
                   autoFocus
                   aria-label="Team access code"
-                  className="h-9 w-44 xsmall:w-52 rounded-full border border-[var(--color-gold)]/30 bg-white/80 px-4 text-[12px] text-[var(--color-plum)] placeholder:text-[var(--color-text-muted)]/60 outline-none focus:border-[var(--color-gold)]/70 transition-colors"
+                  className="h-9 w-44 xsmall:w-52 rounded-full border border-[var(--color-gold)]/30 bg-white/80 px-4 text-[0.75rem] text-[var(--color-plum)] placeholder:text-[var(--color-text-muted)]/60 outline-none focus:border-[var(--color-gold)]/70 transition-colors"
                 />
                 <button
                   type="submit"
                   disabled={accessStatus === "loading"}
-                  className="h-9 px-4 rounded-full bg-[var(--color-plum)] text-white text-[11px] font-semibold uppercase tracking-[0.16em] hover:opacity-90 disabled:opacity-60 transition"
+                  className="h-9 px-4 rounded-full bg-[var(--color-plum)] text-white text-[0.6875rem] font-semibold uppercase tracking-[0.16em] hover:opacity-90 disabled:opacity-60 transition"
                 >
                   {accessStatus === "loading" ? "…" : "Enter"}
                 </button>
               </div>
               {accessStatus === "error" && (
-                <p className="text-[11px] normal-case tracking-normal text-[#b3261e]">
+                <p className="text-[0.6875rem] normal-case tracking-normal text-[#b3261e]">
                   {accessError}
                 </p>
               )}

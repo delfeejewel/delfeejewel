@@ -48,11 +48,11 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       {/* ── Welcome header ──────────────────────────── */}
       <div className="flex flex-col tablet:flex-row tablet:items-end justify-between gap-3">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-plum)] mb-1.5">
+          <p className="text-[0.75rem] font-bold uppercase tracking-[0.18em] text-[var(--color-plum)] mb-1.5">
             Namaste,
           </p>
           <h1
-            className="font-wittgenstein text-[30px] tablet:text-[40px] font-bold text-[var(--color-plum)] leading-tight"
+            className="font-wittgenstein text-[1.875rem] tablet:text-[2.5rem] font-bold text-[var(--color-plum)] leading-tight"
             data-testid="welcome-message"
             data-value={customer?.first_name}
           >
@@ -60,7 +60,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           </h1>
         </div>
         {memberSince && (
-          <div className="flex items-center gap-2 text-[13px] italic text-[var(--color-text-muted)]">
+          <div className="flex items-center gap-2 text-[0.8125rem] italic text-[var(--color-text-muted)]">
             <Star size={15} className="text-[var(--color-gold)] fill-[var(--color-gold)]" />
             Member since {memberSince}
           </div>
@@ -72,20 +72,20 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         {/* Orders */}
         <div className="tablet:col-span-2 relative overflow-hidden bg-white rounded-2xl border border-[var(--color-lavender)] shadow-[0_20px_40px_rgba(93,46,70,0.06)] p-7">
           <div className="relative z-10">
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[var(--color-plum)] mb-2">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.15em] text-[var(--color-plum)] mb-2">
               Your Orders
             </p>
             <div className="flex items-baseline gap-2">
-              <span className="font-wittgenstein text-[44px] font-bold text-[var(--color-plum)] leading-none">
+              <span className="font-wittgenstein text-[2.75rem] font-bold text-[var(--color-plum)] leading-none">
                 {orderCount}
               </span>
-              <span className="text-[13px] text-[var(--color-text-muted)]">
+              <span className="text-[0.8125rem] text-[var(--color-text-muted)]">
                 {orderCount === 1 ? "order placed" : "orders placed"}
               </span>
             </div>
             <LocalizedClientLink
               href="/account/orders"
-              className="inline-block mt-6 px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold hover:brightness-105 transition-all"
+              className="inline-block mt-6 px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold hover:brightness-105 transition-all"
             >
               View All Orders
             </LocalizedClientLink>
@@ -99,11 +99,11 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         {/* Profile completion */}
         <div className="relative overflow-hidden bg-[var(--color-plum)] rounded-2xl shadow-lg p-7 flex flex-col justify-between text-white">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/60 mb-2">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.15em] text-white/60 mb-2">
               Profile
             </p>
             <h3
-              className="font-wittgenstein text-[24px] font-semibold"
+              className="font-wittgenstein text-[1.5rem] font-semibold"
               data-testid="customer-profile-completion"
               data-value={profileCompletion}
             >
@@ -117,7 +117,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
-            <p className="text-[12px] mt-3 text-white/75">
+            <p className="text-[0.75rem] mt-3 text-white/75">
               {profileCompletion === 100
                 ? "Your profile is all set."
                 : "Add more details to complete it."}
@@ -129,12 +129,12 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       {/* ── Recent orders ───────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-wittgenstein text-[22px] font-semibold text-[var(--color-plum)]">
+          <h3 className="font-wittgenstein text-[1.375rem] font-semibold text-[var(--color-plum)]">
             Recent Orders
           </h3>
           <LocalizedClientLink
             href="/account/orders"
-            className="text-[13px] font-semibold text-[var(--color-plum)] hover:underline decoration-[var(--color-gold)] decoration-2 underline-offset-4"
+            className="text-[0.8125rem] font-semibold text-[var(--color-plum)] hover:underline decoration-[var(--color-gold)] decoration-2 underline-offset-4"
           >
             View All Orders
           </LocalizedClientLink>
@@ -159,7 +159,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                       src={thumb || "/images/fallback-no-image.png"}
                       alt={order.items?.[0]?.title || `Order ${order.display_id}`}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="object-cover"
                       sizes="80px"
                     />
                   </div>
@@ -180,7 +180,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
                       <FieldLabel>Status</FieldLabel>
                       <div className="flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
-                        <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                        <span className="text-[0.8125rem] font-medium text-[var(--color-text-primary)]">
                           {meta.label}
                         </span>
                       </div>
@@ -211,12 +211,12 @@ const Overview = ({ customer, orders }: OverviewProps) => {
             className="bg-white rounded-2xl border border-[var(--color-lavender)] text-center py-12"
             data-testid="no-orders-message"
           >
-            <p className="text-[14px] text-[var(--color-text-muted)] mb-3">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-3">
               You haven&apos;t placed any orders yet.
             </p>
             <LocalizedClientLink
               href="/store"
-              className="text-[13px] font-semibold text-[var(--color-plum)] hover:underline underline-offset-2"
+              className="text-[0.8125rem] font-semibold text-[var(--color-plum)] hover:underline underline-offset-2"
             >
               Start Shopping
             </LocalizedClientLink>
@@ -247,7 +247,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
       {children}
     </p>
   )
@@ -263,7 +263,7 @@ function Field({
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+      <p className="text-[0.8125rem] font-medium text-[var(--color-text-primary)]">
         {children}
       </p>
     </div>
@@ -290,10 +290,10 @@ function FastLink({
         {icon}
       </div>
       <div>
-        <h4 className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)] mb-1">
+        <h4 className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)] mb-1">
           {title}
         </h4>
-        <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+        <p className="text-[0.8125rem] text-[var(--color-text-muted)] leading-relaxed">
           {desc}
         </p>
       </div>

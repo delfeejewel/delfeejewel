@@ -19,10 +19,10 @@ export default async function Orders() {
   return (
     <div className="w-full" data-testid="orders-page-wrapper">
       <header className="mb-8 tablet:mb-10">
-        <h1 className="font-wittgenstein text-[28px] tablet:text-[36px] font-bold text-[var(--color-plum)] mb-1.5">
+        <h1 className="font-wittgenstein text-[1.75rem] tablet:text-[2.25rem] font-bold text-[var(--color-plum)] mb-1.5">
           Order History
         </h1>
-        <p className="text-[14px] text-[var(--color-text-muted)]">
+        <p className="text-[0.875rem] text-[var(--color-text-muted)]">
           Keep track of your collection and manage past purchases.
         </p>
       </header>

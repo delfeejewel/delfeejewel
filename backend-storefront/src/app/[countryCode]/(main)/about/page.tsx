@@ -219,18 +219,18 @@ export default async function AboutPage({ params }: Props) {
             )}
           </div>
           <div className="flex flex-col gap-5 min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               {c.story.eyebrow}
             </span>
-            <h2 className="font-wittgenstein text-[26px] small:text-[34px] font-bold leading-tight text-[var(--color-plum)]">
+            <h2 className="font-wittgenstein text-[1.625rem] small:text-[2.125rem] font-bold leading-tight text-[var(--color-plum)]">
               {c.story.title}
             </h2>
             <div
-              className="flex flex-col gap-4 text-[15px] leading-relaxed text-[var(--color-text-secondary)] min-w-0 break-words [&_*]:max-w-full [&_img]:h-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:flex [&_ol]:flex-col [&_ol]:gap-1.5 [&_strong]:font-semibold [&_strong]:text-[var(--color-text-primary)] [&_a]:text-[var(--color-plum)] [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-2 [&_h2]:font-wittgenstein [&_h2]:text-[20px] [&_h2]:font-bold [&_h2]:text-[var(--color-plum)] [&_h3]:font-semibold [&_h3]:text-[var(--color-plum)]"
+              className="flex flex-col gap-4 text-[0.9375rem] leading-relaxed text-[var(--color-text-secondary)] min-w-0 break-words [&_*]:max-w-full [&_img]:h-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:flex [&_ol]:flex-col [&_ol]:gap-1.5 [&_strong]:font-semibold [&_strong]:text-[var(--color-text-primary)] [&_a]:text-[var(--color-plum)] [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-2 [&_h2]:font-wittgenstein [&_h2]:text-[1.25rem] [&_h2]:font-bold [&_h2]:text-[var(--color-plum)] [&_h3]:font-semibold [&_h3]:text-[var(--color-plum)]"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.story.body).replace(/&nbsp;|\u00a0/g, " ") }}
             />
             {c.story.quote && (
-              <p className="text-[15px] italic text-[var(--color-text-secondary)] border-l-4 border-[var(--color-gold)] pl-5 py-1">
+              <p className="text-[0.9375rem] italic text-[var(--color-text-secondary)] border-l-4 border-[var(--color-gold)] pl-5 py-1">
                 &ldquo;{c.story.quote}&rdquo;
               </p>
             )}
@@ -243,10 +243,10 @@ export default async function AboutPage({ params }: Props) {
       {c.visibility.values && (
       <section className="page-container py-14 small:py-20">
         <div className="text-center max-w-2xl mx-auto mb-10 small:mb-14">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
             {c.values.eyebrow}
           </span>
-          <h2 className="font-wittgenstein text-[26px] small:text-[34px] font-bold text-[var(--color-plum)] mt-2">
+          <h2 className="font-wittgenstein text-[1.625rem] small:text-[2.125rem] font-bold text-[var(--color-plum)] mt-2">
             {c.values.heading}
           </h2>
         </div>
@@ -261,10 +261,10 @@ export default async function AboutPage({ params }: Props) {
                 <div className="w-12 h-12 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center">
                   <Icon size={22} className="text-[var(--color-plum)]" />
                 </div>
-                <h3 className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)]">
+                <h3 className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)]">
                   {v.title}
                 </h3>
-                <p className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                <p className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                   {v.text}
                 </p>
               </div>
@@ -281,10 +281,10 @@ export default async function AboutPage({ params }: Props) {
           <div className="grid grid-cols-2 tablet:grid-cols-4 gap-x-6 gap-y-8">
             {c.stats.map((s, i) => (
               <div key={`${s.label}-${i}`} className="text-center min-w-0">
-                <p className="font-wittgenstein text-[24px] xsmall:text-[30px] small:text-[38px] font-bold text-[var(--color-gold)] leading-tight break-words">
+                <p className="font-wittgenstein text-[1.5rem] xsmall:text-[1.875rem] small:text-[2.375rem] font-bold text-[var(--color-gold)] leading-tight break-words">
                   {s.value}
                 </p>
-                <p className="text-[11px] xsmall:text-[12px] small:text-[13px] uppercase tracking-[0.12em] text-white/70 mt-1 break-words">
+                <p className="text-[0.6875rem] xsmall:text-[0.75rem] small:text-[0.8125rem] uppercase tracking-[0.12em] text-white/70 mt-1 break-words">
                   {s.label}
                 </p>
               </div>
@@ -299,10 +299,10 @@ export default async function AboutPage({ params }: Props) {
       <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border)]">
         <div className="page-container py-14 small:py-20">
           <div className="text-center max-w-2xl mx-auto mb-10 small:mb-14">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               {c.process.eyebrow}
             </span>
-            <h2 className="font-wittgenstein text-[26px] small:text-[34px] font-bold text-[var(--color-plum)] mt-2">
+            <h2 className="font-wittgenstein text-[1.625rem] small:text-[2.125rem] font-bold text-[var(--color-plum)] mt-2">
               {c.process.heading}
             </h2>
           </div>
@@ -314,16 +314,16 @@ export default async function AboutPage({ params }: Props) {
                   key={`${p.title}-${i}`}
                   className="relative rounded-2xl bg-white border border-[var(--color-lavender)] p-6"
                 >
-                  <span className="absolute top-5 right-5 font-wittgenstein text-[40px] font-bold text-[var(--color-lavender)] leading-none">
+                  <span className="absolute top-5 right-5 font-wittgenstein text-[2.5rem] font-bold text-[var(--color-lavender)] leading-none">
                     {i + 1}
                   </span>
                   <div className="w-12 h-12 rounded-xl bg-[var(--color-plum)] flex items-center justify-center mb-4">
                     <Icon size={22} className="text-[var(--color-gold)]" />
                   </div>
-                  <h3 className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)] mb-1.5">
+                  <h3 className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)] mb-1.5">
                     {p.title}
                   </h3>
-                  <p className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                  <p className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                     {p.text}
                   </p>
                 </div>
@@ -341,22 +341,22 @@ export default async function AboutPage({ params }: Props) {
         const ctaRel = ctaTarget === "_blank" ? "noopener noreferrer" : undefined
         const ctaIsExternal = /^https?:\/\//.test(c.cta.buttonHref) || c.cta.buttonHref.startsWith("//")
         const ctaClass =
-          "inline-flex items-center justify-center gap-2 max-w-full px-6 small:px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+          "inline-flex items-center justify-center gap-2 max-w-full px-6 small:px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
         return (
           <section className="page-container py-14 small:py-20">
             <div className="relative overflow-hidden rounded-3xl bg-[var(--color-plum)] px-6 small:px-14 py-12 small:py-16 text-center">
               <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-[var(--color-gold)]/10 blur-3xl" />
               {c.cta.eyebrow && (
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] mb-3">
+                <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] mb-3">
                   {c.cta.eyebrow}
                 </span>
               )}
               <CtaIcon size={32} className="text-[var(--color-gold)] mx-auto mb-4" strokeWidth={1.4} />
-              <h2 className="font-wittgenstein text-[26px] small:text-[34px] font-bold text-white mb-3">
+              <h2 className="font-wittgenstein text-[1.625rem] small:text-[2.125rem] font-bold text-white mb-3">
                 {c.cta.heading}
               </h2>
               {c.cta.description && (
-                <p className="text-[14px] small:text-[15px] text-white/70 max-w-xl mx-auto mb-7">
+                <p className="text-[0.875rem] small:text-[0.9375rem] text-white/70 max-w-xl mx-auto mb-7">
                   {c.cta.description}
                 </p>
               )}

@@ -28,7 +28,7 @@ export default function ReviewNudgeBar({ count }: { count: number }) {
         <Sparkles size={13} className="shrink-0" />
         <LocalizedClientLink
           href="/account/reviews"
-          className="text-[12px] font-medium hover:underline"
+          className="text-[0.75rem] font-medium hover:underline"
         >
           You have {count} {count === 1 ? "piece" : "pieces"} waiting for your
           review — share your sparkle &#10024;

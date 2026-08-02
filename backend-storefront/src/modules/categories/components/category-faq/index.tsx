@@ -22,7 +22,7 @@ export default function CategoryFaq({
 
   return (
     <div className="max-w-[820px] mx-auto py-10 small:py-12">
-      <h2 className="font-wittgenstein text-[22px] small:text-[26px] font-bold text-[var(--color-plum)] mb-5">
+      <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.625rem] font-bold text-[var(--color-plum)] mb-5">
         {categoryName} FAQs
       </h2>
       <FaqAccordion items={items} startOpen={null} />

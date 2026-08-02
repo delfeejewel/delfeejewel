@@ -61,18 +61,18 @@ export default function GiftWrapToggle({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-wittgenstein text-[15px] small:text-[16px] font-bold text-[var(--color-plum)]">
+          <span className="font-wittgenstein text-[0.9375rem] small:text-[1rem] font-bold text-[var(--color-plum)]">
             {enabled ? "Gift wrap added" : "Add gift wrap"}
           </span>
-          <span className="text-[12px] font-semibold tabular-nums text-[var(--color-plum)] bg-[var(--color-lavender)] px-2 py-0.5 rounded-full">
+          <span className="text-[0.75rem] font-semibold tabular-nums text-[var(--color-plum)] bg-[var(--color-lavender)] px-2 py-0.5 rounded-full">
             +{formattedPrice}
           </span>
         </div>
-        <p className="text-[12.5px] text-[var(--color-text-secondary)] mt-1 leading-snug">
+        <p className="text-[0.78125rem] text-[var(--color-text-secondary)] mt-1 leading-snug">
           Signature box, hand-tied ribbon, and a complimentary note card.
         </p>
         {error && (
-          <p className="text-[11.5px] text-red-600 mt-1.5">{error}</p>
+          <p className="text-[0.71875rem] text-red-600 mt-1.5">{error}</p>
         )}
       </div>
       <div

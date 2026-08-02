@@ -143,7 +143,7 @@ export default async function AuthenticityPage({ params }: Props) {
   const promiseRel = promiseTarget === "_blank" ? "noopener noreferrer" : undefined
   const promiseIsExternal = /^https?:\/\//.test(c.promise.buttonHref) || c.promise.buttonHref.startsWith("//")
   const promiseBtnClass =
-    "inline-flex items-center justify-center gap-2 max-w-full px-6 small:px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+    "inline-flex items-center justify-center gap-2 max-w-full px-6 small:px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
 
   return (
     <div className="bg-[var(--color-bg-primary)] font-outfit">
@@ -167,10 +167,10 @@ export default async function AuthenticityPage({ params }: Props) {
               <IntroIcon size={22} className="text-[var(--color-plum)]" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-1.5">
+              <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-1.5">
                 {c.intro.heading}
               </h2>
-              <p className="text-[14px] leading-relaxed text-[var(--color-text-secondary)] min-w-0 break-words whitespace-pre-line">
+              <p className="text-[0.875rem] leading-relaxed text-[var(--color-text-secondary)] min-w-0 break-words whitespace-pre-line">
                 {c.intro.body}
               </p>
             </div>
@@ -182,10 +182,10 @@ export default async function AuthenticityPage({ params }: Props) {
       {c.visibility.pillars && (
         <section className="page-container pb-12 small:pb-16">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               {c.pillars.eyebrow}
             </span>
-            <h2 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] mt-2">
+            <h2 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)] mt-2">
               {c.pillars.heading}
             </h2>
           </div>
@@ -200,10 +200,10 @@ export default async function AuthenticityPage({ params }: Props) {
                   <div className="w-12 h-12 rounded-xl bg-[var(--color-plum)] flex items-center justify-center">
                     <Icon size={22} className="text-[var(--color-gold)]" />
                   </div>
-                  <h3 className="font-wittgenstein text-[17px] font-semibold text-[var(--color-plum)]">
+                  <h3 className="font-wittgenstein text-[1.0625rem] font-semibold text-[var(--color-plum)]">
                     {p.title}
                   </h3>
-                  <p className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                  <p className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                     {p.text}
                   </p>
                 </div>
@@ -218,14 +218,14 @@ export default async function AuthenticityPage({ params }: Props) {
         <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border)]">
           <div className="page-container py-12 small:py-16">
             <div className="text-center max-w-2xl mx-auto mb-10">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
                 {c.marks.eyebrow}
               </span>
-              <h2 className="font-wittgenstein text-[26px] small:text-[32px] font-bold text-[var(--color-plum)] mt-2">
+              <h2 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-bold text-[var(--color-plum)] mt-2">
                 {c.marks.heading}
               </h2>
               {c.marks.description && (
-                <p className="text-[14px] text-[var(--color-text-secondary)] mt-3">
+                <p className="text-[0.875rem] text-[var(--color-text-secondary)] mt-3">
                   {c.marks.description}
                 </p>
               )}
@@ -236,14 +236,14 @@ export default async function AuthenticityPage({ params }: Props) {
                   key={`${m.title}-${i}`}
                   className="flex gap-4 rounded-2xl bg-white border border-[var(--color-lavender)] p-5"
                 >
-                  <span className="font-wittgenstein text-[26px] font-bold text-[var(--color-gold)] leading-none">
+                  <span className="font-wittgenstein text-[1.625rem] font-bold text-[var(--color-gold)] leading-none">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-wittgenstein text-[16px] font-semibold text-[var(--color-plum)] mb-1">
+                    <h3 className="font-wittgenstein text-[1rem] font-semibold text-[var(--color-plum)] mb-1">
                       {m.title}
                     </h3>
-                    <p className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                    <p className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                       {m.text}
                     </p>
                   </div>
@@ -259,10 +259,10 @@ export default async function AuthenticityPage({ params }: Props) {
         <section className="page-container py-12 small:py-16">
           <div className="max-w-3xl mx-auto text-center">
             <PromiseIcon size={32} strokeWidth={1.4} className="text-[var(--color-plum)] mx-auto mb-4" />
-            <h2 className="font-wittgenstein text-[24px] small:text-[30px] font-bold text-[var(--color-plum)] mb-3">
+            <h2 className="font-wittgenstein text-[1.5rem] small:text-[1.875rem] font-bold text-[var(--color-plum)] mb-3">
               {c.promise.heading}
             </h2>
-            <p className="text-[14px] small:text-[15px] leading-relaxed text-[var(--color-text-secondary)] mb-7 break-words whitespace-pre-line">
+            <p className="text-[0.875rem] small:text-[0.9375rem] leading-relaxed text-[var(--color-text-secondary)] mb-7 break-words whitespace-pre-line">
               {c.promise.body}
             </p>
             {promiseIsExternal ? (

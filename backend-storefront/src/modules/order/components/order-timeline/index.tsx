@@ -242,7 +242,7 @@ export default function OrderTimeline({
                 {step.label}
               </span>
               <span
-                className="text-[11px] mt-1"
+                className="text-[0.6875rem] mt-1"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 {step.timestamp ? fmtDateTime(step.timestamp) : step.desc}

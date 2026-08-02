@@ -29,7 +29,7 @@ function Breadcrumb({ product }: { product: HttpTypes.StoreProduct }) {
       : { label: "Products", href: "/store" }
 
   return (
-    <nav className="flex items-center gap-2 mb-10 text-[12px] font-medium tracking-[0.04em] text-[var(--color-text-muted)]">
+    <nav className="flex items-center gap-2 mb-10 text-[0.75rem] font-medium tracking-[0.04em] text-[var(--color-text-muted)]">
       <LocalizedClientLink href="/" className="hover:text-[var(--color-plum)] transition-colors duration-200">
         Home
       </LocalizedClientLink>
@@ -184,11 +184,16 @@ const ProductTemplate = async ({
       </div>{/* end decorations wrapper */}
 
       <div className="relative z-10">
-        {/* Product Hero — sticky gallery + scrollable right content */}
+        {/* Product Hero — gallery + buy box, both scrolling with the page */}
         <div className="page-container pt-8 pb-12 small:pb-24">
           <div className="grid grid-cols-1 medium:grid-cols-12 gap-8 medium:gap-14 items-start">
-            {/* Left: sticky column — breadcrumb + gallery */}
-            <div className="medium:col-span-5 medium:sticky medium:top-[140px] medium:pt-4">
+            {/*
+              Left: breadcrumb + gallery. Deliberately NOT sticky — a pinned
+              column taller than the viewport (short laptop screens, the gallery
+              plus its thumbnail rail) strands its own bottom edge: the page
+              scrolls on but the cut-off part never comes into view.
+            */}
+            <div className="medium:col-span-5 medium:pt-4">
               <div className="mb-4">
                 <Breadcrumb product={product} />
               </div>
@@ -204,16 +209,16 @@ const ProductTemplate = async ({
                 reviewSummary={reviewSummary}
                 coupons={coupons}
               />
-
-              {/* Gradient divider */}
-              <div className="my-12 small:my-16">
-                <div className="h-px pdp-divider" />
-              </div>
-
-              {/* Description + Specs + Story — full width in right column */}
-              <ProductDetails product={product} />
             </div>
           </div>
+
+          {/* Gradient divider */}
+          <div className="my-12 small:my-16">
+            <div className="h-px pdp-divider" />
+          </div>
+
+          {/* Description + Specs + Story — full page width, below both columns */}
+          <ProductDetails product={product} />
         </div>
 
         {/* Related products */}

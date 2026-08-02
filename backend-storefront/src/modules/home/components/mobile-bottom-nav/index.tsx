@@ -32,7 +32,7 @@ export default function MobileBottomNav() {
               }`}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[0.625rem] font-medium">{item.label}</span>
             </LocalizedClientLink>
           )
         })}

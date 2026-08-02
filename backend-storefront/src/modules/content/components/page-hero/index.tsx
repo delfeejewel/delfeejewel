@@ -37,7 +37,7 @@ export default function PageHero({
           {breadcrumb && breadcrumb.length > 0 && (
             <nav
               aria-label="Breadcrumb"
-              className="flex items-center flex-wrap gap-2 text-[12px] text-[var(--color-text-muted)]"
+              className="flex items-center flex-wrap gap-2 text-[0.75rem] text-[var(--color-text-muted)]"
             >
               {breadcrumb.map((c, i) => (
                 <span key={`${c.label}-${i}`} className="flex items-center gap-2">
@@ -60,17 +60,17 @@ export default function PageHero({
           )}
 
           {eyebrow && (
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
               {eyebrow}
             </span>
           )}
 
-          <h1 className="font-wittgenstein text-[32px] small:text-[44px] font-bold leading-tight text-[var(--color-plum)]">
+          <h1 className="font-wittgenstein text-[2rem] small:text-[2.75rem] font-bold leading-tight text-[var(--color-plum)]">
             {title}
           </h1>
 
           {description && (
-            <p className="text-[15px] small:text-[16px] leading-relaxed text-[var(--color-text-secondary)]">
+            <p className="text-[0.9375rem] small:text-[1rem] leading-relaxed text-[var(--color-text-secondary)]">
               {description}
             </p>
           )}

@@ -2,7 +2,7 @@ import { Text } from "@medusajs/ui"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import Thumbnail from "../thumbnail"
+import ThumbnailCarousel from "../thumbnail-carousel"
 import PreviewPrice from "./price"
 
 export default function ProductPreview({
@@ -29,10 +29,9 @@ export default function ProductPreview({
         }}
       >
         <div className="relative overflow-hidden">
-          <Thumbnail
+          <ThumbnailCarousel
             thumbnail={product.thumbnail}
             images={product.images}
-            size="full"
             isFeatured={isFeatured}
           />
         </div>

@@ -65,7 +65,7 @@ export default function QuickChips({
             <motion.button
               key={chip.label}
               onClick={() => handleClick(chip)}
-              className="flex-shrink-0 px-4 py-2 rounded-full text-[12px] font-medium whitespace-nowrap"
+              className="flex-shrink-0 px-4 py-2 rounded-full text-[0.75rem] font-medium whitespace-nowrap"
               style={{
                 background: active ? "var(--color-accent-dark)" : "var(--color-bg-primary)",
                 color: active ? "#fff" : "var(--color-text-secondary)",

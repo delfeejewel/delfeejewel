@@ -9,7 +9,7 @@ type PaymentDetailsProps = {
 }
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+  <p className="text-[0.65625rem] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
     {children}
   </p>
 )
@@ -25,11 +25,11 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
 
   return (
     <div>
-      <h2 className="font-wittgenstein text-[18px] small:text-[20px] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
+      <h2 className="font-wittgenstein text-[1.125rem] small:text-[1.25rem] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
         Payment
       </h2>
       {payment ? (
-        <div className="grid grid-cols-1 small:grid-cols-2 gap-5 text-[13px]">
+        <div className="grid grid-cols-1 small:grid-cols-2 gap-5 text-[0.8125rem]">
           <div>
             <Label>Payment method</Label>
             <p
@@ -86,7 +86,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
           </div>
         </div>
       ) : (
-        <p className="text-[13px] text-[var(--color-text-muted)]">
+        <p className="text-[0.8125rem] text-[var(--color-text-muted)]">
           Payment details will appear here once processed.
         </p>
       )}

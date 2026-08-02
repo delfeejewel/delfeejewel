@@ -41,13 +41,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={`flex flex-col w-full ${className}`}>
         {topLabel && (
-          <label className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+          <label className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
             {topLabel}
           </label>
         )}
         <div className="relative w-full">
           {prefix && (
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-secondary)] pointer-events-none select-none">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[0.875rem] text-[var(--color-text-secondary)] pointer-events-none select-none">
               {prefix}
             </span>
           )}
@@ -58,7 +58,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             placeholder=" "
             required={required}
             className={clx(
-              "peer w-full h-12 px-4 text-[14px] bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl appearance-none transition-colors duration-150 outline-none hover:border-[var(--color-border-hover)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15",
+              "peer w-full h-12 px-4 text-[0.875rem] bg-white text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-xl appearance-none transition-colors duration-150 outline-none hover:border-[var(--color-border-hover)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15",
               prefix && "pl-12"
             )}
             {...props}
@@ -71,10 +71,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             htmlFor={name}
             onClick={() => inputRef.current?.focus()}
             className={clx(
-              "absolute left-2.5 -translate-y-1/2 px-1 text-[14px] text-[var(--color-text-muted)] transition-all duration-150 pointer-events-none",
+              "absolute left-2.5 -translate-y-1/2 px-1 text-[0.875rem] text-[var(--color-text-muted)] transition-all duration-150 pointer-events-none",
               prefix
-                ? "top-0 text-[11px] bg-white peer-focus:text-[var(--color-plum)]"
-                : "top-1/2 bg-transparent peer-focus:top-0 peer-focus:text-[11px] peer-focus:bg-white peer-focus:text-[var(--color-plum)] peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:bg-white"
+                ? "top-0 text-[0.6875rem] bg-white peer-focus:text-[var(--color-plum)]"
+                : "top-1/2 bg-transparent peer-focus:top-0 peer-focus:text-[0.6875rem] peer-focus:bg-white peer-focus:text-[var(--color-plum)] peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-[0.6875rem] peer-[:not(:placeholder-shown)]:bg-white"
             )}
           >
             {label}

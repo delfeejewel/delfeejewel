@@ -79,10 +79,10 @@ export default function WishlistView({ products, countryCode }: Props) {
       {/* Header */}
       <header className="flex flex-col tablet:flex-row tablet:justify-between tablet:items-end gap-4 mb-8 tablet:mb-10">
         <div>
-          <h1 className="font-wittgenstein text-[28px] tablet:text-[36px] font-bold text-[var(--color-plum)] mb-1.5">
+          <h1 className="font-wittgenstein text-[1.75rem] tablet:text-[2.25rem] font-bold text-[var(--color-plum)] mb-1.5">
             My Wishlist
           </h1>
-          <p className="text-[14px] text-[var(--color-text-muted)]">
+          <p className="text-[0.875rem] text-[var(--color-text-muted)]">
             {items.length === 0
               ? "You haven't saved any pieces yet."
               : `You have ${items.length} item${
@@ -95,7 +95,7 @@ export default function WishlistView({ products, countryCode }: Props) {
           <button
             type="button"
             onClick={handleShare}
-            className="self-start tablet:self-auto flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--color-border)] bg-white text-[13px] font-semibold text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+            className="self-start tablet:self-auto flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--color-border)] bg-white text-[0.8125rem] font-semibold text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] transition-colors"
           >
             {shared ? <Check size={16} /> : <Share2 size={16} />}
             {shared ? "Link Copied" : "Share Wishlist"}
@@ -115,16 +115,16 @@ export default function WishlistView({ products, countryCode }: Props) {
               strokeWidth={1.6}
             />
           </div>
-          <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+          <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
             Your Wishlist is Empty
           </h2>
-          <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm">
+          <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-sm">
             Tap the heart on any piece you love and it will be saved here for
             later.
           </p>
           <LocalizedClientLink
             href="/store"
-            className="mt-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold hover:brightness-105 transition-all"
+            className="mt-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold hover:brightness-105 transition-all"
             data-testid="explore-collection-button"
           >
             Explore the Collection
@@ -205,7 +205,7 @@ function WishlistCard({
             src={image}
             alt={product.title || "Product"}
             fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="object-cover"
             sizes="(max-width: 512px) 100vw, (max-width: 1280px) 50vw, 25vw"
           />
         </LocalizedClientLink>
@@ -222,7 +222,7 @@ function WishlistCard({
 
         {badge && (
           <span
-            className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge.cls}`}
+            className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-[0.625rem] font-bold uppercase tracking-wider ${badge.cls}`}
           >
             {badge.label}
           </span>
@@ -235,12 +235,12 @@ function WishlistCard({
           href={`/products/${product.handle}`}
           className="block"
         >
-          <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] capitalize leading-snug line-clamp-2 hover:text-[var(--color-plum)] transition-colors">
+          <h3 className="text-[0.9375rem] font-semibold text-[var(--color-text-primary)] capitalize leading-snug line-clamp-2 hover:text-[var(--color-plum)] transition-colors">
             {product.title}
           </h3>
         </LocalizedClientLink>
         {subtitle && (
-          <p className="mt-1 text-[13px] text-[var(--color-text-muted)] line-clamp-1">
+          <p className="mt-1 text-[0.8125rem] text-[var(--color-text-muted)] line-clamp-1">
             {subtitle}
           </p>
         )}
@@ -249,17 +249,17 @@ function WishlistCard({
           <div className="flex items-baseline gap-2 mb-3">
             {cheapestPrice ? (
               <>
-                <span className="font-wittgenstein text-[20px] font-bold text-[var(--color-plum)]">
+                <span className="font-wittgenstein text-[1.25rem] font-bold text-[var(--color-plum)]">
                   {cheapestPrice.calculated_price}
                 </span>
                 {cheapestPrice.price_type === "sale" && (
-                  <span className="text-[13px] line-through text-[var(--color-text-muted)]">
+                  <span className="text-[0.8125rem] line-through text-[var(--color-text-muted)]">
                     {cheapestPrice.original_price}
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-[14px] text-[var(--color-text-muted)]">
+              <span className="text-[0.875rem] text-[var(--color-text-muted)]">
                 Price unavailable
               </span>
             )}
@@ -270,7 +270,7 @@ function WishlistCard({
               type="button"
               onClick={handleAddToBag}
               disabled={adding || !inStock}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all"
             >
               <ShoppingBag size={15} />
               {!inStock ? "Out of Stock" : adding ? "Adding..." : "Add to Bag"}
@@ -278,7 +278,7 @@ function WishlistCard({
           ) : (
             <LocalizedClientLink
               href={`/products/${product.handle}`}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
             >
               <ShoppingBag size={15} />
               Select Options

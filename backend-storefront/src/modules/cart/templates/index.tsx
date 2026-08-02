@@ -26,10 +26,10 @@ const CartTemplate = ({
           <>
             {/* Page heading */}
             <header className="mb-6 small:mb-8">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
                 Your bag
               </span>
-              <h1 className="font-wittgenstein text-[28px] small:text-[36px] font-bold text-[var(--color-plum)] mt-1 leading-tight">
+              <h1 className="font-wittgenstein text-[1.75rem] small:text-[2.25rem] font-bold text-[var(--color-plum)] mt-1 leading-tight">
                 Almost yours
               </h1>
             </header>

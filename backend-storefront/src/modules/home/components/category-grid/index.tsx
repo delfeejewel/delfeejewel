@@ -40,7 +40,7 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
     <section className="pt-8 pb-10 small:py-16 bg-white">
       {/* Header */}
       <div className="page-container mb-5 small:mb-8">
-        <h2 className="font-wittgenstein text-[24px] small:text-[30px] text-[var(--color-plum)]">
+        <h2 className="font-wittgenstein text-[1.5rem] small:text-[1.875rem] text-[var(--color-plum)]">
           Shop by Category
         </h2>
         <div className="w-12 h-[2px] bg-[var(--color-gold)] mt-2.5 rounded-full" />
@@ -100,7 +100,7 @@ export default function CategoryGrid({ categories }: { categories: Category[] })
 
                 {/* Label */}
                 <div className="mt-3 small:mt-4 text-center">
-                  <p className="font-semibold text-[14px] small:text-[15px] text-[var(--color-text-secondary)] group-hover:text-[var(--color-plum)] transition-colors">
+                  <p className="font-semibold text-[0.875rem] small:text-[0.9375rem] text-[var(--color-text-secondary)] group-hover:text-[var(--color-plum)] transition-colors">
                     {cat.name}
                   </p>
                 </div>

@@ -42,7 +42,7 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
           onFocus={() => innerRef.current?.focus()}
           onBlur={() => innerRef.current?.blur()}
           className={clx(
-            "relative flex items-center h-12 text-[14px] border border-[var(--color-border)] bg-white rounded-xl transition-colors duration-150 hover:border-[var(--color-border-hover)] focus-within:border-[var(--color-plum)] focus-within:ring-2 focus-within:ring-[var(--color-plum)]/15",
+            "relative flex items-center h-12 text-[0.875rem] border border-[var(--color-border)] bg-white rounded-xl transition-colors duration-150 hover:border-[var(--color-border-hover)] focus-within:border-[var(--color-plum)] focus-within:ring-2 focus-within:ring-[var(--color-plum)]/15",
             className,
             {
               "text-[var(--color-text-muted)]": isPlaceholder,

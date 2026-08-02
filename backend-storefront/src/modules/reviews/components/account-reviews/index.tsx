@@ -35,10 +35,10 @@ export default function AccountReviews({
   return (
     <div className="w-full" data-testid="reviews-page-wrapper">
       <header className="mb-8 tablet:mb-10">
-        <h1 className="font-wittgenstein text-[28px] tablet:text-[36px] font-bold text-[var(--color-plum)] mb-1.5">
+        <h1 className="font-wittgenstein text-[1.75rem] tablet:text-[2.25rem] font-bold text-[var(--color-plum)] mb-1.5">
           My Reviews
         </h1>
-        <p className="text-[14px] text-[var(--color-text-muted)]">
+        <p className="text-[0.875rem] text-[var(--color-text-muted)]">
           Share your experience and help other shoppers choose with confidence.
         </p>
       </header>
@@ -51,16 +51,16 @@ export default function AccountReviews({
               strokeWidth={1.6}
             />
           </div>
-          <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+          <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
             No reviews yet
           </h2>
-          <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm">
+          <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-sm">
             Once your orders are delivered, the pieces you bought will show up
             here for you to review.
           </p>
           <LocalizedClientLink
             href="/account/orders"
-            className="mt-1 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
+            className="mt-1 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
           >
             View My Orders
           </LocalizedClientLink>
@@ -70,7 +70,7 @@ export default function AccountReviews({
       {/* Pending */}
       {pending.length > 0 && (
         <section className="mb-10">
-          <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-4">
+          <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-4">
             Waiting for your review ({pending.length})
           </h2>
           <div
@@ -93,7 +93,7 @@ export default function AccountReviews({
       {/* Submitted */}
       {submitted.length > 0 && (
         <section>
-          <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-4">
+          <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-4">
             Your reviews
           </h2>
           <div className="flex flex-col gap-4">
@@ -115,26 +115,26 @@ export default function AccountReviews({
                   {r.product_handle ? (
                     <LocalizedClientLink
                       href={`/products/${r.product_handle}`}
-                      className="text-[14px] font-semibold text-[var(--color-text-primary)] capitalize hover:text-[var(--color-plum)] transition-colors"
+                      className="text-[0.875rem] font-semibold text-[var(--color-text-primary)] capitalize hover:text-[var(--color-plum)] transition-colors"
                     >
                       {r.product_title}
                     </LocalizedClientLink>
                   ) : (
-                    <span className="text-[14px] font-semibold text-[var(--color-text-primary)] capitalize">
+                    <span className="text-[0.875rem] font-semibold text-[var(--color-text-primary)] capitalize">
                       {r.product_title}
                     </span>
                   )}
                   <div className="flex items-center gap-2.5 mt-1.5 mb-2">
                     <Stars rating={r.rating} />
-                    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-green-700">
+                    <span className="inline-flex items-center gap-1 text-[0.65625rem] font-semibold text-green-700">
                       <ShieldCheck size={12} />
                       Verified Purchase
                     </span>
                   </div>
-                  <p className="text-[13.5px] leading-relaxed text-[var(--color-text-secondary)]">
+                  <p className="text-[0.84375rem] leading-relaxed text-[var(--color-text-secondary)]">
                     {r.content}
                   </p>
-                  <p className="text-[11.5px] text-[var(--color-text-muted)] mt-2">
+                  <p className="text-[0.71875rem] text-[var(--color-text-muted)] mt-2">
                     {new Date(r.created_at).toLocaleDateString("en-IN", {
                       day: "numeric",
                       month: "short",

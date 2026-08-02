@@ -50,7 +50,7 @@ export default function PopularTags() {
     <section className="content-container pt-6">
       <div className="flex items-center gap-3 mb-3">
         <p
-          className="text-[11px] uppercase tracking-[0.18em] font-semibold"
+          className="text-[0.6875rem] uppercase tracking-[0.18em] font-semibold"
           style={{ color: "var(--color-plum)" }}
         >
           Popular right now
@@ -63,7 +63,7 @@ export default function PopularTags() {
               params.delete("for")
               push(params)
             }}
-            className="text-[11px] underline"
+            className="text-[0.6875rem] underline"
             style={{ color: "var(--color-text-muted)" }}
           >
             Clear
@@ -80,7 +80,7 @@ export default function PopularTags() {
               key={a.value}
               onClick={() => setAudience(a.value)}
               aria-pressed={isActive}
-              className="flex-shrink-0 px-4 py-2 rounded-full text-[12px] font-medium whitespace-nowrap transition-all duration-200"
+              className="flex-shrink-0 px-4 py-2 rounded-full text-[0.75rem] font-medium whitespace-nowrap transition-all duration-200"
               style={{
                 background: isActive
                   ? "var(--color-gold)"
@@ -108,7 +108,7 @@ export default function PopularTags() {
             <button
               key={t.value}
               onClick={() => setTag(t.value)}
-              className="flex-shrink-0 px-4 py-2 rounded-full text-[12px] font-medium whitespace-nowrap transition-all duration-200"
+              className="flex-shrink-0 px-4 py-2 rounded-full text-[0.75rem] font-medium whitespace-nowrap transition-all duration-200"
               style={{
                 background: isActive
                   ? "var(--color-plum)"

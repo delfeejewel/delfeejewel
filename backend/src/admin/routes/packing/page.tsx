@@ -30,6 +30,8 @@ type Item = {
   id: string
   title: string
   variant_title: string | null
+  /** Null for service lines (gift wrap, COD fee) — those get no product link. */
+  product_id: string | null
   quantity: number
   packed: boolean
 }
@@ -443,7 +445,22 @@ const PackingPage = () => {
                             onCheckedChange={() => togglePacked(item, allButThisPacked)}
                           />
                           <Text size="small">
-                            Packed {item.title}
+                            Packed{" "}
+                            {/* Opens the product in a new tab: checking a piece
+                                against its photo/SKU shouldn't cost the packer
+                                their place in the checklist. */}
+                            {item.product_id ? (
+                              <a
+                                href={`/app/products/${item.product_id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ textDecoration: "underline" }}
+                              >
+                                {item.title}
+                              </a>
+                            ) : (
+                              item.title
+                            )}
                             {item.variant_title ? ` — ${item.variant_title}` : ""} × {item.quantity}
                           </Text>
                         </div>

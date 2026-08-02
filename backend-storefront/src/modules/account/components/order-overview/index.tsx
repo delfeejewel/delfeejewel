@@ -14,16 +14,16 @@ const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
         <div className="w-14 h-14 rounded-full bg-[var(--color-lavender)] flex items-center justify-center">
           <ShoppingBag className="w-6 h-6 text-[var(--color-plum)]" strokeWidth={1.6} />
         </div>
-        <h2 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+        <h2 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
           No Orders Yet
         </h2>
-        <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm">
+        <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-sm">
           You haven&apos;t placed any orders yet. Start exploring our
           collection and find something you love.
         </p>
         <LocalizedClientLink
           href="/store"
-          className="mt-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold hover:brightness-105 transition-all"
+          className="mt-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold hover:brightness-105 transition-all"
           data-testid="continue-shopping-button"
         >
           Start Shopping
@@ -47,17 +47,17 @@ const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
           <Gift size={28} />
         </div>
         <div>
-          <h2 className="font-wittgenstein text-[24px] font-semibold text-[var(--color-plum)] mb-2">
+          <h2 className="font-wittgenstein text-[1.5rem] font-semibold text-[var(--color-plum)] mb-2">
             Gifting a piece of forever?
           </h2>
-          <p className="text-[14px] text-[var(--color-text-muted)] max-w-lg mx-auto leading-relaxed">
+          <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-lg mx-auto leading-relaxed">
             Every Delfee piece arrives in a premium box with a certificate of
             authenticity — ready for your most precious moments.
           </p>
         </div>
         <LocalizedClientLink
           href="/store"
-          className="px-8 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold shadow-lg hover:scale-105 transition-transform"
+          className="px-8 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold shadow-lg hover:scale-105 transition-transform"
         >
           Explore Gifting Collection
         </LocalizedClientLink>

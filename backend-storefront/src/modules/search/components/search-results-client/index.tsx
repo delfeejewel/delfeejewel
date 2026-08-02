@@ -117,12 +117,13 @@ export default function SearchResultsClient({
     router.push(`${pathname}?${params.toString()}`, { scroll: true })
   }
 
+  // One card per row on a phone (< 512px) — same as the store listing.
   const gridClass =
     gridCols === 2
-      ? "grid-cols-2"
+      ? "grid-cols-1 xsmall:grid-cols-2"
       : gridCols === 3
-        ? "grid-cols-2 small:grid-cols-3"
-        : "grid-cols-2 small:grid-cols-3 medium:grid-cols-4"
+        ? "grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3"
+        : "grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3 medium:grid-cols-4"
 
   return (
     <>
@@ -175,7 +176,7 @@ export default function SearchResultsClient({
                       <button
                         key={page}
                         onClick={() => goToPage(page)}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-medium transition-all duration-200"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-[0.8125rem] font-medium transition-all duration-200"
                         style={{
                           background:
                             page === currentPage
@@ -214,10 +215,10 @@ export default function SearchResultsClient({
 
               {initialProducts.length === 0 ? (
                 <>
-                  <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-2">
+                  <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-2">
                     No results found
                   </h3>
-                  <p className="text-[14px] text-[var(--color-text-muted)] mb-6 max-w-sm">
+                  <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-6 max-w-sm">
                     We couldn&apos;t find anything for &ldquo;{query}&rdquo;.
                     Try a different term or explore these:
                   </p>
@@ -226,7 +227,7 @@ export default function SearchResultsClient({
                       <LocalizedClientLink
                         key={term}
                         href={`/search?q=${encodeURIComponent(term)}`}
-                        className="px-3.5 py-1.5 rounded-full text-[12px] font-medium border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50 hover:text-[var(--color-plum)] transition-colors"
+                        className="px-3.5 py-1.5 rounded-full text-[0.75rem] font-medium border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50 hover:text-[var(--color-plum)] transition-colors"
                       >
                         {term}
                       </LocalizedClientLink>
@@ -234,23 +235,23 @@ export default function SearchResultsClient({
                   </div>
                   <LocalizedClientLink
                     href="/store"
-                    className="px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
+                    className="px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
                   >
                     Browse All Products
                   </LocalizedClientLink>
                 </>
               ) : (
                 <>
-                  <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)] mb-2">
+                  <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)] mb-2">
                     No products match your filters
                   </h3>
-                  <p className="text-[14px] text-[var(--color-text-muted)] mb-6 max-w-sm">
+                  <p className="text-[0.875rem] text-[var(--color-text-muted)] mb-6 max-w-sm">
                     Try adjusting or clearing your filters to see more results.
                   </p>
                   {hasActiveFilters && (
                     <button
                       onClick={() => setFilters({})}
-                      className="px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
+                      className="px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
                     >
                       Clear All Filters
                     </button>

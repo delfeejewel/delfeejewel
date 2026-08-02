@@ -26,16 +26,16 @@ export default function NotFound() {
 
         <div className="page-container relative z-10 py-20 small:py-28">
           <div className="max-w-xl mx-auto text-center flex flex-col items-center">
-            <p className="font-wittgenstein text-[88px] small:text-[128px] font-bold leading-none text-gradient-gold">
+            <p className="font-wittgenstein text-[5.5rem] small:text-[8rem] font-bold leading-none text-gradient-gold">
               404
             </p>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] mt-2">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] mt-2">
               Page Not Found
             </span>
-            <h1 className="font-wittgenstein text-[28px] small:text-[38px] font-bold text-[var(--color-plum)] mt-3">
+            <h1 className="font-wittgenstein text-[1.75rem] small:text-[2.375rem] font-bold text-[var(--color-plum)] mt-3">
               This page has slipped away
             </h1>
-            <p className="text-[14px] small:text-[15px] text-[var(--color-text-secondary)] mt-3 max-w-md">
+            <p className="text-[0.875rem] small:text-[0.9375rem] text-[var(--color-text-secondary)] mt-3 max-w-md">
               The page you're looking for may have been moved, renamed, or no
               longer exists. Let's get you back to something beautiful.
             </p>
@@ -43,14 +43,14 @@ export default function NotFound() {
             <div className="flex flex-col xsmall:flex-row items-center gap-3 mt-8">
               <LocalizedClientLink
                 href="/"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
               >
                 <Home size={15} />
                 Back to Home
               </LocalizedClientLink>
               <LocalizedClientLink
                 href="/store"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
               >
                 <ShoppingBag size={15} />
                 Browse the Store
@@ -62,7 +62,7 @@ export default function NotFound() {
 
       {/* Helpful links */}
       <section className="page-container py-12 small:py-16">
-        <p className="text-center text-[12px] font-semibold uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-6">
+        <p className="text-center text-[0.75rem] font-semibold uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-6">
           Or jump to
         </p>
         <div className="grid grid-cols-2 medium:grid-cols-4 gap-4 max-w-3xl mx-auto">
@@ -77,7 +77,7 @@ export default function NotFound() {
                 <div className="w-11 h-11 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center">
                   <Icon size={19} className="text-[var(--color-plum)]" />
                 </div>
-                <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+                <span className="text-[0.8125rem] font-semibold text-[var(--color-text-primary)]">
                   {l.label}
                 </span>
               </LocalizedClientLink>

@@ -17,13 +17,13 @@ export default function MobileStickyBar({
   return (
     <div className="fixed bottom-0 left-0 right-0 small:hidden z-50 px-4 py-3 flex items-center gap-3 border-t border-[var(--color-lavender)] bg-[var(--color-bg-primary)]">
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] text-[var(--color-text-muted)] truncate capitalize">{title}</p>
+        <p className="text-[0.6875rem] text-[var(--color-text-muted)] truncate capitalize">{title}</p>
         <p className="flex items-baseline gap-2">
-          <span className="font-wittgenstein text-[18px] font-bold text-[var(--color-plum)]">
+          <span className="font-wittgenstein text-[1.125rem] font-bold text-[var(--color-plum)]">
             {price}
           </span>
           {originalPrice && (
-            <span className="text-[12px] line-through text-[var(--color-text-muted)]">
+            <span className="text-[0.75rem] line-through text-[var(--color-text-muted)]">
               {originalPrice}
             </span>
           )}
@@ -31,7 +31,7 @@ export default function MobileStickyBar({
       </div>
       <button
         onClick={scrollToCart}
-        className="pdp-v1-cta h-11 px-6 flex items-center justify-center text-[12px] font-semibold uppercase tracking-[0.06em] text-white rounded-lg shrink-0"
+        className="pdp-v1-cta h-11 px-6 flex items-center justify-center text-[0.75rem] font-semibold uppercase tracking-[0.06em] text-white rounded-lg shrink-0"
       >
         Add to Bag
       </button>

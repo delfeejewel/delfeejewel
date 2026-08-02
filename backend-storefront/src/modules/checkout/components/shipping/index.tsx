@@ -166,10 +166,10 @@ const Shipping: React.FC<ShippingProps> = ({
     >
       <div className="flex flex-row items-center justify-between mb-5">
         <div className="flex flex-col">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">
             Step 2
           </span>
-          <h2 className="font-wittgenstein text-[22px] small:text-[24px] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
+          <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.5rem] font-bold text-[var(--color-plum)] mt-0.5 flex items-center gap-2">
             Delivery
             {isComplete && (
               <CheckCircle2
@@ -186,7 +186,7 @@ const Shipping: React.FC<ShippingProps> = ({
           cart?.email && (
             <button
               onClick={handleEdit}
-              className="text-[12px] font-semibold uppercase tracking-wider text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] underline-offset-4 hover:underline"
+              className="text-[0.75rem] font-semibold uppercase tracking-wider text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] underline-offset-4 hover:underline"
               data-testid="edit-delivery-button"
             >
               Edit
@@ -223,7 +223,7 @@ const Shipping: React.FC<ShippingProps> = ({
                       value={PICKUP_OPTION_ON}
                       data-testid="delivery-option-radio"
                       className={clx(
-                        "flex items-center justify-between text-[14px] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
+                        "flex items-center justify-between text-[0.875rem] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
                         {
                           "!border-[var(--color-plum)] bg-[var(--color-lavender)]/40":
                             showPickupOptions === PICKUP_OPTION_ON,
@@ -265,7 +265,7 @@ const Shipping: React.FC<ShippingProps> = ({
                         data-testid="delivery-option-radio"
                         disabled={isDisabled}
                         className={clx(
-                          "flex items-center justify-between text-[14px] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
+                          "flex items-center justify-between text-[0.875rem] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
                           {
                             "!border-[var(--color-plum)] bg-[var(--color-lavender)]/40":
                               option.id === shippingMethodId,
@@ -335,7 +335,7 @@ const Shipping: React.FC<ShippingProps> = ({
                           disabled={option.insufficient_inventory}
                           data-testid="delivery-option-radio"
                           className={clx(
-                            "flex items-center justify-between text-[14px] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
+                            "flex items-center justify-between text-[0.875rem] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
                             {
                               "!border-[var(--color-plum)] bg-[var(--color-lavender)]/40":
                                 option.id === shippingMethodId,
@@ -385,7 +385,7 @@ const Shipping: React.FC<ShippingProps> = ({
               onClick={handleSubmit}
               disabled={isLoading || !cart.shipping_methods?.[0]}
               data-testid="submit-delivery-option-button"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             >
               {isLoading ? "Working…" : "Continue to payment"}
             </button>
@@ -394,8 +394,8 @@ const Shipping: React.FC<ShippingProps> = ({
       ) : (
         <div>
           {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
-            <div className="text-[13px]">
-              <p className="text-[10.5px] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
+            <div className="text-[0.8125rem]">
+              <p className="text-[0.65625rem] uppercase tracking-[0.12em] font-semibold text-[var(--color-text-muted)] mb-1.5">
                 Method
               </p>
               <p className="text-[var(--color-text-primary)] font-medium">

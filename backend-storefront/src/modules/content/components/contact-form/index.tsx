@@ -24,10 +24,10 @@ type ContactFormProps = {
 }
 
 const inputCls =
-  "w-full h-11 px-4 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+  "w-full h-11 px-4 rounded-lg text-[0.875rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
 
 const labelCls =
-  "text-[12px] font-semibold text-[var(--color-text-secondary)] mb-1.5 block"
+  "text-[0.75rem] font-semibold text-[var(--color-text-secondary)] mb-1.5 block"
 
 export default function ContactForm({
   subjects,
@@ -120,16 +120,16 @@ export default function ContactForm({
             >
               <CheckCircle2 className="w-7 h-7 text-green-600" />
             </motion.div>
-            <h3 className="font-wittgenstein text-[20px] small:text-[22px] font-semibold text-[var(--color-plum)]">
+            <h3 className="font-wittgenstein text-[1.25rem] small:text-[1.375rem] font-semibold text-[var(--color-plum)]">
               {successTitle}
             </h3>
-            <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm leading-relaxed">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-sm leading-relaxed">
               {successMessage}
             </p>
 
             {/* Echo the address back so a typo is obvious while it's still fixable. */}
             {sentTo && (
-              <p className="text-[13px] text-[var(--color-text-secondary)]">
+              <p className="text-[0.8125rem] text-[var(--color-text-secondary)]">
                 Sent as{" "}
                 <span className="font-semibold text-[var(--color-plum)]">
                   {sentTo}
@@ -140,14 +140,14 @@ export default function ContactForm({
             <div className="mt-2 flex flex-col xsmall:flex-row items-center gap-3">
               <LocalizedClientLink
                 href="/store"
-                className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
               >
                 Continue Shopping
               </LocalizedClientLink>
               <button
                 type="button"
                 onClick={reset}
-                className="text-[13px] font-semibold text-[var(--color-plum)] underline underline-offset-4 hover:text-[var(--color-gold)] transition-colors"
+                className="text-[0.8125rem] font-semibold text-[var(--color-plum)] underline underline-offset-4 hover:text-[var(--color-gold)] transition-colors"
               >
                 Send another message
               </button>
@@ -241,7 +241,7 @@ export default function ContactForm({
               type="submit"
               disabled={status === "sending"}
               whileTap={{ scale: 0.97 }}
-              className="mt-5 w-full xsmall:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              className="mt-5 w-full xsmall:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             >
               {status === "sending" ? (
                 <>

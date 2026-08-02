@@ -50,7 +50,7 @@ export default function ReorderButton({
   }
 
   const baseBtn =
-    "inline-flex items-center justify-center gap-2 text-[12px] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+    "inline-flex items-center justify-center gap-2 text-[0.75rem] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
   const styles =
     variant === "primary"
       ? "px-6 py-2.5 rounded-xl bg-[var(--color-plum)] text-white hover:bg-[var(--color-plum-deep)] active:scale-95"
@@ -79,7 +79,7 @@ export default function ReorderButton({
       </button>
       {message && (
         <p
-          className={`text-[11px] inline-flex items-center gap-1 ${
+          className={`text-[0.6875rem] inline-flex items-center gap-1 ${
             status === "error"
               ? "text-red-500"
               : "text-[var(--color-text-muted)]"

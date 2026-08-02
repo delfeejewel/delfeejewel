@@ -97,7 +97,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       <li>
                         <LocalizedClientLink
                           href="/"
-                          className="flex items-center px-3 py-3 rounded-lg text-[15px] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
+                          className="flex items-center px-3 py-3 rounded-lg text-[0.9375rem] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                           onClick={close}
                           data-testid="home-link"
                         >
@@ -109,7 +109,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       {categories && categories.length > 0 && (
                         <>
                           <li className="px-3 pt-4 pb-1">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)]">
+                            <span className="text-[0.625rem] font-semibold uppercase tracking-[0.15em] text-[var(--color-gold)]">
                               Categories
                             </span>
                           </li>
@@ -117,7 +117,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                             <li key={cat.handle}>
                               <LocalizedClientLink
                                 href={`/categories/${cat.handle}`}
-                                className="flex items-center px-3 py-2.5 rounded-lg text-[14px] text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
+                                className="flex items-center px-3 py-2.5 rounded-lg text-[0.875rem] text-[var(--color-text-secondary)] hover:text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                                 onClick={close}
                                 data-testid={`${cat.handle}-link`}
                               >
@@ -134,7 +134,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       <li>
                         <LocalizedClientLink
                           href="/store"
-                          className="flex items-center px-3 py-3 rounded-lg text-[15px] font-semibold text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
+                          className="flex items-center px-3 py-3 rounded-lg text-[0.9375rem] font-semibold text-[var(--color-plum)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                           onClick={close}
                           data-testid="all-jewellery-link"
                         >
@@ -144,7 +144,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       <li>
                         <LocalizedClientLink
                           href="/account"
-                          className="flex items-center px-3 py-3 rounded-lg text-[15px] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
+                          className="flex items-center px-3 py-3 rounded-lg text-[0.9375rem] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                           onClick={close}
                           data-testid="account-link"
                         >
@@ -154,7 +154,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       <li>
                         <LocalizedClientLink
                           href="/account/wishlist"
-                          className="flex items-center px-3 py-3 rounded-lg text-[15px] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
+                          className="flex items-center px-3 py-3 rounded-lg text-[0.9375rem] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                           onClick={close}
                         >
                           Wishlist
@@ -163,7 +163,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                       <li>
                         <LocalizedClientLink
                           href="/cart"
-                          className="flex items-center px-3 py-3 rounded-lg text-[15px] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
+                          className="flex items-center px-3 py-3 rounded-lg text-[0.9375rem] font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                           onClick={close}
                           data-testid="cart-link"
                         >
@@ -210,7 +210,7 @@ const SideMenu = ({ regions, locales, currentLocale, categories }: SideMenuProps
                         />
                       </div>
                       <Text
-                        className="text-[11px] text-[var(--color-text-muted)]"
+                        className="text-[0.6875rem] text-[var(--color-text-muted)]"
                         suppressHydrationWarning
                       >
                         {BRAND.copyright(new Date().getFullYear())}

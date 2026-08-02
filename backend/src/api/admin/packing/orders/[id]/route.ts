@@ -45,6 +45,8 @@ export async function GET(
       // without it every service line counts as something to physically pick.
       "items.product_handle",
       "items.variant_sku",
+      // Lets the checklist link each line to its product in Admin.
+      "items.product_id",
       "fulfillments.id",
       "fulfillments.provider_id",
       "fulfillments.data",
@@ -77,6 +79,12 @@ export async function GET(
     id: it.id,
     title: it.title,
     variant_title: it.variant_title || null,
+    product_id: it.product_id || null,
+    // Both already queried above but never returned: the dispatch widget shows
+    // the SKU, and filters service lines (gift wrap, COD fee) out of the pick
+    // list by handle — with the field missing that filter matched nothing.
+    product_handle: it.product_handle || null,
+    variant_sku: it.variant_sku || null,
     quantity: it.detail?.quantity ?? it.quantity ?? 1,
     packed: !!activePacking?.packed_item_ids?.includes(it.id),
   }))

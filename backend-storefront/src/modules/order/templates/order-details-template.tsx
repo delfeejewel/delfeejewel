@@ -171,7 +171,7 @@ export default function OrderDetailsTemplate({
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <LocalizedClientLink
           href="/account/orders"
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
           data-testid="back-to-overview-button"
         >
           <ChevronLeft size={16} />
@@ -185,23 +185,23 @@ export default function OrderDetailsTemplate({
         <div className="flex flex-col tablet:flex-row tablet:items-start justify-between gap-4 mb-8">
           <div>
             <div className="flex flex-wrap items-center gap-3 mb-1">
-              <h1 className="font-wittgenstein text-[24px] small:text-[28px] font-bold text-[var(--color-plum)]">
+              <h1 className="font-wittgenstein text-[1.5rem] small:text-[1.75rem] font-bold text-[var(--color-plum)]">
                 Order #{order.display_id}
               </h1>
-              <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${badge.cls}`}>
+              <span className={`px-3 py-1 rounded-full text-[0.6875rem] font-bold uppercase tracking-wider ${badge.cls}`}>
                 {badge.label}
               </span>
             </div>
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <p className="text-[0.8125rem] text-[var(--color-text-muted)]">
               Placed on {fmtDate(order.created_at)} • {itemCount}{" "}
               {itemCount === 1 ? "item" : "items"}
             </p>
           </div>
           <div className="tablet:text-right shrink-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
               {estLabel}
             </p>
-            <p className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)]">
+            <p className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)]">
               {estValue}
             </p>
           </div>
@@ -233,7 +233,7 @@ export default function OrderDetailsTemplate({
 
         {/* Items in order */}
         <div className="bg-white rounded-2xl border border-[var(--color-lavender)] shadow-sm p-6">
-          <h2 className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)] mb-5">
+          <h2 className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)] mb-5">
             Items in Order
           </h2>
           <div className="space-y-4">
@@ -249,15 +249,15 @@ export default function OrderDetailsTemplate({
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[var(--color-text-primary)] leading-tight">
+                  <p className="text-[0.875rem] font-semibold text-[var(--color-text-primary)] leading-tight">
                     {item.product_title || item.title}
                   </p>
                   {item.variant_title && (
-                    <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
+                    <p className="text-[0.75rem] text-[var(--color-text-muted)] mt-0.5">
                       {item.variant_title} • Qty {item.quantity}
                     </p>
                   )}
-                  <p className="text-[13px] font-bold text-[var(--color-plum)] mt-1">
+                  <p className="text-[0.8125rem] font-bold text-[var(--color-plum)] mt-1">
                     {convertToLocale({
                       amount: item.total,
                       currency_code: order.currency_code,
@@ -270,7 +270,7 @@ export default function OrderDetailsTemplate({
 
           {/* Totals */}
           <div className="mt-6 pt-5 border-t border-[var(--color-lavender)] space-y-2">
-            <div className="flex justify-between text-[13px] text-[var(--color-text-muted)]">
+            <div className="flex justify-between text-[0.8125rem] text-[var(--color-text-muted)]">
               <span>Subtotal</span>
               <span>
                 {convertToLocale({
@@ -279,7 +279,7 @@ export default function OrderDetailsTemplate({
                 })}
               </span>
             </div>
-            <div className="flex justify-between text-[13px] text-[var(--color-text-muted)]">
+            <div className="flex justify-between text-[0.8125rem] text-[var(--color-text-muted)]">
               <span>Shipping</span>
               <span>
                 {order.shipping_total
@@ -291,7 +291,7 @@ export default function OrderDetailsTemplate({
               </span>
             </div>
             {!!order.discount_total && (
-              <div className="flex justify-between text-[13px] text-green-700 font-semibold">
+              <div className="flex justify-between text-[0.8125rem] text-green-700 font-semibold">
                 <span>Discount</span>
                 <span>
                   {`− ${convertToLocale({
@@ -301,7 +301,7 @@ export default function OrderDetailsTemplate({
                 </span>
               </div>
             )}
-            <div className="flex justify-between text-[15px] font-bold text-[var(--color-plum)] pt-1.5">
+            <div className="flex justify-between text-[0.9375rem] font-bold text-[var(--color-plum)] pt-1.5">
               <span>Total</span>
               <span>
                 {convertToLocale({
@@ -320,12 +320,12 @@ export default function OrderDetailsTemplate({
           <div className="bg-white rounded-2xl border border-[var(--color-lavender)] shadow-sm p-6">
             <div className="flex items-center gap-2 mb-3">
               <MapPin size={16} className="text-[var(--color-plum)]" />
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-plum)]">
+              <h3 className="text-[0.75rem] font-bold uppercase tracking-wider text-[var(--color-plum)]">
                 Shipping Address
               </h3>
             </div>
             {address ? (
-              <div className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+              <div className="text-[0.8125rem] text-[var(--color-text-muted)] leading-relaxed">
                 <p className="font-semibold text-[var(--color-text-primary)]">
                   {address.first_name} {address.last_name}
                 </p>
@@ -342,7 +342,7 @@ export default function OrderDetailsTemplate({
                 {address.phone && <p className="mt-1.5">Phone: {address.phone}</p>}
               </div>
             ) : (
-              <p className="text-[13px] text-[var(--color-text-muted)]">
+              <p className="text-[0.8125rem] text-[var(--color-text-muted)]">
                 No shipping address on file.
               </p>
             )}
@@ -353,18 +353,18 @@ export default function OrderDetailsTemplate({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <CreditCard size={16} className="text-[var(--color-plum)]" />
-                <h3 className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-plum)]">
+                <h3 className="text-[0.75rem] font-bold uppercase tracking-wider text-[var(--color-plum)]">
                   Payment Method
                 </h3>
               </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${payBadge.cls}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[0.625rem] font-bold uppercase ${payBadge.cls}`}>
                 {payBadge.label}
               </span>
             </div>
-            <p className="text-[14px] font-semibold text-[var(--color-text-primary)] capitalize">
+            <p className="text-[0.875rem] font-semibold text-[var(--color-text-primary)] capitalize">
               {paymentMethodLabel(payment?.provider_id)}
             </p>
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
+            <p className="text-[0.8125rem] text-[var(--color-text-muted)] mt-0.5">
               {convertToLocale({
                 amount: order.total,
                 currency_code: order.currency_code,
@@ -378,12 +378,12 @@ export default function OrderDetailsTemplate({
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Truck size={16} className="text-[var(--color-gold)]" />
-                <h3 className="text-[12px] font-bold uppercase tracking-wider text-[var(--color-plum)]">
+                <h3 className="text-[0.75rem] font-bold uppercase tracking-wider text-[var(--color-plum)]">
                   Courier Info
                 </h3>
               </div>
               {courierName && (
-                <span className="bg-[var(--color-bg-secondary)] text-[var(--color-plum)] px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                <span className="bg-[var(--color-bg-secondary)] text-[var(--color-plum)] px-2 py-0.5 rounded text-[0.625rem] font-bold uppercase">
                   {courierName}
                 </span>
               )}
@@ -391,11 +391,11 @@ export default function OrderDetailsTemplate({
             {isShipped && trackingNumber ? (
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                  <p className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
                     Tracking ID
                   </p>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[14px] font-bold text-[var(--color-text-primary)]">
+                    <p className="text-[0.875rem] font-bold text-[var(--color-text-primary)]">
                       {trackingNumber}
                     </p>
                     <CopyButton value={String(trackingNumber)} />
@@ -406,7 +406,7 @@ export default function OrderDetailsTemplate({
                     href={trackingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[var(--color-plum)] hover:underline"
+                    className="inline-flex items-center gap-1.5 text-[0.75rem] font-bold uppercase tracking-wide text-[var(--color-plum)] hover:underline"
                   >
                     Track on partner site
                     <ExternalLink size={13} />
@@ -414,7 +414,7 @@ export default function OrderDetailsTemplate({
                 )}
               </div>
             ) : (
-              <p className="text-[13px] text-[var(--color-text-muted)]">
+              <p className="text-[0.8125rem] text-[var(--color-text-muted)]">
                 Your order hasn&apos;t shipped yet. Tracking details will appear
                 here once it&apos;s dispatched.
               </p>
@@ -424,16 +424,16 @@ export default function OrderDetailsTemplate({
           {/* Need help */}
           <div className="bg-[var(--color-plum)] rounded-2xl shadow-sm p-6 flex items-center justify-between gap-4">
             <div>
-              <p className="font-wittgenstein text-[18px] font-semibold text-white">
+              <p className="font-wittgenstein text-[1.125rem] font-semibold text-white">
                 Need Help?
               </p>
-              <p className="text-[12px] text-white/70">
+              <p className="text-[0.75rem] text-white/70">
                 Our concierge is here for you.
               </p>
             </div>
             <LocalizedClientLink
               href="/contact"
-              className="shrink-0 flex items-center gap-1.5 bg-[var(--color-gold)] text-[var(--color-plum-deep)] px-5 py-2.5 rounded-full text-[12px] font-bold hover:scale-105 transition-transform"
+              className="shrink-0 flex items-center gap-1.5 bg-[var(--color-gold)] text-[var(--color-plum-deep)] px-5 py-2.5 rounded-full text-[0.75rem] font-bold hover:scale-105 transition-transform"
             >
               <Headset size={15} />
               Contact
@@ -444,7 +444,7 @@ export default function OrderDetailsTemplate({
 
       {/* ── Detailed activity ── */}
       <section className="bg-white rounded-2xl border border-[var(--color-lavender)] shadow-sm p-6 small:p-8">
-        <h2 className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)] mb-6">
+        <h2 className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)] mb-6">
           Detailed Activity
         </h2>
         <div className="relative space-y-7 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[var(--color-lavender)]">
@@ -456,14 +456,14 @@ export default function OrderDetailsTemplate({
                 }`}
               />
               <div className="flex flex-col tablet:flex-row tablet:justify-between gap-0.5">
-                <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+                <p className="text-[0.8125rem] font-semibold text-[var(--color-text-primary)]">
                   {a.label}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                <p className="text-[0.625rem] uppercase tracking-wide text-[var(--color-text-muted)]">
                   {fmtDateTime(a.date)}
                 </p>
               </div>
-              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
+              <p className="text-[0.75rem] text-[var(--color-text-muted)] mt-0.5">
                 {a.desc}
               </p>
             </div>

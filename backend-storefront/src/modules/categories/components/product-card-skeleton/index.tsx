@@ -53,7 +53,7 @@ export default function ProductCardSkeleton() {
 /** A full grid of skeleton cards, for the initial/catalogue-loading state. */
 export function ProductCardSkeletonGrid({
   count = 12,
-  gridClass = "grid-cols-2 small:grid-cols-3 medium:grid-cols-4",
+  gridClass = "grid-cols-1 xsmall:grid-cols-2 small:grid-cols-3 medium:grid-cols-4",
 }: {
   count?: number
   gridClass?: string

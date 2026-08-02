@@ -198,7 +198,7 @@ const InvoiceButton = ({
     <button
       type="button"
       onClick={handleDownload}
-      className={`inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all ${className}`}
       data-testid="download-invoice-button"
     >
       <Download size={15} />

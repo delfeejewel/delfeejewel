@@ -194,10 +194,10 @@ export default function TrackOrderTemplate() {
       <TrackDecor />
       <div className="page-container relative z-10 py-10 small:py-14">
         <header className="text-center mb-10">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
+          <span className="text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
             Order Tracking
           </span>
-          <h1 className="font-wittgenstein text-[32px] tablet:text-[42px] font-bold text-[var(--color-plum)] mt-2">
+          <h1 className="font-wittgenstein text-[2rem] tablet:text-[2.625rem] font-bold text-[var(--color-plum)] mt-2">
             Where&apos;s My Order?
           </h1>
           <div className="flex items-center justify-center gap-2.5 mt-3.5">
@@ -207,7 +207,7 @@ export default function TrackOrderTemplate() {
             </svg>
             <span className="h-px w-10 bg-gradient-to-l from-transparent to-[var(--color-gold)]/50" />
           </div>
-          <p className="text-[14px] text-[var(--color-text-secondary)] mt-3.5 max-w-lg mx-auto">
+          <p className="text-[0.875rem] text-[var(--color-text-secondary)] mt-3.5 max-w-lg mx-auto">
             Enter your order number and the email you used at checkout to see
             the latest delivery status.
           </p>
@@ -224,17 +224,17 @@ export default function TrackOrderTemplate() {
                 <Search size={18} />
               </span>
               <div>
-                <h2 className="font-wittgenstein text-[18px] font-bold text-[var(--color-plum)] leading-tight">
+                <h2 className="font-wittgenstein text-[1.125rem] font-bold text-[var(--color-plum)] leading-tight">
                   Find your order
                 </h2>
-                <p className="text-[12px] text-[var(--color-text-muted)]">
+                <p className="text-[0.75rem] text-[var(--color-text-muted)]">
                   Takes just a few seconds
                 </p>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
+              <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                 <Hash size={11} /> Order number
               </label>
               <input
@@ -246,11 +246,11 @@ export default function TrackOrderTemplate() {
                   setError("")
                 }}
                 placeholder="1234"
-                className="w-full px-3.5 py-2.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15 transition-all"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[0.875rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15 transition-all"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
+              <label className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)] flex items-center gap-1.5 mb-1.5">
                 <Mail size={11} /> Email
               </label>
               <input
@@ -261,14 +261,14 @@ export default function TrackOrderTemplate() {
                   setError("")
                 }}
                 placeholder="you@example.com"
-                className="w-full px-3.5 py-2.5 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15 transition-all"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[0.875rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-plum)] focus:ring-2 focus:ring-[var(--color-plum)]/15 transition-all"
               />
             </div>
-            {error && <p className="text-[12.5px] text-red-500">{error}</p>}
+            {error && <p className="text-[0.78125rem] text-red-500">{error}</p>}
             <button
               type="submit"
               disabled={submitting}
-              className="mt-1 inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-plum)] text-white text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] disabled:opacity-50 transition-all"
+              className="mt-1 inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-plum)] text-white text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] disabled:opacity-50 transition-all"
             >
               <Search size={14} />
               {submitting ? "Searching..." : "Track Order"}
@@ -278,19 +278,19 @@ export default function TrackOrderTemplate() {
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex items-center justify-center gap-2 py-2.5 rounded-full border border-[var(--color-border)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-lavender)]/40 transition-all"
+                className="inline-flex items-center justify-center gap-2 py-2.5 rounded-full border border-[var(--color-border)] text-[var(--color-plum)] text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-lavender)]/40 transition-all"
               >
                 Find another order
               </button>
             )}
 
-            <p className="text-[11.5px] text-[var(--color-text-muted)]">
+            <p className="text-[0.71875rem] text-[var(--color-text-muted)]">
               Tip: your order number is in the confirmation email — it looks
               like #1234.
             </p>
 
             <div className="mt-auto pt-4 border-t border-[var(--color-border)]">
-              <p className="text-[12px] text-[var(--color-text-muted)]">
+              <p className="text-[0.75rem] text-[var(--color-text-muted)]">
                 Can&apos;t find your order?{" "}
                 <a
                   href="/contact"
@@ -313,12 +313,12 @@ export default function TrackOrderTemplate() {
                     strokeWidth={1.6}
                   />
                 </div>
-                <p className="font-wittgenstein text-[18px] font-semibold text-[var(--color-plum)]">
+                <p className="font-wittgenstein text-[1.125rem] font-semibold text-[var(--color-plum)]">
                   {tokenLoading
                     ? "Fetching your order…"
                     : "Your tracking will appear here"}
                 </p>
-                <p className="text-[13.5px] text-[var(--color-text-muted)] max-w-sm mt-1">
+                <p className="text-[0.84375rem] text-[var(--color-text-muted)] max-w-sm mt-1">
                   {tokenLoading
                     ? "Opening the order from your email link."
                     : "Enter your order details on the left and we'll fetch the live status from our courier partner."}
@@ -328,10 +328,10 @@ export default function TrackOrderTemplate() {
               <div className="bg-white rounded-3xl border border-[var(--color-lavender)] shadow-[0_10px_40px_-12px_rgba(93,46,70,0.12)] p-6 small:p-7 h-full flex flex-col">
                 <div className="flex flex-wrap items-baseline justify-between gap-2 pb-4 border-b border-[var(--color-border)]">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-plum)]">
+                    <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--color-plum)]">
                       Order #{order.display_id}
                     </span>
-                    <p className="text-[12.5px] text-[var(--color-text-muted)]">
+                    <p className="text-[0.78125rem] text-[var(--color-text-muted)]">
                       Placed on{" "}
                       {new Date(order.created_at).toLocaleDateString("en-IN", {
                         day: "2-digit",
@@ -340,7 +340,7 @@ export default function TrackOrderTemplate() {
                       })}
                     </p>
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-[var(--color-lavender)]/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-plum)] capitalize">
+                  <span className="inline-flex items-center rounded-full bg-[var(--color-lavender)]/50 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--color-plum)] capitalize">
                     {order.status === "canceled" ? "Cancelled" : "Active"}
                   </span>
                 </div>
@@ -364,10 +364,10 @@ export default function TrackOrderTemplate() {
                       strokeWidth={1.6}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold">
+                      <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold">
                         Tracking
                       </p>
-                      <p className="text-[13.5px] text-[var(--color-text-primary)] font-medium">
+                      <p className="text-[0.84375rem] text-[var(--color-text-primary)] font-medium">
                         {awb && (
                           <span className="font-mono tracking-wider">
                             {awb}
@@ -386,7 +386,7 @@ export default function TrackOrderTemplate() {
                         href={trackHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-plum)] hover:text-[var(--color-plum-deep)]"
+                        className="inline-flex items-center gap-1 text-[0.75rem] font-semibold text-[var(--color-plum)] hover:text-[var(--color-plum-deep)]"
                       >
                         Open
                         <ExternalLink size={11} />
@@ -397,7 +397,7 @@ export default function TrackOrderTemplate() {
 
                 {/* Items preview */}
                 <div className="pt-2">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold mb-2.5">
+                  <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold mb-2.5">
                     Items
                   </p>
                   <ul className="flex flex-col gap-3">
@@ -415,14 +415,14 @@ export default function TrackOrderTemplate() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[13.5px] font-semibold text-[var(--color-text-primary)] capitalize truncate">
+                            <p className="text-[0.84375rem] font-semibold text-[var(--color-text-primary)] capitalize truncate">
                               {it.title}
                             </p>
-                            <p className="text-[12px] text-[var(--color-text-muted)]">
+                            <p className="text-[0.75rem] text-[var(--color-text-muted)]">
                               Qty {qty}
                             </p>
                           </div>
-                          <span className="text-[13px] font-semibold text-[var(--color-plum)] tabular-nums">
+                          <span className="text-[0.8125rem] font-semibold text-[var(--color-plum)] tabular-nums">
                             {convertToLocale({
                               amount: (it.unit_price || 0) * qty,
                               currency_code: order.currency_code,
@@ -437,7 +437,7 @@ export default function TrackOrderTemplate() {
                 {/* Price breakdown — pinned to the bottom so the card stays
                     vertically balanced with the lookup form. */}
                 <div className="mt-auto pt-5">
-                  <div className="border-t border-[var(--color-border)] pt-4 flex flex-col gap-1.5 text-[13px]">
+                  <div className="border-t border-[var(--color-border)] pt-4 flex flex-col gap-1.5 text-[0.8125rem]">
                     <div className="flex justify-between">
                       <span className="text-[var(--color-text-secondary)]">Subtotal</span>
                       <span className="tabular-nums text-[var(--color-text-primary)]">

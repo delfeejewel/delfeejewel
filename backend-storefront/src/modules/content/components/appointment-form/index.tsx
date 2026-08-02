@@ -13,9 +13,9 @@ import {
 } from "@lib/data/appointments"
 
 const inputCls =
-  "w-full h-11 px-4 rounded-lg text-[14px] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+  "w-full h-11 px-4 rounded-lg text-[0.875rem] outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
 const labelCls =
-  "text-[12px] font-semibold text-[var(--color-text-secondary)] mb-1.5 block"
+  "text-[0.75rem] font-semibold text-[var(--color-text-secondary)] mb-1.5 block"
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
@@ -112,10 +112,10 @@ export default function AppointmentForm() {
         <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center">
           <CheckCircle2 className="w-7 h-7 text-green-600" />
         </div>
-        <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+        <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
           Appointment booked
         </h3>
-        <p className="text-[14px] text-[var(--color-text-muted)] max-w-sm">
+        <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-sm">
           Your visit is confirmed for <strong>{form.date}</strong> at{" "}
           <strong>{slot}</strong>. We've emailed your confirmation
           {reference ? (
@@ -133,7 +133,7 @@ export default function AppointmentForm() {
   if (cfg && !cfg.enabled) {
     return (
       <div className="rounded-2xl bg-white border border-[var(--color-lavender)] p-8 text-center">
-        <p className="text-[14px] text-[var(--color-text-muted)]">
+        <p className="text-[0.875rem] text-[var(--color-text-muted)]">
           Online appointment booking is currently closed. Please contact us to
           arrange a visit.
         </p>
@@ -192,7 +192,7 @@ export default function AppointmentForm() {
               Choose a time *
             </label>
             {loadingSlots ? (
-              <p className="text-[13px] text-[var(--color-text-muted)] flex items-center gap-2">
+              <p className="text-[0.8125rem] text-[var(--color-text-muted)] flex items-center gap-2">
                 <Loader2 size={14} className="animate-spin" /> Loading times…
               </p>
             ) : slots.length > 0 ? (
@@ -202,7 +202,7 @@ export default function AppointmentForm() {
                     type="button"
                     key={s.time}
                     onClick={() => setSlot(s.time)}
-                    className={`h-9 px-4 rounded-lg text-[13px] font-medium border transition-all ${
+                    className={`h-9 px-4 rounded-lg text-[0.8125rem] font-medium border transition-all ${
                       slot === s.time
                         ? "bg-[var(--color-plum)] text-white border-[var(--color-plum)]"
                         : "bg-white text-[var(--color-text-primary)] border-[var(--color-border)] hover:border-[var(--color-gold)]"
@@ -213,7 +213,7 @@ export default function AppointmentForm() {
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-[var(--color-text-muted)]">
+              <p className="text-[0.8125rem] text-[var(--color-text-muted)]">
                 {slotMsg || "No open slots on this date."}
               </p>
             )}
@@ -233,7 +233,7 @@ export default function AppointmentForm() {
         <button
           type="submit"
           disabled={status === "booking" || !slot}
-          className="h-12 rounded-lg text-[13px] font-semibold uppercase tracking-[0.1em] text-white bg-[var(--color-plum)] hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          className="h-12 rounded-lg text-[0.8125rem] font-semibold uppercase tracking-[0.1em] text-white bg-[var(--color-plum)] hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {status === "booking" ? (
             <>

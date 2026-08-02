@@ -30,10 +30,10 @@ export default function ShopByGender() {
       <div className="page-container">
         {/* Header */}
         <div className="text-center mb-12">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
+          <span className="text-[0.6875rem] font-semibold tracking-[0.15em] uppercase text-[var(--color-gold)]">
             Curated Collections
           </span>
-          <h2 className="font-wittgenstein text-[26px] small:text-[32px] font-semibold text-[var(--color-text-primary)] mt-2">
+          <h2 className="font-wittgenstein text-[1.625rem] small:text-[2rem] font-semibold text-[var(--color-text-primary)] mt-2">
             Shop by Recipient
           </h2>
         </div>
@@ -54,19 +54,19 @@ export default function ShopByGender() {
               />
               <div className={`absolute inset-0 ${item.overlay} p-8 small:p-12 flex flex-col justify-end`}>
                 {/* Tag */}
-                <span className="inline-block self-start px-3 py-1 rounded-full border border-[var(--color-gold)]/40 text-[var(--color-gold)] text-[10px] font-bold uppercase tracking-[0.15em] mb-4">
+                <span className="inline-block self-start px-3 py-1 rounded-full border border-[var(--color-gold)]/40 text-[var(--color-gold)] text-[0.625rem] font-bold uppercase tracking-[0.15em] mb-4">
                   {item.label}
                 </span>
 
-                <h3 className={`font-wittgenstein text-[28px] small:text-[36px] font-bold ${item.textColor} mb-3 leading-tight`}>
+                <h3 className={`font-wittgenstein text-[1.75rem] small:text-[2.25rem] font-bold ${item.textColor} mb-3 leading-tight`}>
                   {item.label === "For Her" ? "Her Kind of\nElegance" : "His Kind of\nStatement"}
                 </h3>
-                <p className={`${item.textColor}/80 text-[14px] small:text-[15px] mb-6 max-w-sm leading-relaxed`}>
+                <p className={`${item.textColor}/80 text-[0.875rem] small:text-[0.9375rem] mb-6 max-w-sm leading-relaxed`}>
                   {item.description}
                 </p>
                 <LocalizedClientLink
                   href={item.link}
-                  className={`self-start px-8 py-3 rounded-full font-semibold text-[13px] tracking-wide transition-all duration-300 hover:-translate-y-0.5 shadow-md ${item.btnClass}`}
+                  className={`self-start px-8 py-3 rounded-full font-semibold text-[0.8125rem] tracking-wide transition-all duration-300 hover:-translate-y-0.5 shadow-md ${item.btnClass}`}
                 >
                   {item.cta}
                 </LocalizedClientLink>

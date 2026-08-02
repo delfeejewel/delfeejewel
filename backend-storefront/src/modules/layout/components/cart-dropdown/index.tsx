@@ -84,7 +84,7 @@ const CartDropdown = ({
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
             {totalItems > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-[var(--color-plum)] text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-[var(--color-plum)] text-white text-[0.625rem] font-bold flex items-center justify-center">
                 {totalItems}
               </span>
             )}
@@ -107,10 +107,10 @@ const CartDropdown = ({
           >
             {/* Header */}
             <div className="px-5 py-4 border-b border-[var(--color-lavender)]">
-              <h3 className="font-wittgenstein text-[16px] font-semibold text-[var(--color-text-primary)]">
+              <h3 className="font-wittgenstein text-[1rem] font-semibold text-[var(--color-text-primary)]">
                 Shopping Bag
                 {totalItems > 0 && (
-                  <span className="ml-2 text-[12px] font-normal text-[var(--color-text-muted)]">
+                  <span className="ml-2 text-[0.75rem] font-normal text-[var(--color-text-muted)]">
                     ({totalItems} {totalItems === 1 ? "item" : "items"})
                   </span>
                 )}
@@ -143,7 +143,7 @@ const CartDropdown = ({
                         <div className="flex flex-col flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <h4 className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">
+                              <h4 className="text-[0.8125rem] font-medium text-[var(--color-text-primary)] truncate">
                                 <LocalizedClientLink
                                   href={`/products/${item.product_handle}`}
                                   data-testid="product-link"
@@ -157,7 +157,7 @@ const CartDropdown = ({
                                 data-value={item.variant}
                               />
                               <span
-                                className="text-[11px] text-[var(--color-text-muted)]"
+                                className="text-[0.6875rem] text-[var(--color-text-muted)]"
                                 data-testid="cart-item-quantity"
                                 data-value={item.quantity}
                               >
@@ -174,7 +174,7 @@ const CartDropdown = ({
                           </div>
                           <DeleteButton
                             id={item.id}
-                            className="mt-1 self-start text-[11px] text-[var(--color-text-muted)] hover:text-red-500 transition-colors"
+                            className="mt-1 self-start text-[0.6875rem] text-[var(--color-text-muted)] hover:text-red-500 transition-colors"
                             data-testid="cart-item-remove-button"
                           >
                             Remove
@@ -187,11 +187,11 @@ const CartDropdown = ({
                 {/* Footer */}
                 <div className="px-5 py-4 border-t border-[var(--color-lavender)] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                    <span className="text-[0.8125rem] font-medium text-[var(--color-text-primary)]">
                       Subtotal <span className="font-normal text-[var(--color-text-muted)]">(excl. taxes)</span>
                     </span>
                     <span
-                      className="text-[15px] font-bold text-[var(--color-plum)]"
+                      className="text-[0.9375rem] font-bold text-[var(--color-plum)]"
                       data-testid="cart-subtotal"
                       data-value={subtotal}
                     >
@@ -203,7 +203,7 @@ const CartDropdown = ({
                   </div>
                   <LocalizedClientLink href="/cart" passHref>
                     <button
-                      className="w-full h-11 rounded-lg text-[13px] font-semibold uppercase tracking-[0.06em] text-white transition-all duration-300 hover:brightness-110 [background:linear-gradient(135deg,var(--color-plum),var(--color-footer-bg))]"
+                      className="w-full h-11 rounded-lg text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-white transition-all duration-300 hover:brightness-110 [background:linear-gradient(135deg,var(--color-plum),var(--color-footer-bg))]"
                       data-testid="go-to-cart-button"
                     >
                       View Cart & Checkout
@@ -218,12 +218,12 @@ const CartDropdown = ({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                   </svg>
                 </div>
-                <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">Your bag is empty</p>
-                <p className="text-[12px] text-[var(--color-text-muted)] mb-5">Discover our handcrafted jewellery</p>
+                <p className="text-[0.875rem] font-medium text-[var(--color-text-primary)] mb-1">Your bag is empty</p>
+                <p className="text-[0.75rem] text-[var(--color-text-muted)] mb-5">Discover our handcrafted jewellery</p>
                 <LocalizedClientLink href="/store">
                   <button
                     onClick={close}
-                    className="h-10 px-8 rounded-lg text-[12px] font-semibold uppercase tracking-[0.06em] border border-[var(--color-plum)] text-[var(--color-plum)] hover:bg-[var(--color-plum)] hover:text-white transition-all duration-300"
+                    className="h-10 px-8 rounded-lg text-[0.75rem] font-semibold uppercase tracking-[0.06em] border border-[var(--color-plum)] text-[var(--color-plum)] hover:bg-[var(--color-plum)] hover:text-white transition-all duration-300"
                   >
                     Explore Collection
                   </button>

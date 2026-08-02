@@ -30,7 +30,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
       value={paymentProviderId}
       disabled={disabled}
       className={clx(
-        "flex flex-col gap-y-2 text-[14px] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
+        "flex flex-col gap-y-2 text-[0.875rem] cursor-pointer py-3.5 border rounded-xl px-5 mb-2 transition-colors border-[var(--color-border)] hover:border-[var(--color-plum)]",
         {
           "!border-[var(--color-plum)] bg-[var(--color-lavender)]/40":
             selectedPaymentOptionId === paymentProviderId,
@@ -52,7 +52,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
         </span>
       </div>
       {isManual(paymentProviderId) && isDevelopment && (
-        <PaymentTest className="small:hidden text-[10px]" />
+        <PaymentTest className="small:hidden text-[0.625rem]" />
       )}
       {children}
     </RadioGroupOption>

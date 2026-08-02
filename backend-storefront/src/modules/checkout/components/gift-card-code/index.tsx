@@ -66,7 +66,7 @@ export default function GiftCardCode({ cart }: Props) {
             return (
               <span
                 key={cl.id}
-                className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[12px] font-semibold"
+                className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full bg-[var(--color-lavender)] text-[var(--color-plum)] text-[0.75rem] font-semibold"
               >
                 <Gift size={12} />
                 <span className="tracking-wider" data-testid="gift-card-code">
@@ -104,7 +104,7 @@ export default function GiftCardCode({ cart }: Props) {
             setOpen(true)
             setTimeout(() => inputRef.current?.focus(), 50)
           }}
-          className="self-start inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
+          className="self-start inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
           data-testid="add-gift-card-button"
         >
           <Gift size={13} />
@@ -120,14 +120,14 @@ export default function GiftCardCode({ cart }: Props) {
               type="text"
               placeholder="XXXX-XXXX-XXXX"
               autoComplete="off"
-              className="flex-1 px-4 py-2.5 rounded-lg text-[13px] uppercase tracking-[0.15em] font-mono outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+              className="flex-1 px-4 py-2.5 rounded-lg text-[0.8125rem] uppercase tracking-[0.15em] font-mono outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
               data-testid="gift-card-input"
               onChange={() => setError("")}
             />
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 rounded-lg bg-[var(--color-plum)] text-white text-[11.5px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] disabled:opacity-50 transition-all"
+              className="px-5 py-2.5 rounded-lg bg-[var(--color-plum)] text-white text-[0.71875rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] disabled:opacity-50 transition-all"
               data-testid="gift-card-apply-button"
             >
               {submitting ? "..." : "Apply"}
@@ -135,7 +135,7 @@ export default function GiftCardCode({ cart }: Props) {
           </div>
           {error && (
             <p
-              className="text-[12px] text-red-500"
+              className="text-[0.75rem] text-red-500"
               data-testid="gift-card-error-message"
             >
               {error}

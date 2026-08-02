@@ -3,6 +3,22 @@
 @import "tailwindcss/utilities";
 
 @layer base {
+  /**
+   * Fluid type base. Every font size in the app is expressed in rem (and
+   * Tailwind's own spacing scale is too), so scaling the root is what makes
+   * typography respond to the viewport instead of being pinned to one size.
+   *
+   * Resolves to ~14px at 360px wide and ~17px from 1440px up, interpolating
+   * in between. The phone end is set well below the 16px default on purpose:
+   * a size that reads as modest on a 1600px canvas eats a third of the line
+   * on a 360px one, so holding type near 16px there makes a page feel shouty.
+   * Stated in rem rather than px so a reader who has raised their browser's
+   * default font size still gets it honoured.
+   */
+  html {
+    font-size: clamp(0.875rem, 0.8125rem + 0.2778vw, 1.0625rem);
+  }
+
   :root {
     /* Plum + Gold luxury palette */
     --color-bg-primary: #faf9f7;
@@ -324,6 +340,31 @@
     @apply max-w-[1400px] w-full mx-auto px-6;
   }
 
+  /**
+   * PDP main image. Square, but bounded by the viewport's HEIGHT rather than
+   * only the column's width: on a short laptop screen a full-width square
+   * pushed the thumbnail rail under the fold, so the other photos were only
+   * findable by scrolling. Limiting the WIDTH (not the height) is what keeps
+   * it square while it shrinks. Mobile is unaffected — the page scrolls there
+   * anyway and a shrunken hero photo would be the worse trade.
+   */
+  .pdp-gallery-main {
+    width: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .pdp-gallery-main {
+      /*
+       * 24.5rem ≈ what sits outside the photo: sticky header + breadcrumb
+       * above it, thumbnail rail and its gap below. The 15rem floor stops a
+       * very short window from shrinking the hero photo into a stamp — below
+       * that height the rail costs one small scroll, which is the better
+       * trade. Both in rem so the reserve tracks the fluid type scale.
+       */
+      width: min(100%, max(15rem, calc(100svh - 24.5rem)));
+    }
+  }
+
   .contrast-btn {
     @apply px-6 py-3 rounded-full transition-all duration-300 ease-out font-medium tracking-wide;
     background: var(--gradient-accent);
@@ -335,7 +376,7 @@
   }
 
   .text-xsmall-regular {
-    @apply text-[10px] leading-4 font-normal;
+    @apply text-[0.625rem] leading-4 font-normal;
   }
 
   .text-small-regular {
@@ -363,27 +404,27 @@
   }
 
   .text-xl-regular {
-    @apply text-2xl leading-[36px] font-normal;
+    @apply text-2xl leading-[2.25rem] font-normal;
   }
 
   .text-xl-semi {
-    @apply text-2xl leading-[36px] font-semibold;
+    @apply text-2xl leading-[2.25rem] font-semibold;
   }
 
   .text-2xl-regular {
-    @apply text-[30px] leading-[48px] font-normal;
+    @apply text-[1.875rem] leading-[3rem] font-normal;
   }
 
   .text-2xl-semi {
-    @apply text-[30px] leading-[48px] font-semibold;
+    @apply text-[1.875rem] leading-[3rem] font-semibold;
   }
 
   .text-3xl-regular {
-    @apply text-[32px] leading-[44px] font-normal;
+    @apply text-[2rem] leading-[2.75rem] font-normal;
   }
 
   .text-3xl-semi {
-    @apply text-[32px] leading-[44px] font-semibold;
+    @apply text-[2rem] leading-[2.75rem] font-semibold;
   }
 }
 

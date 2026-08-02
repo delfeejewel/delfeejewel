@@ -58,10 +58,10 @@ export default function ReviewPopup({ pending }: { pending: PendingReview[] }) {
           <div className="w-14 h-14 rounded-full bg-[var(--color-lavender)] mx-auto flex items-center justify-center mb-3">
             <MessageSquarePlus size={24} className="text-[var(--color-plum)]" />
           </div>
-          <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+          <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
             How were your pieces?
           </h3>
-          <p className="text-[13.5px] text-[var(--color-text-muted)] mt-1.5 mb-4">
+          <p className="text-[0.84375rem] text-[var(--color-text-muted)] mt-1.5 mb-4">
             You have {pending.length} delivered{" "}
             {pending.length === 1 ? "piece" : "pieces"} waiting for a review.
             Your feedback helps other shoppers choose.
@@ -83,7 +83,7 @@ export default function ReviewPopup({ pending }: { pending: PendingReview[] }) {
               </div>
             ))}
             {pending.length > 4 && (
-              <span className="text-[12px] text-[var(--color-text-muted)]">
+              <span className="text-[0.75rem] text-[var(--color-text-muted)]">
                 +{pending.length - 4}
               </span>
             )}
@@ -92,14 +92,14 @@ export default function ReviewPopup({ pending }: { pending: PendingReview[] }) {
           <LocalizedClientLink
             href="/account/reviews"
             onClick={close}
-            className="block w-full py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
+            className="block w-full py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 transition-all"
           >
             Write Reviews
           </LocalizedClientLink>
           <button
             type="button"
             onClick={close}
-            className="mt-2.5 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
+            className="mt-2.5 text-[0.75rem] text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors"
           >
             Maybe later
           </button>

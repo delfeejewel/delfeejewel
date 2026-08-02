@@ -161,7 +161,7 @@ export default async function FaqPage({ params }: Props) {
         <div className="max-w-[820px] mx-auto flex flex-col gap-12">
           {CATEGORIES.map((cat) => (
             <div key={cat.name}>
-              <h2 className="font-wittgenstein text-[22px] small:text-[26px] font-bold text-[var(--color-plum)] mb-5">
+              <h2 className="font-wittgenstein text-[1.375rem] small:text-[1.625rem] font-bold text-[var(--color-plum)] mb-5">
                 {cat.name}
               </h2>
               <FaqAccordion items={cat.items} startOpen={null} />
@@ -173,16 +173,16 @@ export default async function FaqPage({ params }: Props) {
             <div className="w-12 h-12 rounded-full bg-[var(--color-plum)] flex items-center justify-center">
               <LifeBuoy size={22} className="text-[var(--color-gold)]" />
             </div>
-            <h3 className="font-wittgenstein text-[20px] font-semibold text-[var(--color-plum)]">
+            <h3 className="font-wittgenstein text-[1.25rem] font-semibold text-[var(--color-plum)]">
               Still need help?
             </h3>
-            <p className="text-[14px] text-[var(--color-text-muted)] max-w-md">
+            <p className="text-[0.875rem] text-[var(--color-text-muted)] max-w-md">
               Our customer care team is happy to answer anything that isn't
               covered here.
             </p>
             <LocalizedClientLink
               href="/contact"
-              className="mt-1 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+              className="mt-1 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
             >
               Contact Us
               <ArrowRight size={15} />

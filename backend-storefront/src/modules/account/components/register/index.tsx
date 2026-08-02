@@ -74,7 +74,7 @@ function InputField({
     <div className="space-y-1.5">
       <label
         htmlFor={id}
-        className="block text-[11px] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]"
+        className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[var(--color-text-secondary)]"
       >
         {label}
         {optional && (
@@ -90,7 +90,7 @@ function InputField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           {...registration}
-          className={`w-full px-0 py-3.5 bg-transparent border-0 border-b-2 transition-colors placeholder:text-[var(--color-text-muted)]/50 text-[14px] text-[var(--color-text-primary)] focus:outline-none focus:ring-0 ${
+          className={`w-full px-0 py-3.5 bg-transparent border-0 border-b-2 transition-colors placeholder:text-[var(--color-text-muted)]/50 text-[0.875rem] text-[var(--color-text-primary)] focus:outline-none focus:ring-0 ${
             showToggle ? "pr-8" : ""
           } ${
             error
@@ -108,7 +108,7 @@ function InputField({
           </button>
         )}
       </div>
-      {error && <p className="text-[11px] text-red-500">{error}</p>}
+      {error && <p className="text-[0.6875rem] text-red-500">{error}</p>}
     </div>
   )
 }
@@ -190,15 +190,15 @@ export default function Register({ setCurrentView }: Props) {
         <div className="mx-auto w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
-        <h2 className="font-wittgenstein text-[22px] font-bold text-[var(--color-plum)]">
+        <h2 className="font-wittgenstein text-[1.375rem] font-bold text-[var(--color-plum)]">
           You&apos;re all set!
         </h2>
-        <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5">
+        <p className="text-[0.8125rem] text-[var(--color-text-muted)] mt-1.5">
           Your account has been created and you&apos;re signed in.
         </p>
 
         {linkedOrders > 0 && (
-          <div className="mt-5 flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg bg-[var(--color-lavender)]/40 border border-[var(--color-lavender)] text-[13px] text-[var(--color-plum)]">
+          <div className="mt-5 flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg bg-[var(--color-lavender)]/40 border border-[var(--color-lavender)] text-[0.8125rem] text-[var(--color-plum)]">
             <PackageCheck size={17} className="shrink-0" />
             <span>
               We added{" "}
@@ -213,7 +213,7 @@ export default function Register({ setCurrentView }: Props) {
         <button
           type="button"
           onClick={() => router.refresh()}
-          className="w-full py-4 mt-6 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[11px] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98]"
+          className="w-full py-4 mt-6 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[0.6875rem] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98]"
         >
           Continue to my account
         </button>
@@ -231,14 +231,14 @@ export default function Register({ setCurrentView }: Props) {
             setStep("details")
             setServerError(null)
           }}
-          className="text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors mb-5"
+          className="text-[0.75rem] text-[var(--color-text-muted)] hover:text-[var(--color-plum)] transition-colors mb-5"
         >
           ← Back
         </button>
-        <h2 className="font-wittgenstein text-[20px] font-bold text-[var(--color-plum)]">
+        <h2 className="font-wittgenstein text-[1.25rem] font-bold text-[var(--color-plum)]">
           Verify your email
         </h2>
-        <p className="text-[13px] text-[var(--color-text-muted)] mt-1 mb-6">
+        <p className="text-[0.8125rem] text-[var(--color-text-muted)] mt-1 mb-6">
           Enter the 6-digit code we sent to{" "}
           <span className="font-semibold text-[var(--color-text-secondary)]">
             {details.email}
@@ -255,11 +255,11 @@ export default function Register({ setCurrentView }: Props) {
             setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
           }
           placeholder="000000"
-          className="w-full px-4 py-3.5 rounded-lg border-2 border-[var(--color-border)] bg-white text-[22px] tracking-[10px] text-center font-mono text-[var(--color-text-primary)] placeholder:tracking-normal placeholder:text-[var(--color-text-muted)]/40 focus:outline-none focus:border-[var(--color-plum)] transition-colors"
+          className="w-full px-4 py-3.5 rounded-lg border-2 border-[var(--color-border)] bg-white text-[1.375rem] tracking-[10px] text-center font-mono text-[var(--color-text-primary)] placeholder:tracking-normal placeholder:text-[var(--color-text-muted)]/40 focus:outline-none focus:border-[var(--color-plum)] transition-colors"
         />
 
         {serverError && (
-          <div className="mt-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-[12px] text-red-600">
+          <div className="mt-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-[0.75rem] text-red-600">
             {serverError}
             {accountExists && (
               <button
@@ -277,7 +277,7 @@ export default function Register({ setCurrentView }: Props) {
           type="button"
           onClick={submitCode}
           disabled={creating || code.length < 6}
-          className="w-full py-4 mt-5 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[11px] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 mt-5 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[0.6875rem] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           data-testid="register-verify-button"
         >
           {creating ? (
@@ -290,7 +290,7 @@ export default function Register({ setCurrentView }: Props) {
           )}
         </button>
 
-        <p className="text-center text-[12px] text-[var(--color-text-muted)] mt-4">
+        <p className="text-center text-[0.75rem] text-[var(--color-text-muted)] mt-4">
           Didn&apos;t get it?{" "}
           <button
             type="button"
@@ -379,7 +379,7 @@ export default function Register({ setCurrentView }: Props) {
 
         {/* Server error */}
         {serverError && (
-          <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-[12px] text-red-600">
+          <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-[0.75rem] text-red-600">
             {serverError}
             {accountExists && (
               <button
@@ -397,7 +397,7 @@ export default function Register({ setCurrentView }: Props) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 mt-2 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[11px] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 mt-2 bg-[var(--color-gold)] text-[var(--color-plum-deep)] font-bold text-[0.6875rem] uppercase tracking-widest rounded-lg shadow-md hover:bg-[var(--color-gold-light)] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           data-testid="register-button"
         >
           {isSubmitting ? (
@@ -414,13 +414,13 @@ export default function Register({ setCurrentView }: Props) {
       {/* Divider + switch */}
       <div className="relative my-7 flex items-center">
         <div className="flex-grow border-t border-[var(--color-border)]" />
-        <span className="flex-shrink mx-4 text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">
+        <span className="flex-shrink mx-4 text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-widest">
           Or
         </span>
         <div className="flex-grow border-t border-[var(--color-border)]" />
       </div>
 
-      <p className="text-center text-[13px] text-[var(--color-text-muted)]">
+      <p className="text-center text-[0.8125rem] text-[var(--color-text-muted)]">
         Already have an account?{" "}
         <button
           type="button"

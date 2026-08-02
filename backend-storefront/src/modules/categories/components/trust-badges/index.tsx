@@ -40,7 +40,7 @@ export default function TrustBadges() {
           >
             <Icon size={14} strokeWidth={1.5} style={{ color: "var(--color-plum)" }} />
           </div>
-          <span className="text-[12px] font-medium whitespace-nowrap" style={{ color: "var(--color-text-secondary)" }}>
+          <span className="text-[0.75rem] font-medium whitespace-nowrap" style={{ color: "var(--color-text-secondary)" }}>
             {label}
           </span>
         </motion.div>

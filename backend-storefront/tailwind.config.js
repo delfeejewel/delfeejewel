@@ -2,6 +2,13 @@ const path = require("path")
 
 module.exports = {
   darkMode: "class",
+  // Wrap every hover:/group-hover: utility in @media (hover: hover). On a
+  // touchscreen a tap counts as a hover and the state sticks until you tap
+  // elsewhere, so image zooms and reveal-on-hover overlays would fire on the
+  // way to opening a product.
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   presets: [require("@medusajs/ui-preset")],
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx}",

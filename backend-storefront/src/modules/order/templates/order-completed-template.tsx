@@ -41,13 +41,13 @@ export default async function OrderCompletedTemplate({
           <div className="w-14 h-14 small:w-16 small:h-16 rounded-full bg-green-50 flex items-center justify-center mb-3 small:mb-4">
             <CheckCircle2 className="text-green-600 w-7 h-7 small:w-[34px] small:h-[34px]" />
           </div>
-          <span className="text-[10px] small:text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+          <span className="text-[0.625rem] small:text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
             Order Confirmed
           </span>
-          <h1 className="font-wittgenstein text-[24px] xsmall:text-[28px] small:text-[40px] font-bold text-[var(--color-plum)] mt-1.5 small:mt-2">
+          <h1 className="font-wittgenstein text-[1.5rem] xsmall:text-[1.75rem] small:text-[2.5rem] font-bold text-[var(--color-plum)] mt-1.5 small:mt-2">
             Thank you for your order!
           </h1>
-          <p className="text-[13px] small:text-[15px] text-[var(--color-text-secondary)] mt-2 max-w-lg px-2">
+          <p className="text-[0.8125rem] small:text-[0.9375rem] text-[var(--color-text-secondary)] mt-2 max-w-lg px-2">
             Your order has been placed successfully. A confirmation has been
             sent to your email — we'll let you know as soon as it ships.
           </p>
@@ -84,7 +84,7 @@ export default async function OrderCompletedTemplate({
 
             {/* Items */}
             <div className="bg-white rounded-2xl border border-[var(--color-lavender)] p-5 small:p-8">
-              <h2 className="font-wittgenstein text-[18px] small:text-[22px] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
+              <h2 className="font-wittgenstein text-[1.125rem] small:text-[1.375rem] font-bold text-[var(--color-plum)] mb-3 small:mb-4">
                 Items in your order
               </h2>
               <Items order={order} />
@@ -102,14 +102,14 @@ export default async function OrderCompletedTemplate({
           {/* Sidebar — totals + actions (sticky) */}
           <aside className="lg:sticky lg:top-6">
             <div className="bg-white rounded-2xl border border-[var(--color-lavender)] p-5 small:p-6 flex flex-col gap-5">
-              <h2 className="font-wittgenstein text-[18px] small:text-[20px] font-bold text-[var(--color-plum)]">
+              <h2 className="font-wittgenstein text-[1.125rem] small:text-[1.25rem] font-bold text-[var(--color-plum)]">
                 Order Summary
               </h2>
               <CartTotals totals={order} />
               <div className="flex flex-col gap-3 pt-1">
                 <LocalizedClientLink
                   href="/store"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all text-center"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all text-center"
                 >
                   <ShoppingBag size={15} className="shrink-0" />
                   Continue Shopping
@@ -118,7 +118,7 @@ export default async function OrderCompletedTemplate({
                 {customer && (
                   <LocalizedClientLink
                     href="/account/orders"
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all text-center"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all text-center"
                   >
                     <Package size={15} className="shrink-0" />
                     View My Orders

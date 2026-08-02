@@ -21,13 +21,13 @@ export default function StaffPicks({
     <section className="content-container pt-8 small:pt-10">
       <header className="mb-4">
         <p
-          className="text-[11px] uppercase tracking-[0.18em] font-semibold"
+          className="text-[0.6875rem] uppercase tracking-[0.18em] font-semibold"
           style={{ color: "var(--color-plum)" }}
         >
           Editor&apos;s picks
         </p>
         <h2
-          className="font-wittgenstein text-[22px] small:text-[26px] font-bold mt-0.5"
+          className="font-wittgenstein text-[1.375rem] small:text-[1.625rem] font-bold mt-0.5"
           style={{ color: "var(--color-text-primary)" }}
         >
           Staff favourites this week
@@ -55,11 +55,11 @@ export default function StaffPicks({
                   src={img}
                   alt={p.title || "Product"}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="object-cover"
                   sizes="(max-width: 640px) 50vw, 220px"
                 />
                 <span
-                  className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold"
+                  className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[0.625rem] font-semibold"
                   style={{
                     background: "var(--color-plum)",
                     color: "#fff",
@@ -69,7 +69,7 @@ export default function StaffPicks({
                 </span>
               </div>
               <p
-                className="text-[13px] small:text-[13.5px] font-medium mt-2 line-clamp-2"
+                className="text-[0.8125rem] small:text-[0.84375rem] font-medium mt-2 line-clamp-2"
                 style={{ color: "var(--color-text-primary)" }}
               >
                 {p.title}
@@ -77,14 +77,14 @@ export default function StaffPicks({
               {cheapestPrice && (
                 <p className="mt-0.5 flex items-baseline gap-1.5 tabular-nums">
                   <span
-                    className="text-[13px] font-bold"
+                    className="text-[0.8125rem] font-bold"
                     style={{ color: "var(--color-plum)" }}
                   >
                     {cheapestPrice.calculated_price}
                   </span>
                   {cheapestPrice.price_type === "sale" && (
                     <span
-                      className="text-[11px] line-through"
+                      className="text-[0.6875rem] line-through"
                       style={{ color: "var(--color-text-muted)" }}
                     >
                       {cheapestPrice.original_price}

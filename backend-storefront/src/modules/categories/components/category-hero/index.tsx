@@ -101,7 +101,7 @@ export default function CategoryHero({
 
       <div className="relative z-10 content-container py-10 small:py-12">
         <motion.h1
-          className="font-wittgenstein text-3xl small:text-[44px] tracking-tight leading-[1.1] mb-3"
+          className="font-wittgenstein text-3xl small:text-[2.75rem] tracking-tight leading-[1.1] mb-3"
           style={{ color: "var(--color-text-primary)" }}
           initial="hidden"
           animate="visible"
@@ -135,7 +135,7 @@ export default function CategoryHero({
           transition={{ duration: 0.4, delay: 0.5 }}
         >
           <span
-            className="text-[12px] px-3.5 py-1.5 rounded-full font-medium"
+            className="text-[0.75rem] px-3.5 py-1.5 rounded-full font-medium"
             style={{
               background: "var(--color-lavender)",
               color: "var(--color-plum)",

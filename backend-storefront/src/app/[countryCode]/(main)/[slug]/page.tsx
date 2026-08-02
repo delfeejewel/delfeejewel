@@ -60,7 +60,7 @@ export default async function DynamicPage(props: Props) {
     <div className="content-container py-12 small:py-20">
       <div className="max-w-3xl mx-auto">
         <h1
-          className="font-wittgenstein text-3xl small:text-[42px] leading-tight tracking-tight mb-6"
+          className="font-wittgenstein text-3xl small:text-[2.625rem] leading-tight tracking-tight mb-6"
           style={{ color: "var(--color-text-primary)" }}
         >
           {page.title}

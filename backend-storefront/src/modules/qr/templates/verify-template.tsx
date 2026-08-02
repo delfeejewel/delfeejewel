@@ -25,16 +25,16 @@ export default function VerifyTemplate({
             <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
               <ShieldAlert className="w-8 h-8 text-red-500" strokeWidth={1.5} />
             </div>
-            <h1 className="font-wittgenstein text-[26px] font-bold text-[var(--color-plum)]">
+            <h1 className="font-wittgenstein text-[1.625rem] font-bold text-[var(--color-plum)]">
               Not recognised
             </h1>
-            <p className="text-[14px] text-[var(--color-text-secondary)] leading-relaxed">
+            <p className="text-[0.875rem] text-[var(--color-text-secondary)] leading-relaxed">
               {data.message ||
                 "We couldn't verify this code as authentic Delfee. If you bought this from us, please contact our care team and we'll help."}
             </p>
             <LocalizedClientLink
               href="/contact"
-              className="mt-2 px-6 py-3 rounded-full bg-[var(--color-plum)] text-white text-[11.5px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] transition-all"
+              className="mt-2 px-6 py-3 rounded-full bg-[var(--color-plum)] text-white text-[0.71875rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] transition-all"
             >
               Contact our care team
             </LocalizedClientLink>
@@ -73,13 +73,13 @@ export default function VerifyTemplate({
             </div>
             <div className="relative flex flex-col items-center gap-2">
               <ShieldCheck size={42} strokeWidth={1.4} />
-              <p className="text-[11px] uppercase tracking-[0.25em] font-semibold opacity-80">
+              <p className="text-[0.6875rem] uppercase tracking-[0.25em] font-semibold opacity-80">
                 Authenticity Verified
               </p>
-              <h1 className="font-wittgenstein text-[32px] small:text-[40px] font-bold leading-tight">
+              <h1 className="font-wittgenstein text-[2rem] small:text-[2.5rem] font-bold leading-tight">
                 Verified Genuine
               </h1>
-              <p className="text-[12.5px] opacity-70">
+              <p className="text-[0.78125rem] opacity-70">
                 Crafted by {BRAND.name}
               </p>
             </div>
@@ -97,21 +97,21 @@ export default function VerifyTemplate({
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold mb-1">
+                <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold mb-1">
                   Authentic piece
                 </p>
-                <h2 className="font-wittgenstein text-[20px] small:text-[22px] font-bold text-[var(--color-plum)] capitalize leading-tight">
+                <h2 className="font-wittgenstein text-[1.25rem] small:text-[1.375rem] font-bold text-[var(--color-plum)] capitalize leading-tight">
                   {p.title}
                 </h2>
                 {v.title && v.title !== "Default" && (
-                  <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
+                  <p className="text-[0.8125rem] text-[var(--color-text-secondary)] mt-0.5">
                     {v.title}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 small:grid-cols-2 gap-x-6 gap-y-3 text-[13px] border-t border-[var(--color-border)] pt-5">
+            <div className="grid grid-cols-1 small:grid-cols-2 gap-x-6 gap-y-3 text-[0.8125rem] border-t border-[var(--color-border)] pt-5">
               {p.material && (
                 <Detail label="Material" value={p.material} />
               )}
@@ -132,7 +132,7 @@ export default function VerifyTemplate({
 
             <LocalizedClientLink
               href={`/products/${p.handle}`}
-              className="inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-plum)] text-white text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] active:scale-[0.98] transition-all"
+              className="inline-flex items-center justify-center gap-2 py-3 rounded-full bg-[var(--color-plum)] text-white text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum-deep)] active:scale-[0.98] transition-all"
             >
               View this piece online
               <ArrowRight size={14} />
@@ -141,7 +141,7 @@ export default function VerifyTemplate({
         </div>
 
         {/* Trust note */}
-        <div className="max-w-2xl mx-auto mt-6 flex items-center justify-center gap-2 text-[12px] text-[var(--color-text-muted)]">
+        <div className="max-w-2xl mx-auto mt-6 flex items-center justify-center gap-2 text-[0.75rem] text-[var(--color-text-muted)]">
           <Sparkles size={12} className="text-[var(--color-gold)]" />
           Every {BRAND.name} piece carries this code. Always verify before you
           buy from any reseller.
@@ -160,7 +160,7 @@ function Detail({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold mb-0.5">
+      <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-[var(--color-text-muted)] font-semibold mb-0.5">
         {label}
       </p>
       <p className="text-[var(--color-text-primary)]">{value}</p>

@@ -47,13 +47,13 @@ export default function EmptyCartMessage({
               />
             </div>
 
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] mt-6">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] mt-6">
               Your cart
             </span>
-            <h1 className="font-wittgenstein text-[28px] small:text-[38px] font-bold text-[var(--color-plum)] mt-2 leading-tight">
+            <h1 className="font-wittgenstein text-[1.75rem] small:text-[2.375rem] font-bold text-[var(--color-plum)] mt-2 leading-tight">
               Your cart is feeling light
             </h1>
-            <p className="text-[14px] small:text-[15px] text-[var(--color-text-secondary)] mt-3 max-w-md">
+            <p className="text-[0.875rem] small:text-[0.9375rem] text-[var(--color-text-secondary)] mt-3 max-w-md">
               Nothing here yet. Browse the store, save favourites to your
               wishlist, and they&apos;ll be waiting whenever you&apos;re ready.
             </p>
@@ -62,14 +62,14 @@ export default function EmptyCartMessage({
             <div className="flex flex-col xsmall:flex-row items-center gap-3 mt-8">
               <LocalizedClientLink
                 href="/store"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
               >
                 <ShoppingBag size={15} />
                 Continue shopping
               </LocalizedClientLink>
               <LocalizedClientLink
                 href="/account/wishlist"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
               >
                 <Heart size={15} />
                 View wishlist
@@ -81,7 +81,7 @@ export default function EmptyCartMessage({
 
       {/* Quick links */}
       <section className="py-10 small:py-12">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-5">
+        <p className="text-center text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] mb-5">
           Or jump to
         </p>
         <div className="grid grid-cols-2 medium:grid-cols-4 gap-3 small:gap-4 max-w-3xl mx-auto">
@@ -96,7 +96,7 @@ export default function EmptyCartMessage({
                 <div className="w-11 h-11 rounded-xl bg-[var(--color-lavender)] flex items-center justify-center">
                   <Icon size={18} className="text-[var(--color-plum)]" strokeWidth={1.6} />
                 </div>
-                <span className="text-[12.5px] font-semibold text-[var(--color-text-primary)]">
+                <span className="text-[0.78125rem] font-semibold text-[var(--color-text-primary)]">
                   {l.label}
                 </span>
               </LocalizedClientLink>

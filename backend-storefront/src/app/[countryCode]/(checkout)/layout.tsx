@@ -19,10 +19,10 @@ export default function CheckoutLayout({
             data-testid="back-to-cart-link"
           >
             <ChevronDown className="rotate-90" size={16} />
-            <span className="mt-px hidden small:block text-[13px] font-medium">
+            <span className="mt-px hidden small:block text-[0.8125rem] font-medium">
               Back to shopping cart
             </span>
-            <span className="mt-px block small:hidden text-[13px] font-medium">
+            <span className="mt-px block small:hidden text-[0.8125rem] font-medium">
               Back
             </span>
           </LocalizedClientLink>
@@ -43,7 +43,7 @@ export default function CheckoutLayout({
           </LocalizedClientLink>
 
           <div className="flex-1 basis-0 flex justify-end">
-            <span className="hidden small:flex items-center gap-x-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+            <span className="hidden small:flex items-center gap-x-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
               <svg
                 width="13"
                 height="13"

@@ -70,13 +70,13 @@ export default async function CartRecoverPage({ params }: { params: Params }) {
               />
             </div>
 
-            <span className="text-[10px] xsmall:text-[11px] font-semibold uppercase tracking-[0.18em] xsmall:tracking-[0.2em] text-[var(--color-gold)] mt-5 xsmall:mt-6">
+            <span className="text-[0.625rem] xsmall:text-[0.6875rem] font-semibold uppercase tracking-[0.18em] xsmall:tracking-[0.2em] text-[var(--color-gold)] mt-5 xsmall:mt-6">
               Welcome back
             </span>
-            <h1 className="font-wittgenstein text-[22px] xsmall:text-[26px] tablet:text-[32px] small:text-[38px] font-bold text-[var(--color-plum)] mt-2 leading-tight">
+            <h1 className="font-wittgenstein text-[1.375rem] xsmall:text-[1.625rem] tablet:text-[2rem] small:text-[2.375rem] font-bold text-[var(--color-plum)] mt-2 leading-tight">
               Your cart is right where you left it
             </h1>
-            <p className="text-[13px] xsmall:text-[14px] small:text-[15px] text-[var(--color-text-secondary)] mt-3 max-w-md">
+            <p className="text-[0.8125rem] xsmall:text-[0.875rem] small:text-[0.9375rem] text-[var(--color-text-secondary)] mt-3 max-w-md">
               We kept your selection safe — {totalQty} {totalQty === 1 ? "item" : "items"} waiting for you.
             </p>
           </div>
@@ -102,19 +102,19 @@ export default async function CartRecoverPage({ params }: { params: Params }) {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] xsmall:text-[13.5px] small:text-[14px] font-semibold text-[var(--color-text-primary)] line-clamp-2 xsmall:line-clamp-1 break-words">
+                  <p className="text-[0.8125rem] xsmall:text-[0.84375rem] small:text-[0.875rem] font-semibold text-[var(--color-text-primary)] line-clamp-2 xsmall:line-clamp-1 break-words">
                     {it.title}
                   </p>
                   {it.variant_title && (
-                    <p className="text-[11px] xsmall:text-[11.5px] text-[var(--color-text-muted)] mt-0.5 line-clamp-1">
+                    <p className="text-[0.6875rem] xsmall:text-[0.71875rem] text-[var(--color-text-muted)] mt-0.5 line-clamp-1">
                       {it.variant_title}
                     </p>
                   )}
-                  <p className="text-[11px] xsmall:text-[11.5px] text-[var(--color-text-muted)] mt-0.5">
+                  <p className="text-[0.6875rem] xsmall:text-[0.71875rem] text-[var(--color-text-muted)] mt-0.5">
                     Qty {it.quantity}
                   </p>
                 </div>
-                <p className="text-[12.5px] xsmall:text-[13.5px] font-bold text-[var(--color-plum)] tabular-nums whitespace-nowrap shrink-0">
+                <p className="text-[0.78125rem] xsmall:text-[0.84375rem] font-bold text-[var(--color-plum)] tabular-nums whitespace-nowrap shrink-0">
                   {convertToLocale({
                     amount: Number(it.unit_price || 0) * Number(it.quantity || 0),
                     currency_code: cart.currency_code,
@@ -124,17 +124,17 @@ export default async function CartRecoverPage({ params }: { params: Params }) {
             ))}
 
             {items.length > 5 && (
-              <li className="px-4 xsmall:px-5 py-3 text-center text-[11.5px] xsmall:text-[12px] text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)]">
+              <li className="px-4 xsmall:px-5 py-3 text-center text-[0.71875rem] xsmall:text-[0.75rem] text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)]">
                 + {items.length - 5} more {items.length - 5 === 1 ? "item" : "items"} in your cart
               </li>
             )}
 
             {/* Subtotal row */}
             <li className="flex items-center justify-between px-4 xsmall:px-5 py-3.5 xsmall:py-4 bg-[var(--color-bg-secondary)]">
-              <span className="text-[11.5px] xsmall:text-[12.5px] uppercase tracking-[0.1em] xsmall:tracking-[0.12em] font-semibold text-[var(--color-text-muted)]">
+              <span className="text-[0.71875rem] xsmall:text-[0.78125rem] uppercase tracking-[0.1em] xsmall:tracking-[0.12em] font-semibold text-[var(--color-text-muted)]">
                 Subtotal
               </span>
-              <span className="text-[15px] xsmall:text-[16px] font-bold text-[var(--color-plum)] tabular-nums">
+              <span className="text-[0.9375rem] xsmall:text-[1rem] font-bold text-[var(--color-plum)] tabular-nums">
                 {convertToLocale({
                   amount: Number(cart.subtotal || cart.total || 0),
                   currency_code: cart.currency_code,
@@ -147,21 +147,21 @@ export default async function CartRecoverPage({ params }: { params: Params }) {
           <div className="flex flex-col xsmall:flex-row items-stretch xsmall:items-center justify-center gap-3 mt-6 xsmall:mt-8">
             <LocalizedClientLink
               href="/cart"
-              className="inline-flex items-center justify-center gap-2 px-6 xsmall:px-8 py-3 xsmall:py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[11.5px] xsmall:text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 xsmall:px-8 py-3 xsmall:py-3.5 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.71875rem] xsmall:text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] transition-all"
             >
               Continue to cart
               <ArrowRight size={15} />
             </LocalizedClientLink>
             <LocalizedClientLink
               href="/store"
-              className="inline-flex items-center justify-center gap-2 px-6 xsmall:px-8 py-3 xsmall:py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[11.5px] xsmall:text-[12px] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 xsmall:px-8 py-3 xsmall:py-3.5 rounded-full border-2 border-[var(--color-plum)] text-[var(--color-plum)] text-[0.71875rem] xsmall:text-[0.75rem] font-bold uppercase tracking-wider hover:bg-[var(--color-plum)] hover:text-white transition-all"
             >
               Keep browsing
             </LocalizedClientLink>
           </div>
 
           {/* Reassurance */}
-          <div className="flex items-start xsmall:items-center justify-center gap-2 mt-5 xsmall:mt-6 text-[11px] xsmall:text-[11.5px] text-[var(--color-text-muted)] px-2 xsmall:px-0">
+          <div className="flex items-start xsmall:items-center justify-center gap-2 mt-5 xsmall:mt-6 text-[0.6875rem] xsmall:text-[0.71875rem] text-[var(--color-text-muted)] px-2 xsmall:px-0">
             <Clock size={12} className="shrink-0 mt-[2px] xsmall:mt-0" />
             <span className="text-center">
               Prices and availability may have changed since you last visited.

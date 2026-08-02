@@ -22,11 +22,11 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   return (
     <section>
       <div className="flex items-baseline gap-2 mb-3">
-        <h2 className="font-wittgenstein text-[20px] small:text-[22px] font-bold text-[var(--color-plum)]">
+        <h2 className="font-wittgenstein text-[1.25rem] small:text-[1.375rem] font-bold text-[var(--color-plum)]">
           Items
         </h2>
         {items && (
-          <span className="text-[12px] text-[var(--color-text-muted)]">
+          <span className="text-[0.75rem] text-[var(--color-text-muted)]">
             ({total} {total === 1 ? "piece" : "pieces"})
           </span>
         )}

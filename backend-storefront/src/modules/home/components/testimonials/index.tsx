@@ -74,7 +74,7 @@ export default function Testimonials({ reviews }: { reviews?: Review[] | null })
                   <p className="font-semibold text-[var(--color-plum)]">
                     {review.name}
                   </p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
+                  <p className="text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
                     Verified Buyer
                   </p>
                 </div>

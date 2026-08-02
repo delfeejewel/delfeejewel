@@ -47,7 +47,7 @@ export default async function CategoryTemplate({
             <LocalizedClientLink
               key={c.id}
               href={`/categories/${c.handle}`}
-              className="px-4 py-1.5 rounded-full text-[12px] font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+              className="px-4 py-1.5 rounded-full text-[0.75rem] font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
               style={{
                 border: "1px solid var(--color-border)",
                 color: "var(--color-text-secondary)",

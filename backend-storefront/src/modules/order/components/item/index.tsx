@@ -22,7 +22,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
 
       <div className="flex-1 min-w-0">
         <p
-          className="text-[14px] font-medium text-[var(--color-text-primary)] break-words"
+          className="text-[0.875rem] font-medium text-[var(--color-text-primary)] break-words"
           data-testid="product-name"
         >
           {item.product_title}
@@ -31,7 +31,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
       </div>
 
       <div className="shrink-0 flex flex-col items-end text-right">
-        <span className="flex items-center gap-x-1 text-[12.5px] text-[var(--color-text-muted)] whitespace-nowrap">
+        <span className="flex items-center gap-x-1 text-[0.78125rem] text-[var(--color-text-muted)] whitespace-nowrap">
           <span data-testid="product-quantity">{item.quantity}</span>x
           <LineItemUnitPrice
             item={item}

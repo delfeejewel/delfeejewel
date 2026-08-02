@@ -90,21 +90,21 @@ export default function CouponOffers({
               >
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="text-[12.5px] font-bold tracking-[0.12em] uppercase text-[var(--color-plum)]">
+                    <span className="text-[0.78125rem] font-bold tracking-[0.12em] uppercase text-[var(--color-plum)]">
                       {c.code}
                     </span>
-                    <span className="text-[12px] font-semibold text-[var(--color-text-primary)]">
+                    <span className="text-[0.75rem] font-semibold text-[var(--color-text-primary)]">
                       {couponValueLabel(c)}
                       {target ? ` ${target}` : ""}
                     </span>
                   </div>
                   {c.description && (
-                    <p className="text-[11px] leading-snug text-[var(--color-text-muted)]">
+                    <p className="text-[0.6875rem] leading-snug text-[var(--color-text-muted)]">
                       {c.description}
                     </p>
                   )}
                   {c.first_order_only && (
-                    <p className="text-[10px] font-medium tracking-[0.05em] uppercase text-[var(--color-text-muted)]">
+                    <p className="text-[0.625rem] font-medium tracking-[0.05em] uppercase text-[var(--color-text-muted)]">
                       First order only
                     </p>
                   )}
@@ -114,7 +114,7 @@ export default function CouponOffers({
                   <button
                     type="button"
                     onClick={onRemove}
-                    className="shrink-0 inline-flex items-center gap-1 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
+                    className="shrink-0 inline-flex items-center gap-1 text-[0.71875rem] font-semibold uppercase tracking-[0.05em] text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
                     aria-label={`Remove ${c.code}`}
                   >
                     <Check size={13} className="text-green-600" />
@@ -126,7 +126,7 @@ export default function CouponOffers({
                     type="button"
                     onClick={() => onApply(c.code)}
                     disabled={!!pendingCode}
-                    className="shrink-0 px-3 py-1.5 rounded-lg text-[11.5px] font-bold uppercase tracking-[0.05em] text-white bg-[var(--color-plum)] hover:bg-[var(--color-plum-deep)] disabled:opacity-50 transition-colors"
+                    className="shrink-0 px-3 py-1.5 rounded-lg text-[0.71875rem] font-bold uppercase tracking-[0.05em] text-white bg-[var(--color-plum)] hover:bg-[var(--color-plum-deep)] disabled:opacity-50 transition-colors"
                     data-testid="pdp-coupon-apply"
                   >
                     {isPending ? (
@@ -144,7 +144,7 @@ export default function CouponOffers({
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
+              className="inline-flex items-center gap-1 text-[0.75rem] font-medium text-[var(--color-plum)] hover:text-[var(--color-plum-deep)] transition-colors"
             >
               View all {coupons.length} offers
               <ChevronDown size={13} />
@@ -160,7 +160,7 @@ export default function CouponOffers({
           value={manualCode}
           onChange={(e) => setManualCode(e.target.value.toUpperCase())}
           placeholder="Enter coupon code"
-          className="flex-1 h-10 px-3 rounded-lg text-[13px] uppercase tracking-wider outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
+          className="flex-1 h-10 px-3 rounded-lg text-[0.8125rem] uppercase tracking-wider outline-none border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)]/30 transition-all"
           data-testid="pdp-coupon-input"
         />
         <button
@@ -176,7 +176,7 @@ export default function CouponOffers({
           visible applied/remove state. */}
       {activeCode && !activeIsListed && (
         <div className="flex items-center justify-between gap-2 rounded-lg bg-white border border-[var(--color-gold)] px-3 py-2">
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-plum)]">
+          <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold text-[var(--color-plum)]">
             <Check size={13} className="text-green-600" />
             <span className="tracking-[0.1em] uppercase">{activeCode}</span>
           </span>
@@ -192,13 +192,13 @@ export default function CouponOffers({
       )}
 
       {stagedCode && !appliedCode && (
-        <p className="text-[11px] text-[var(--color-text-muted)]">
+        <p className="text-[0.6875rem] text-[var(--color-text-muted)]">
           Saved — applied automatically when you add this to your bag.
         </p>
       )}
 
       {error && (
-        <p className="text-[12px] text-red-500" role="alert">
+        <p className="text-[0.75rem] text-red-500" role="alert">
           {error}
         </p>
       )}

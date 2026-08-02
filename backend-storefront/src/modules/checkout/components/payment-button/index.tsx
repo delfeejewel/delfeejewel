@@ -23,7 +23,7 @@ const ThemedPlaceOrderButton: React.FC<
   <button
     {...props}
     disabled={disabled || isLoading}
-    className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[12px] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+    className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[var(--color-gold)] text-[var(--color-plum-deep)] text-[0.75rem] font-bold uppercase tracking-wider hover:brightness-105 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
   >
     {isLoading && (
       <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -393,7 +393,7 @@ const CodPaymentButton = ({
   return (
     <div className="flex flex-col gap-3">
       {upfrontRequired && (
-        <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] p-3.5 text-[13px]">
+        <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] p-3.5 text-[0.8125rem]">
           <p
             className="font-semibold text-[var(--color-plum)] mb-2"
             data-testid="cod-upfront-breakdown"
