@@ -5,10 +5,9 @@ import {
   ProductStatus,
 } from "@medusajs/framework/utils"
 import { createProductsWorkflow } from "@medusajs/medusa/core-flows"
+import { COD_FEE_BANDS } from "../utils/cod"
 
 const HANDLE = "cod-fee"
-const PRICE_INR = 50
-const SKU = "COD-FEE-INR-50"
 
 /**
  * Seeds the "COD Handling Fee" product — a single ₹50 line item automatically
@@ -63,28 +62,35 @@ export default async function seedCodFeeProduct({ container }: ExecArgs) {
           sales_channels: [{ id: sc.id }],
           shipping_profile_id: sp.id,
           metadata: { is_cod_fee: true, hidden_from_storefront: true },
+          // One variant per fee band (see utils/cod.ts) — Medusa prices line
+          // items per variant, so a banded fee needs a variant per band. The
+          // cart route picks the right one from the cart's merchandise value.
+          // All are tax-INCLUSIVE gross and inherit the product-scoped GST18
+          // rate (18%, service) created by scripts/set-cod-fee-tax.ts, which
+          // must be run after this seed.
           options: [
             {
               title: "Type",
-              values: ["Standard"],
+              values: COD_FEE_BANDS.map((b) => b.option),
             },
           ],
-          variants: [
-            {
-              title: "Standard",
-              sku: SKU,
-              manage_inventory: false,
-              allow_backorder: true,
-              metadata: { is_cod_fee: true },
-              options: { Type: "Standard" },
-              prices: [{ amount: PRICE_INR, currency_code: "inr" }],
-            },
-          ],
+          variants: COD_FEE_BANDS.map((b) => ({
+            title: b.option,
+            sku: b.sku,
+            manage_inventory: false,
+            allow_backorder: true,
+            metadata: { is_cod_fee: true, cod_fee_band_max: b.max },
+            options: { Type: b.option },
+            prices: [{ amount: b.amount, currency_code: "inr" }],
+          })),
         },
       ],
     },
   })
 
   const created = (result as any[])?.[0]
-  logger.info(`Created COD Handling Fee product: ${created?.id} (₹${PRICE_INR})`)
+  logger.info(
+    `Created COD Handling Fee product: ${created?.id} — bands ` +
+      COD_FEE_BANDS.map((b) => `₹${b.amount} (≤₹${b.max})`).join(", ")
+  )
 }

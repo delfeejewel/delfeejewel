@@ -418,7 +418,9 @@ export async function initiatePaymentSession(
 }
 
 /**
- * Toggles the ₹50 Cash-on-Delivery handling fee on the current cart.
+ * Toggles the Cash-on-Delivery handling fee on the current cart. The amount
+ * lives on the cod-fee product (₹60 gross, taxed at 18% as a service via the
+ * GST18 rate) — never hardcode it here.
  *
  * Called whenever the shopper confirms a payment method at checkout, with
  * `enabled` set to whether that method is COD — so switching from COD to a

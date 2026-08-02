@@ -1,7 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { paymentInfoMap, isCod } from "@lib/constants"
+import { paymentInfoMap, isCod, HIDDEN_PRODUCT_HANDLES } from "@lib/constants"
 import { initiatePaymentSession, toggleCodFee } from "@lib/data/cart"
 import { CreditCard } from "@medusajs/icons"
 import { CheckCircle2 } from "lucide-react"
@@ -20,6 +20,23 @@ const Payment = ({
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession: any) => paymentSession.status === "pending"
+  )
+
+  // Cash on Delivery is withdrawn above a merchandise-value cap: a refused
+  // high-value parcel costs forward freight, the courier's RTO charge and a
+  // round trip on goods worth more than the rest of the order combined.
+  // The backend enforces this on POST /store/carts/:id/cod-fee — hiding the
+  // option here just avoids offering something that would be rejected.
+  const codMaxOrderValue = Number(
+    process.env.NEXT_PUBLIC_COD_MAX_ORDER_VALUE || 15000
+  )
+  const merchandiseValue = (cart.items || [])
+    .filter((it: any) => !HIDDEN_PRODUCT_HANDLES.includes(it.product_handle))
+    .reduce((s: number, it: any) => s + (Number(it.total) || 0), 0)
+  const codAllowed = merchandiseValue <= codMaxOrderValue
+
+  const offeredPaymentMethods = (availablePaymentMethods || []).filter(
+    (m: any) => codAllowed || !isCod(m.id)
   )
 
   const [isLoading, setIsLoading] = useState(false)
@@ -73,7 +90,7 @@ const Payment = ({
       const checkActiveSession =
         activeSession?.provider_id === selectedPaymentMethod
 
-      // The ₹50 COD handling fee is a cart line item, so it has to be settled
+      // The COD handling fee is a cart line item, so it has to be settled
       // before the payment session is created — the COD upfront token is a
       // percentage of the cart total and must see the fee. Toggling it off for
       // prepaid methods is what stops a stranded fee turning into a refund.
@@ -145,12 +162,12 @@ const Payment = ({
       </div>
       <div>
         <div className={isOpen ? "block" : "hidden"}>
-          {!paidByGiftcard && availablePaymentMethods?.length && (
+          {!paidByGiftcard && offeredPaymentMethods?.length && (
             <RadioGroup
               value={selectedPaymentMethod}
               onChange={(value: string) => setPaymentMethod(value)}
             >
-              {availablePaymentMethods.map((paymentMethod) => (
+              {offeredPaymentMethods.map((paymentMethod) => (
                 <div key={paymentMethod.id}>
                   <PaymentContainer
                     paymentInfoMap={paymentInfoMap}
@@ -174,6 +191,13 @@ const Payment = ({
                 Gift card
               </Text>
             </div>
+          )}
+
+          {!paidByGiftcard && !codAllowed && (
+            <Text className="text-[12px] text-ui-fg-subtle mt-3">
+              Cash on Delivery isn’t available on orders above ₹
+              {codMaxOrderValue.toLocaleString("en-IN")}.
+            </Text>
           )}
 
           <ErrorMessage

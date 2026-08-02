@@ -27,10 +27,38 @@ import { isCodProvider } from "../../../../../lib/is-cod-provider"
 const GATEWAY_FEE_PERCENT = Number(process.env.GATEWAY_FEE_PERCENT ?? 2)
 const GST_ON_FEE_PERCENT = 18
 
+/**
+ * What the COURIER charges US to handle a COD shipment — distinct from the
+ * COD fee we charge the customer (the `cod-fee` service line, revenue).
+ *
+ * `courier_rate` on the fulfillment is freight ONLY; the COD charge is debited
+ * from the Shiprocket wallet on top of it and appears nowhere in the AWB
+ * response. Order #9 measured the gap: ₹208.18 debited against a ₹148.95
+ * freight quote, so ~₹59.23 of COD charge + GST went unaccounted.
+ *
+ * Shiprocket bills this as max(flat, percent × collectable), plus GST. The
+ * defaults below reproduce order #9 to within ₹0.23 (max(50, 2% × 1019.30) ×
+ * 1.18 = ₹59.00 vs ₹59.23 observed) but are NOT confirmed against a passbook
+ * entry — treat them as a working estimate until they are, and override via
+ * env if your slab differs.
+ *
+ * A measured figure always wins: set `cod_charge_actual` on the fulfillment
+ * data (from the Shiprocket passbook) and it is used verbatim, un-estimated.
+ */
+const COD_CHARGE_FLAT = Number(process.env.SHIPROCKET_COD_FEE_FLAT ?? 50)
+const COD_CHARGE_PERCENT = Number(process.env.SHIPROCKET_COD_FEE_PERCENT ?? 2)
+
 /** Service line items are cost recovery, not merchandise. */
 const SERVICE_HANDLES = ["gift-wrap", "cod-fee"]
 
 const round2 = (n: number) => Math.round(n * 100) / 100
+
+/** Money inside human-readable hint strings, e.g. 1244.15 → "₹1,244.15". */
+const money = (n: number) =>
+  `₹${Number(n).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
 
 export async function GET(
   req: AuthenticatedMedusaRequest,
@@ -60,6 +88,10 @@ export async function GET(
         // which silently produces a zero-revenue breakdown. Verified against
         // real orders.
         "items.*",
+        // Carries the promotion CODE actually applied to each line, which is
+        // the only place the customer-facing coupon name survives on the order.
+        "items.adjustments.*",
+        "items.tax_lines.rate",
         "fulfillments.id",
         "fulfillments.data",
         "payment_collections.payments.provider_id",
@@ -118,6 +150,63 @@ export async function GET(
     })
 
     const cogs = lines.reduce((s, l) => s + (l.cost ?? 0), 0)
+
+    // ---- customer-facing money trail ---------------------------------------
+    // Reads the way the customer experienced it: list price → coupon → price
+    // paid → add-on fees → shipping. Catalogue prices are GST-INCLUSIVE, so
+    // every gross figure is split into its ex-GST base and the GST inside it.
+    //
+    // `unit_price` is the price at the time of order (already reflecting any
+    // sale price), BEFORE any coupon. `total`/`tax_total` are post-coupon. The
+    // pre-coupon tax split has to be derived from the line's own rate, because
+    // Medusa only stores tax for the amount actually charged.
+    const splitInclusive = (gross: number, ratePercent: number) => {
+      const net = round2(gross / (1 + ratePercent / 100))
+      return { gross: round2(gross), net, tax: round2(gross - net) }
+    }
+
+    const merchandiseRate = Number(merchandise[0]?.tax_lines?.[0]?.rate) || 0
+    const listGross = merchandise.reduce(
+      (s, i) => s + (Number(i.unit_price) || 0) * (Number(i.quantity) || 0),
+      0
+    )
+    const merchandiseDiscount = merchandise.reduce(
+      (s, i) => s + (Number(i.discount_total) || 0),
+      0
+    )
+    const paidGross = merchandise.reduce((s, i) => s + (Number(i.total) || 0), 0)
+    const paidTax = merchandise.reduce(
+      (s, i) => s + (Number(i.tax_total) || 0),
+      0
+    )
+
+    // Promotion codes actually applied, from the line adjustments.
+    const discountCodes = Array.from(
+      new Set(
+        items.flatMap((i) =>
+          ((i.adjustments as any[]) || []).map((a) => a?.code).filter(Boolean)
+        )
+      )
+    )
+
+    // Each add-on fee (COD handling, gift wrap) listed on its own, with its
+    // own GST split — they can sit at different rates from the merchandise.
+    const serviceLines = services.map((i) => {
+      const gross = Number(i.total) || 0
+      const tax = Number(i.tax_total) || 0
+      return {
+        handle: i.product_handle,
+        title: i.title,
+        gross: round2(gross),
+        net: round2(gross - tax),
+        tax: round2(tax),
+      }
+    })
+
+    const shippingTax = round2(
+      (Number(order.shipping_total) || 0) -
+        (Number(order.shipping_subtotal) || 0)
+    )
     const missingCost = lines.filter((l) => !l.cost_known)
 
     // ---- shipping -----------------------------------------------------------
@@ -153,6 +242,49 @@ export async function GET(
         100
     )
 
+    // ---- courier COD charge -------------------------------------------------
+    // Only COD orders incur one, and only on the balance the courier actually
+    // collects (total minus any upfront token) — the same figure sent to
+    // Shiprocket as the collectable amount.
+    const codCollectable = isCod
+      ? Math.max(0, (Number(order.total) || 0) - prepaidAmount)
+      : 0
+
+    // Preference order, most authoritative first:
+    //   1. cod_charge_actual  — hand-entered from the Shiprocket passbook
+    //   2. cod_charges        — Shiprocket's own quote, captured at AWB
+    //                           assignment from the serviceability response
+    //   3. the estimate below — only when neither was recorded
+    const codChargeMeasuredRaw = (order.fulfillments || []).find(
+      (f: any) => f?.data?.cod_charge_actual != null || f?.data?.cod_charges != null
+    )?.data
+    const codChargeRaw =
+      codChargeMeasuredRaw?.cod_charge_actual ?? codChargeMeasuredRaw?.cod_charges
+    const codChargeActual =
+      codChargeRaw != null && Number.isFinite(Number(codChargeRaw))
+        ? round2(Number(codChargeRaw))
+        : null
+    const codChargeSource =
+      codChargeMeasuredRaw?.cod_charge_actual != null
+        ? "passbook"
+        : codChargeMeasuredRaw?.cod_charges != null
+          ? "shiprocket quote"
+          : null
+
+    const codChargeEstimated =
+      codChargeActual === null && isCod
+        ? round2(
+            Math.max(
+              COD_CHARGE_FLAT,
+              (codCollectable * COD_CHARGE_PERCENT) / 100
+            ) *
+              (1 + GST_ON_FEE_PERCENT / 100)
+          )
+        : 0
+
+    const codCharge = isCod ? (codChargeActual ?? codChargeEstimated) : 0
+    const codChargeIsEstimate = isCod && codChargeActual === null
+
     // ---- roll-up ------------------------------------------------------------
     const merchandiseRevenueNet = lines.reduce((s, l) => s + l.revenue_net, 0)
     const servicesRevenueNet = services.reduce(
@@ -163,12 +295,99 @@ export async function GET(
       shippingActual !== null ? round2(shippingCharged - shippingActual) : null
 
     const knownCosts =
-      cogs + (shippingActual ?? 0) + gatewayFee
+      cogs + (shippingActual ?? 0) + gatewayFee + codCharge
     const grossProfit = round2(
       merchandiseRevenueNet + servicesRevenueNet + shippingCharged - knownCosts
     )
 
-    const complete = missingCost.length === 0 && shippingActual !== null
+    // "Complete" must mean every cost is MEASURED, per this route's contract
+    // that nothing is estimated silently. The gateway fee has always been a
+    // rate-based estimate, so it is excluded from that promise by long-standing
+    // design; an estimated courier COD charge is not — it is a real invoice
+    // from Shiprocket that we simply have not read yet, so it downgrades the
+    // breakdown to Partial until `cod_charge_actual` is filled in.
+    const complete =
+      missingCost.length === 0 && shippingActual !== null && !codChargeIsEstimate
+
+    // ---- cost groups --------------------------------------------------------
+    // Each cost we bear, paired with what (if anything) we recovered from the
+    // customer for it, and the difference. PRESENTATIONAL ONLY — gross_profit
+    // above is computed from the raw figures, so nothing here double-counts.
+    //
+    // Recovery is stated NET of GST, matching the revenue convention: tax
+    // collected is the government's, never margin. Costs are stated as
+    // actually charged, which for courier and gateway lines INCLUDES their
+    // GST — that input tax may be creditable to you as ITC, which this widget
+    // does not model, so these margins are slightly pessimistic if you claim it.
+    const codFeeLine = serviceLines.find((s) => s.handle === "cod-fee")
+
+    const costGroups = [
+      {
+        key: "product",
+        label: "Product",
+        cost: round2(cogs),
+        cost_known: missingCost.length === 0,
+        cost_hint: missingCost.length
+          ? `cost price not set: ${missingCost.map((l) => l.title).join(", ")}`
+          : null,
+        cost_label: "Cost to us",
+        collected_label: "Collected from customer",
+        collected_net: round2(merchandiseRevenueNet),
+        collected_tax: round2(paidTax),
+        margin:
+          missingCost.length === 0
+            ? round2(merchandiseRevenueNet - cogs)
+            : null,
+      },
+      {
+        key: "shipping",
+        label: "Shipping",
+        cost: shippingActual,
+        cost_known: shippingActual !== null,
+        cost_hint: shippingActual === null
+          ? "unknown until a courier is assigned"
+          : courierName,
+        cost_label: "Paid to courier",
+        collected_label: "Charged to customer",
+        collected_net: round2(shippingCharged - shippingTax),
+        collected_tax: shippingTax,
+        margin:
+          shippingActual !== null
+            ? round2(shippingCharged - shippingTax - shippingActual)
+            : null,
+      },
+      {
+        key: "gateway",
+        label: "Payment gateway",
+        cost: gatewayFee,
+        cost_known: true,
+        cost_hint: `estimated ${GATEWAY_FEE_PERCENT}% + ${GST_ON_FEE_PERCENT}% GST on ${money(prepaidAmount)}${isCod ? " — the COD token only, never the cash balance" : ""}`,
+        cost_label: "Paid to gateway",
+        // Never recovered — the gateway fee is always absorbed.
+        collected_label: null,
+        collected_net: null,
+        collected_tax: 0,
+        margin: round2(-gatewayFee),
+      },
+    ]
+
+    if (isCod) {
+      costGroups.push({
+        key: "cod",
+        label: "Courier COD charge",
+        cost: codCharge,
+        cost_known: !codChargeIsEstimate,
+        cost_hint: codChargeIsEstimate
+          ? `ESTIMATED — max(${money(COD_CHARGE_FLAT)}, ${COD_CHARGE_PERCENT}% of ${money(codCollectable)}) + ${GST_ON_FEE_PERCENT}% GST. ` +
+            `No courier quote was recorded on this shipment — reassign the AWB, or set cod_charge_actual from the Shiprocket passbook.`
+          : `${courierName || "courier"} — ${codChargeSource}`,
+        cost_label: "Paid to courier",
+        collected_label: "COD fee collected",
+        collected_net: codFeeLine ? codFeeLine.net : 0,
+        collected_tax: codFeeLine ? codFeeLine.tax : 0,
+        margin: round2((codFeeLine ? codFeeLine.net : 0) - codCharge),
+      })
+    }
 
     return res.json({
       order_id: order.id,
@@ -183,6 +402,33 @@ export async function GET(
         tax_collected: round2(Number(order.tax_total) || 0),
         order_total: round2(Number(order.total) || 0),
       },
+      // Step-by-step money trail, in the order the customer met it.
+      breakdown: {
+        list_price: splitInclusive(listGross, merchandiseRate),
+        discount: round2(merchandiseDiscount),
+        discount_codes: discountCodes,
+        after_discount: {
+          gross: round2(paidGross),
+          net: round2(paidGross - paidTax),
+          tax: round2(paidTax),
+        },
+        services: serviceLines,
+        shipping: {
+          gross: shippingCharged,
+          net: round2(shippingCharged - shippingTax),
+          tax: shippingTax,
+        },
+        order_total: round2(Number(order.total) || 0),
+        // How the total splits across the two moments money arrives. For COD
+        // that is the upfront token (already captured online) and the balance
+        // the courier collects on delivery; for a prepaid order it is all
+        // collected up front and there is no balance.
+        payment: {
+          is_cod: isCod,
+          paid_online: round2(prepaidAmount),
+          balance_due: round2(codCollectable),
+        },
+      },
       costs: {
         cogs: round2(cogs),
         cogs_known: missingCost.length === 0,
@@ -191,6 +437,15 @@ export async function GET(
         courier_name: courierName,
         gateway_fee: gatewayFee,
         gateway_fee_estimated: true,
+        courier_cod_charge: codCharge,
+        courier_cod_charge_estimated: codChargeIsEstimate,
+        courier_cod_charge_basis: {
+          applies: isCod,
+          flat: COD_CHARGE_FLAT,
+          percent: COD_CHARGE_PERCENT,
+          gst_on_fee_percent: GST_ON_FEE_PERCENT,
+          charged_on: round2(codCollectable),
+        },
         gateway_fee_basis: {
           percent: GATEWAY_FEE_PERCENT,
           gst_on_fee_percent: GST_ON_FEE_PERCENT,
@@ -198,6 +453,7 @@ export async function GET(
           is_cod: isCod,
         },
       },
+      cost_groups: costGroups,
       shipping_margin: shippingMargin,
       gross_profit: grossProfit,
       margin_percent:

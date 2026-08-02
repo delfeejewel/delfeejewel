@@ -194,7 +194,12 @@ export async function POST(
         }
       }
 
-      let awb: { awb_code: string | null; courier_name: string | null }
+      let awb: {
+        awb_code: string | null
+        courier_name: string | null
+        courier_rate?: number | null
+        charges?: any
+      }
       try {
         awb = await provider.assignAwb(data.shiprocket_shipment_id, { order })
       } catch (e: any) {
@@ -228,7 +233,17 @@ export async function POST(
       await updateFulfillmentWorkflow(req.scope).run({
         input: {
           id: fulfillmentId,
-          data: { ...data, awb_code: awb.awb_code, courier_name: awb.courier_name },
+          data: {
+            ...data,
+            awb_code: awb.awb_code,
+            courier_name: awb.courier_name,
+            // This manual retry path previously recorded neither the rate nor
+            // the charge breakdown, so an order assigned from here had no
+            // shipping cost at all in the margin widget.
+            courier_rate: awb.courier_rate ?? data.courier_rate ?? null,
+            courier_charges: awb.charges ?? data.courier_charges ?? null,
+            cod_charges: awb.charges?.cod ?? data.cod_charges ?? null,
+          },
         } as any,
       })
       await logStep("awb_assigned", { awb_code: awb.awb_code })

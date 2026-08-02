@@ -8,8 +8,9 @@ import {
   deleteLineItemsWorkflow,
 } from "@medusajs/medusa/core-flows"
 
+import { codFeeBandFor, codAllowed, codMaxOrderValue } from "../../../../../utils/cod"
+
 const COD_FEE_HANDLE = "cod-fee"
-const COD_FEE_SKU = "COD-FEE-INR-50"
 
 /**
  * POST /store/carts/:id/cod-fee
@@ -40,41 +41,73 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     fields: ["id", "variants.id", "variants.sku"],
   })
   const feeProduct = (products as any[])?.[0]
-  const feeVariant =
-    feeProduct?.variants?.find((v: any) => v.sku === COD_FEE_SKU) ||
-    feeProduct?.variants?.[0]
-  if (!feeVariant) {
+  const feeVariants: any[] = feeProduct?.variants || []
+  if (!feeVariants.length) {
     return res.status(500).json({
       message:
         "COD fee product not seeded. Run: npx medusa exec ./src/scripts/seed-cod-fee-product.ts",
     })
   }
+  const feeVariantIds = new Set(feeVariants.map((v) => v.id))
 
   const { data: carts } = await query.graph({
     entity: "cart",
     filters: { id: cartId },
-    fields: ["id", "metadata", "items.id", "items.variant_id"],
+    fields: ["id", "metadata", "items.id", "items.variant_id", "items.total"],
   })
   const cart = (carts as any[])?.[0]
   if (!cart) return res.status(404).json({ message: "Cart not found" })
 
-  const existing = (cart.items as any[] | undefined)?.find(
-    (it) => it.variant_id === feeVariant.id
+  // Any COD fee line already on the cart — there should only ever be one, but
+  // tolerate several so a stale band can't wedge the cart.
+  const existingFeeLines = ((cart.items as any[]) || []).filter((it) =>
+    feeVariantIds.has(it.variant_id)
   )
 
+  // Band on merchandise value EXCLUDING the fee itself, or adding the fee
+  // could tip the cart into the next band and oscillate.
+  const merchandiseValue = ((cart.items as any[]) || [])
+    .filter((it) => !feeVariantIds.has(it.variant_id))
+    .reduce((s, it) => s + (Number(it.total) || 0), 0)
+
+  if (enabled && !codAllowed(merchandiseValue)) {
+    return res.status(400).json({
+      message:
+        `Cash on Delivery isn't available on orders above ₹${codMaxOrderValue().toLocaleString("en-IN")}. ` +
+        `Please choose an online payment method.`,
+      cod_available: false,
+      cod_max_order_value: codMaxOrderValue(),
+    })
+  }
+
+  const band = enabled ? codFeeBandFor(merchandiseValue) : null
+  const wanted = band
+    ? feeVariants.find((v) => v.sku === band.sku) || feeVariants[0]
+    : null
+
   try {
-    if (enabled) {
-      if (!existing) {
+    if (enabled && wanted) {
+      // Drop any fee line that isn't the band we want (wrong band, or dupes).
+      const stale = existingFeeLines.filter((it) => it.variant_id !== wanted.id)
+      if (stale.length) {
+        await deleteLineItemsWorkflow(req.scope as any).run({
+          input: { ids: stale.map((it) => it.id), cart_id: cartId } as any,
+        })
+      }
+      if (!existingFeeLines.some((it) => it.variant_id === wanted.id)) {
         await addToCartWorkflow(req.scope as any).run({
           input: {
             cart_id: cartId,
-            items: [{ variant_id: feeVariant.id, quantity: 1 }],
+            items: [{ variant_id: wanted.id, quantity: 1 }],
           },
         })
       }
-    } else if (existing) {
+    } else if (existingFeeLines.length) {
       await deleteLineItemsWorkflow(req.scope as any).run({
-        input: { ids: [existing.id], cart_id: cartId } as any,
+        input: {
+          ids: existingFeeLines.map((it) => it.id),
+          cart_id: cartId,
+        } as any,
       })
     }
 
@@ -83,7 +116,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       { id: cartId, metadata: { ...meta, cod_fee: enabled } },
     ])
 
-    return res.json({ ok: true, cod_fee: enabled })
+    return res.json({
+      ok: true,
+      cod_fee: enabled,
+      cod_fee_amount: band?.amount ?? 0,
+      cod_available: true,
+    })
   } catch (e: any) {
     return res.status(500).json({
       message: e?.message || "Could not toggle COD fee",

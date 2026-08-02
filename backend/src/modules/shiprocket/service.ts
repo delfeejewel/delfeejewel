@@ -50,6 +50,24 @@ type ShiprocketOptions = {
 // Shiprocket API base
 const API_BASE = "https://apiv2.shiprocket.in/v1/external"
 
+/**
+ * The per-shipment charge breakdown Shiprocket quotes for a courier, in ₹.
+ * Sourced from the serviceability response, which returns every component —
+ * not just the freight we used to keep. `total` is Shiprocket's own `rate`,
+ * which equals freight + cod.
+ */
+export type CourierCharges = {
+  freight: number
+  cod: number
+  cod_multiplier: number
+  rto: number
+  whatsapp: number
+  other: number
+  coverage: number
+  charge_weight: number
+  total: number
+}
+
 /** Shiprocket rejects a shipment with zero/absent weight or dimensions. */
 const MIN_WEIGHT_KG = 0.05
 const FALLBACK_DIMENSIONS = { length: 10, breadth: 8, height: 5 }
@@ -746,10 +764,12 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
       awb_code: string | null
       courier_name: string | null
       courier_rate: number | null
+      charges: CourierCharges | null
     } = {
       awb_code: null,
       courier_name: null,
       courier_rate: null,
+      charges: null,
     }
     if (shiprocketOrder?.order_id && shiprocketOrder?.shipment_id) {
       try {
@@ -783,7 +803,13 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
         courier_name: awb.courier_name,
         // What the shipment cost US (₹). Paired with the order's shipping_total
         // (what the customer paid), this is the per-order shipping margin.
+        // NOTE: freight ONLY — see courier_charges for the rest.
         courier_rate: awb.courier_rate,
+        // Full quoted breakdown (freight, COD, RTO, whatsapp…). `cod_charges`
+        // is the courier's real COD fee, which the margin widget would
+        // otherwise have to estimate.
+        courier_charges: awb.charges,
+        cod_charges: awb.charges?.cod ?? null,
       },
       labels: awb.awb_code
         ? [
@@ -811,7 +837,13 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     order: any,
     weight: number
   ): Promise<
-    Array<{ courier_id: number; courier_name: string; score: number; rate: number }>
+    Array<{
+      courier_id: number
+      courier_name: string
+      score: number
+      rate: number
+      charges: CourierCharges
+    }>
   > {
     try {
       const address = order?.shipping_address || {}
@@ -834,6 +866,22 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
           // fulfillment so per-order shipping margin (charged vs paid) is a
           // subtraction rather than a guess.
           rate: Number(c.rate) || 0,
+          // The full breakdown behind `rate`. `freight_charge` alone is what
+          // we historically stored as courier_rate, which silently omitted the
+          // COD charge — a real cost that then had to be estimated in the
+          // margin widget. Capturing all of it here makes that exact.
+          // (`rate` = freight_charge + cod_charges.)
+          charges: {
+            freight: Number(c.freight_charge) || 0,
+            cod: Number(c.cod_charges) || 0,
+            cod_multiplier: Number(c.cod_multiplier) || 0,
+            rto: Number(c.rto_charges) || 0,
+            whatsapp: Number(c.whatsapp_charges) || 0,
+            other: Number(c.other_charges) || 0,
+            coverage: Number(c.coverage_charges) || 0,
+            charge_weight: Number(c.charge_weight) || 0,
+            total: Number(c.rate) || 0,
+          },
           score:
             (Number(c.pickup_performance) || 0) * 2 +
             (Number(c.delivery_performance) || 0) +
@@ -869,18 +917,26 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     awb_code: string | null
     courier_name: string | null
     courier_rate: number | null
+    charges: CourierCharges | null
   }> {
     if (this.simulating()) {
       return {
         awb_code: this.simId("AWB"),
         courier_name: "Simulated Courier",
         courier_rate: null,
+        charges: null,
       }
     }
     const logger = this.container_[ContainerRegistrationKeys.LOGGER]
 
+    // Kept across both paths so the auto-assign fallback can still recover the
+    // charge breakdown by matching Shiprocket's chosen courier back to the
+    // ranked quotes by name.
+    let ranked: Awaited<ReturnType<typeof this.rankCouriers>> = []
+
     if (context?.order) {
-      const [best] = await this.rankCouriers(context.order, context.weight || 0.3)
+      ranked = await this.rankCouriers(context.order, context.weight || 0.3)
+      const [best] = ranked
       if (best) {
         try {
           const awbData = await this.apiCall("/courier/assign/awb", "POST", {
@@ -894,6 +950,7 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
               courier_name: awbData?.response?.data?.courier_name || best.courier_name,
               courier_rate:
                 Number(awbData?.response?.data?.freight_charges) || best.rate || null,
+              charges: best.charges,
             }
           }
           logger?.warn(
@@ -912,11 +969,23 @@ export default class ShiprocketFulfillmentService extends AbstractFulfillmentPro
     const awbData = await this.apiCall("/courier/assign/awb", "POST", {
       shipment_id: shipmentId,
     })
+    const chosenName: string | null =
+      awbData?.response?.data?.courier_name || null
     return {
       awb_code: awbData?.response?.data?.awb_code || null,
-      courier_name: awbData?.response?.data?.courier_name || null,
+      courier_name: chosenName,
       // Shiprocket's own auto-assign path: it reports the freight it charged.
       courier_rate: Number(awbData?.response?.data?.freight_charges) || null,
+      // Auto-assign doesn't tell us the breakdown, so recover it from the
+      // ranked quotes by matching the courier Shiprocket picked. Null when we
+      // never ranked (no order context) or it picked one we didn't quote.
+      charges:
+        (chosenName &&
+          ranked.find(
+            (r) =>
+              r.courier_name?.toLowerCase() === chosenName.toLowerCase()
+          )?.charges) ||
+        null,
     }
   }
 

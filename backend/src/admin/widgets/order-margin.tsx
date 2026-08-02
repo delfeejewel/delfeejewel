@@ -26,6 +26,34 @@ type Margin = {
     tax_collected: number
     order_total: number
   }
+  breakdown: {
+    list_price: { gross: number; net: number; tax: number }
+    discount: number
+    discount_codes: string[]
+    after_discount: { gross: number; net: number; tax: number }
+    services: {
+      handle: string
+      title: string
+      gross: number
+      net: number
+      tax: number
+    }[]
+    shipping: { gross: number; net: number; tax: number }
+    order_total: number
+    payment: { is_cod: boolean; paid_online: number; balance_due: number }
+  }
+  cost_groups: {
+    key: string
+    label: string
+    cost: number | null
+    cost_known: boolean
+    cost_hint: string | null
+    cost_label: string
+    collected_label: string | null
+    collected_net: number | null
+    collected_tax: number
+    margin: number | null
+  }[]
   costs: {
     cogs: number
     cogs_known: boolean
@@ -34,6 +62,15 @@ type Margin = {
     courier_name: string | null
     gateway_fee: number
     gateway_fee_estimated: boolean
+    courier_cod_charge: number
+    courier_cod_charge_estimated: boolean
+    courier_cod_charge_basis: {
+      applies: boolean
+      flat: number
+      percent: number
+      gst_on_fee_percent: number
+      charged_on: number
+    }
     gateway_fee_basis: {
       percent: number
       gst_on_fee_percent: number
@@ -136,6 +173,7 @@ const OrderMargin = ({ data }: { data: { id: string } }) => {
 
   const c = margin.costs
   const r = margin.revenue
+  const b = margin.breakdown
 
   return (
     <Container className="p-0 divide-y">
@@ -148,86 +186,130 @@ const OrderMargin = ({ data }: { data: { id: string } }) => {
 
       <div className="px-6 py-3">
         <Text size="xsmall" weight="plus" className="text-ui-fg-subtle uppercase">
-          Revenue
+          What the customer paid
         </Text>
-        <Row label="Merchandise (net of GST)" value={inr(r.merchandise_net)} />
-        {r.services_net > 0 && (
+        <Row
+          label="Selling price"
+          value={inr(b.list_price.gross)}
+          hint={`${inr(b.list_price.net)} + ${inr(b.list_price.tax)} GST`}
+        />
+        {b.discount > 0 && (
           <Row
-            label="Gift wrap / COD fee"
-            value={inr(r.services_net)}
-            hint="cost recovery, not merchandise"
+            label={
+              b.discount_codes.length
+                ? `Discount (${b.discount_codes.join(", ")})`
+                : "Discount"
+            }
+            value={`− ${inr(b.discount)}`}
+            tone="negative"
           />
         )}
-        <Row label="Shipping charged" value={inr(r.shipping_charged)} />
-        {r.discount > 0 && (
+        {b.discount > 0 && (
           <Row
-            label="Coupon discount"
-            value={`− ${inr(r.discount)}`}
-            tone="muted"
-            hint="already reflected above"
+            label="Price after discount"
+            value={inr(b.after_discount.gross)}
+            strong
+            hint={`${inr(b.after_discount.net)} + ${inr(b.after_discount.tax)} GST`}
           />
         )}
+        {b.services.map((s) => (
+          <Row
+            key={s.handle}
+            label={s.title}
+            value={`+ ${inr(s.gross)}`}
+            hint={
+              s.tax > 0
+                ? `${inr(s.net)} + ${inr(s.tax)} GST`
+                : `${inr(s.net)}, no GST`
+            }
+          />
+        ))}
+        <Row
+          label="Shipping charged"
+          value={`+ ${inr(b.shipping.gross)}`}
+          hint={
+            b.shipping.tax > 0
+              ? `${inr(b.shipping.net)} + ${inr(b.shipping.tax)} GST`
+              : "no GST"
+          }
+        />
+        <Row label="Order total" value={inr(b.order_total)} strong />
         <Row
           label="GST collected"
           value={inr(r.tax_collected)}
           tone="muted"
-          hint="passed to government, not margin"
+          hint="included in the figures above — passed to government, not margin"
         />
+        {b.payment.is_cod && (
+          <div className="mt-2 pt-2 border-t border-ui-border-base">
+            <Row
+              label="Paid online (COD token)"
+              value={inr(b.payment.paid_online)}
+              tone="positive"
+              hint="captured at checkout"
+            />
+            <Row
+              label="To collect on delivery"
+              value={inr(b.payment.balance_due)}
+              strong
+              hint="cash the courier must collect"
+            />
+          </div>
+        )}
       </div>
 
       <div className="px-6 py-3">
         <Text size="xsmall" weight="plus" className="text-ui-fg-subtle uppercase">
-          Costs
+          Costs &amp; recovery
         </Text>
-        <Row
-          label="Product cost"
-          value={c.cogs_known ? `− ${inr(c.cogs)}` : `− ${inr(c.cogs)}`}
-          tone="negative"
-          hint={
-            c.cogs_known
-              ? undefined
-              : `cost price not set: ${c.missing_cost_items.join(", ")}`
-          }
-        />
-        <Row
-          label="Shipping paid"
-          value={c.shipping_actual === null ? "—" : `− ${inr(c.shipping_actual)}`}
-          tone={c.shipping_actual === null ? "muted" : "negative"}
-          hint={
-            c.shipping_actual === null
-              ? "unknown until a courier is assigned"
-              : c.courier_name || undefined
-          }
-        />
-        <Row
-          label="Payment gateway fee"
-          value={`− ${inr(c.gateway_fee)}`}
-          tone="negative"
-          hint={`estimated ${c.gateway_fee_basis.percent}% + ${c.gateway_fee_basis.gst_on_fee_percent}% GST on ${inr(c.gateway_fee_basis.charged_on)}${c.gateway_fee_basis.is_cod ? " (COD upfront only)" : ""}`}
-        />
+        {margin.cost_groups.map((g) => (
+          <div
+            key={g.key}
+            className="mt-4 pt-4 border-t border-ui-border-base first:mt-2 first:pt-0 first:border-t-0"
+          >
+            <Text
+              size="xsmall"
+              weight="plus"
+              className="text-ui-fg-base mb-1 block"
+            >
+              {g.label}
+            </Text>
+            <Row
+              label={g.cost_label}
+              value={g.cost === null ? "—" : `− ${inr(g.cost)}`}
+              tone={g.cost === null ? "muted" : "negative"}
+              hint={g.cost_hint || undefined}
+            />
+            {g.collected_label !== null && (
+              <Row
+                label={g.collected_label}
+                value={`+ ${inr(g.collected_net ?? 0)}`}
+                tone="positive"
+                hint={
+                  g.collected_tax > 0
+                    ? `net of ${inr(g.collected_tax)} GST`
+                    : "no GST"
+                }
+              />
+            )}
+            <Row
+              label="Margin"
+              value={g.margin === null ? "—" : inr(g.margin)}
+              strong
+              tone={
+                g.margin === null
+                  ? "muted"
+                  : g.margin >= 0
+                    ? "positive"
+                    : "negative"
+              }
+              hint={g.margin === null ? "needs the cost above" : undefined}
+            />
+          </div>
+        ))}
       </div>
 
       <div className="px-6 py-3">
-        <Row
-          label="Shipping margin"
-          value={
-            margin.shipping_margin === null
-              ? "—"
-              : inr(margin.shipping_margin)
-          }
-          hint={
-            margin.shipping_margin === null
-              ? "needs an assigned courier"
-              : "charged − paid"
-          }
-          tone={
-            margin.shipping_margin === null
-              ? "muted"
-              : margin.shipping_margin >= 0
-                ? "positive"
-                : "negative"
-          }
-        />
         <Row
           label="Gross profit"
           value={inr(margin.gross_profit)}
@@ -243,6 +325,8 @@ const OrderMargin = ({ data }: { data: { id: string } }) => {
           <Text size="xsmall" className="text-ui-fg-subtle mt-2">
             Figures exclude anything marked “—”. Set cost prices on the product
             page and assign a courier to complete this.
+            {c.courier_cod_charge_estimated &&
+              " The courier COD charge is an estimate until the real figure is read from the Shiprocket passbook."}
           </Text>
         )}
       </div>
