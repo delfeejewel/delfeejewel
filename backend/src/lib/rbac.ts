@@ -119,6 +119,46 @@ export const PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
   [/^\/admin\/customers\/segments/, "customers.read"],
 ]
 
+/**
+ * READ gating. PATH_PERMISSIONS above deliberately softens ".write" permissions
+ * on GET, so listing most things is open to any authenticated admin — fine for
+ * the catalogue, not fine for the team roster or anything holding a credential.
+ * These paths require the permission on GET as well.
+ *
+ * Chosen to be safe for the roles that keep access (developer, admin — both
+ * hold settings.write): every path here is reachable only from a Settings page,
+ * so a 403 can't break a screen another role actually works on. Notably absent,
+ * and deliberately so:
+ *  - /admin/store — the sidebar Header throws on a failed store fetch, which
+ *    would white-screen the whole admin. Its metadata is redacted instead, see
+ *    redactStoreForLowPrivilege in api/middlewares.ts.
+ *  - regions, sales-channels, shipping-options/profiles, stock-locations,
+ *    payment-providers, refund/return-reasons — all read by ordinary product
+ *    and order screens that ops and employees use.
+ *
+ * /admin/users/me is excluded: every role needs to read its own profile.
+ */
+export const READ_PATH_PERMISSIONS: Array<[RegExp, Permission]> = [
+  // The team roster: names and email addresses of every admin account.
+  [/^\/admin\/users(\/(?!me(\/|$))|$)/, "settings.write"],
+  // Pending invites carry acceptance tokens — reading one is a route to an
+  // account. Note the unauthenticated accept flow is unaffected: this only
+  // applies once an actor is resolved.
+  [/^\/admin\/invites(\/|$)/, "settings.write"],
+  [/^\/admin\/api-keys(\/|$)/, "settings.write"],
+  [/^\/admin\/workflows-executions(\/|$)/, "settings.write"],
+  [/^\/admin\/tax-regions(\/|$)/, "settings.write"],
+  [/^\/admin\/tax-rates(\/|$)/, "settings.write"],
+]
+
+/** The permission a GET on `path` requires, or null if reads are open. */
+export function readPermissionForPath(path: string): Permission | null {
+  for (const [re, perm] of READ_PATH_PERMISSIONS) {
+    if (re.test(path)) return perm
+  }
+  return null
+}
+
 export function permissionForPath(
   path: string,
   method: string

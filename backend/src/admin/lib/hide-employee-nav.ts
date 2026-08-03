@@ -137,79 +137,184 @@ const hideUserMenuItems = () => {
   }
 }
 
+/** The shortcut hint the dashboard hardcodes on the palette trigger. */
+const SEARCH_SHORTCUT_HINT = "⌘K"
+
 /**
  * Hide the sidebar search (⌘K) button.
  *
  * Unlike the entries above it is NOT a <NavLink>, so there is no href to match
  * on — it is a button that opens the command palette. The dashboard bundle is
  * minified past the point where class names are stable to target, so match on
- * structure instead: the only control in the sidebar carrying a <kbd> shortcut
- * hint next to the label "Search".
+ * structure instead.
  *
- * Scoped to the sidebar (found via a nav link that always exists) so it cannot
- * accidentally hide a search box on a list page. Cosmetic only — the ⌘K
- * keyboard shortcut itself still works, since that is bound at the document
- * level by the dashboard.
+ * Match on the ⌘K hint, NOT on a <kbd> element: the dashboard renders that hint
+ * as a plain <Text> (see Searchbar in @medusajs/dashboard shell), so the button
+ * contains no <kbd> at all and its textContent is "Search⌘K" rather than
+ * "Search". An earlier version of this required one or the other and therefore
+ * never matched anything — the search box stayed visible for every role. The
+ * hint is also language-independent, which the label is not.
+ *
+ * Cosmetic only — the ⌘K keyboard shortcut itself still works, since the
+ * dashboard binds that on document.
  */
-const hideSearchTrigger = () => {
-  const anchor = document.querySelector<HTMLElement>('a[href="/app/orders"]')
-  const sidebar = anchor?.closest<HTMLElement>("nav") || anchor?.parentElement?.parentElement
-  const scope: ParentNode = sidebar || document
-
-  for (const el of Array.from(scope.querySelectorAll<HTMLElement>("button"))) {
+const setSearchHidden = (hidden: boolean) => {
+  // Scope to buttons wrapped in the sidebar's div.px-3 so a search control on a
+  // list page can't be caught by accident. Not scoped to a single <nav>: the
+  // dashboard renders separate desktop and mobile sidebars.
+  for (const el of Array.from(
+    document.querySelectorAll<HTMLElement>("div.px-3 > button")
+  )) {
     const label = (el.textContent || "").trim()
-    if (!label.startsWith("Search")) continue
-    // The shortcut hint is what distinguishes the palette trigger from any
-    // other button that happens to say "Search".
-    if (!el.querySelector("kbd") && label !== "Search") continue
+    if (!label.includes(SEARCH_SHORTCUT_HINT)) continue
     const wrapper = el.closest<HTMLElement>("div.px-3") || el
-    wrapper.style.display = "none"
+    wrapper.style.display = hidden ? "none" : ""
   }
 }
 
-const hideNavLinks = (routes: string[]) => {
+const setNavLinksHidden = (routes: string[], hidden: boolean) => {
   for (const route of routes) {
     const link = document.querySelector<HTMLAnchorElement>(
       `a[href="${route}"]`
     )
     const item = link?.closest<HTMLElement>("div.px-3")
-    if (item) item.style.display = "none"
+    if (item) item.style.display = hidden ? "none" : ""
   }
+}
+
+/**
+ * Every route any role might have hidden — what we hide up front, before we
+ * know who is logged in.
+ */
+const ALL_HIDEABLE_ROUTES = Array.from(
+  new Set([
+    ...HIDDEN_NAV_ROUTES,
+    ...Object.values(ROLE_HIDDEN_NAV_ROUTES).flat(),
+  ])
+)
+
+/** Where an employee gets sent when they land somewhere they shouldn't. */
+const EMPLOYEE_HOME = "/app/packing"
+/** …except inside Settings, where Profile is theirs and is the useful landing. */
+const EMPLOYEE_SETTINGS_HOME = "/app/settings/profile"
+
+/**
+ * Bounce an employee off a page their sidebar doesn't offer.
+ *
+ * Hiding a nav link never stopped anyone reaching the URL, and one link routes
+ * there on its own: "Settings" points at /app/settings, which the dashboard
+ * redirects to /app/settings/store — a page in HIDDEN_NAV_ROUTES. So an
+ * employee clicking Settings landed on Store settings every time.
+ *
+ * Employee only. For other roles the hidden list is cosmetic (one unused
+ * built-in), and bouncing an admin to the packing screen would be worse than
+ * the page they asked for. Still NOT a security boundary — the server-side
+ * checks in src/lib/rbac.ts are; this just keeps the UI honest.
+ */
+const enforceRouteAccess = (routes: string[]) => {
+  const path = window.location.pathname
+  const blocked = routes.some((r) => path === r || path.startsWith(`${r}/`))
+  if (!blocked) return
+
+  const target = path.startsWith("/app/settings")
+    ? EMPLOYEE_SETTINGS_HOME
+    : EMPLOYEE_HOME
+  if (path === target) return
+  // replace(), not href: otherwise Back returns to the blocked page and bounces
+  // again, trapping the tab.
+  window.location.replace(target)
 }
 
 let started = false
 
+/**
+ * Hide first, ask afterwards.
+ *
+ * Two problems with resolving the role before hiding anything, both of which
+ * an employee saw on every login:
+ *
+ *  1. The whole sidebar rendered unrestricted for as long as /admin/users/me
+ *     took to answer — a visible flash of every extension route.
+ *  2. Worse, this module is evaluated when the admin bundle first loads, which
+ *     is on the LOGIN screen. There /admin/users/me 401s, so `body.user` was
+ *     undefined and the role fell through to its "admin" default — installing
+ *     admin's rules permanently, since the guard then marked itself started.
+ *     Logging in is a client-side transition, not a page load, so an employee
+ *     kept admin's sidebar until they manually refreshed.
+ *
+ * So: hide the union of everything hideable immediately, then resolve the role
+ * and REVEAL whatever that role is allowed to see. A privileged user sees a
+ * couple of nav items appear a moment late; nobody sees items they shouldn't.
+ * An unauthenticated probe is no longer mistaken for an answer — we keep
+ * retrying until a session actually exists.
+ */
 export const startEmployeeNavGuard = () => {
   if (started || typeof document === "undefined") return
   started = true
 
-  fetch("/admin/users/me", { credentials: "include" })
-    .then((r) => r.json())
-    .then((body) => {
-      // Mirrors resolveRole() in src/lib/rbac.ts, which defaults to "admin".
-      const role = (body?.user?.metadata?.role as string) || "admin"
+  let routes = ALL_HIDEABLE_ROUTES
+  let hideSearch = true
+  let hideUserMenu = false
+  let enforceRoutes = false
+  let resolved = false
 
-      const routes = [
+  const apply = () => {
+    setNavLinksHidden(routes, true)
+    setSearchHidden(hideSearch)
+    if (hideUserMenu) hideUserMenuItems()
+    // Only once the role is known — until then `routes` is the union of every
+    // hideable path, which would bounce a developer off their own pages.
+    if (enforceRoutes) enforceRouteAccess(routes)
+  }
+
+  apply()
+  new MutationObserver(apply).observe(document.body, {
+    childList: true,
+    subtree: true,
+  })
+
+  /** Returns false while nobody is signed in yet, so the caller can retry. */
+  const resolveRole = async (): Promise<boolean> => {
+    if (resolved) return true
+    try {
+      const res = await fetch("/admin/users/me", { credentials: "include" })
+      if (!res.ok) return false
+      const body = await res.json()
+      const user = body?.user
+      if (!user) return false
+
+      // Mirrors getUserRole() in src/lib/rbac.ts, which defaults to "admin".
+      const role = (user.metadata?.role as string) || "admin"
+      const hidden = [
         ...(role === "employee" ? HIDDEN_NAV_ROUTES : []),
         ...(ROLE_HIDDEN_NAV_ROUTES[role] || []),
       ]
-      const hideSearch = SEARCH_HIDDEN_ROLES.includes(role)
-      const hideUserMenu = USER_MENU_HIDDEN_ROLES.includes(role)
-      if (!routes.length && !hideSearch && !hideUserMenu) return
 
-      const apply = () => {
-        if (routes.length) hideNavLinks(routes)
-        if (hideSearch) hideSearchTrigger()
-        if (hideUserMenu) hideUserMenuItems()
-      }
+      resolved = true
+      routes = hidden
+      hideSearch = SEARCH_HIDDEN_ROLES.includes(role)
+      hideUserMenu = USER_MENU_HIDDEN_ROLES.includes(role)
+      enforceRoutes = role === "employee"
 
+      setNavLinksHidden(
+        ALL_HIDEABLE_ROUTES.filter((r) => !hidden.includes(r)),
+        false
+      )
       apply()
-      new MutationObserver(apply).observe(document.body, {
-        childList: true,
-        subtree: true,
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  void resolveRole().then((ok) => {
+    if (ok) return
+    // Still on the login screen. Keep everything hidden and keep asking; the
+    // sign-in transition is client-side, so there is no load event to hook.
+    const timer = window.setInterval(() => {
+      void resolveRole().then((done) => {
+        if (done) window.clearInterval(timer)
       })
-    })
-    .catch(() => {
-      /* on any error, leave the UI untouched */
-    })
+    }, 2000)
+  })
 }

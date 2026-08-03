@@ -6,6 +6,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import {
   getUserRole,
   permissionForPath,
+  readPermissionForPath,
   roleHas,
 } from "../lib/rbac"
 import { reconcileGiftCardHolds } from "../modules/gift_card/lib/holds"
@@ -70,6 +71,94 @@ async function requirePermission(
         message: `Your role (${role}) is not allowed to perform this action.`,
         required_permission: perm,
       })
+    }
+    return next()
+  } catch {
+    return next()
+  }
+}
+
+/**
+ * Gate READS on the handful of admin paths where listing is itself sensitive —
+ * the team roster, invite tokens, API keys (see READ_PATH_PERMISSIONS).
+ *
+ * requirePermission softens ".write" permissions on GET, which is right for the
+ * catalogue but meant an employee could curl /admin/users for every colleague's
+ * name and email, or /admin/invites for a live acceptance token. Hiding those
+ * pages in the sidebar never stopped the request.
+ *
+ * Falls through when no actor is resolved, matching requirePermission: that
+ * keeps the unauthenticated invite-acceptance flow working.
+ */
+async function requireReadPermission(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  try {
+    if (req.method !== "GET" && req.method !== "HEAD") return next()
+
+    const path = ((req as any).originalUrl as string).split("?")[0]
+    const perm = readPermissionForPath(path)
+    if (!perm) return next()
+
+    const actorId = (req as any).auth_context?.actor_id
+    if (!actorId) return next()
+
+    const role = await getUserRole(req.scope as any, actorId)
+    if (!roleHas(role, perm)) {
+      return res.status(403).json({
+        message: `Your role (${role}) is not allowed to view this.`,
+        required_permission: perm,
+      })
+    }
+    return next()
+  } catch {
+    return next()
+  }
+}
+
+/**
+ * Strip store.metadata for roles without settings.write.
+ *
+ * /admin/store can't simply be 403'd: the dashboard's sidebar Header calls
+ * useStore() and rethrows on error, so denying the read white-screens the whole
+ * admin for that role. But store.metadata is our own scratch space — feature
+ * flags and the like — and has no business being readable by a packing login.
+ * So let the request through and redact the one sensitive field, leaving the
+ * name and currency the Header actually renders.
+ */
+async function redactStoreForLowPrivilege(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  next: MedusaNextFunction
+) {
+  try {
+    if (req.method !== "GET") return next()
+
+    // /admin/stores (plural) is the real endpoint the js-sdk and dashboard use;
+    // the singular form 404s. Both are matched so a future rename can't quietly
+    // turn the redaction off.
+    const path = ((req as any).originalUrl as string).split("?")[0]
+    if (!/^\/admin\/stores?(\/|$)/.test(path)) return next()
+
+    const actorId = (req as any).auth_context?.actor_id
+    if (!actorId) return next()
+
+    const role = await getUserRole(req.scope as any, actorId)
+    if (roleHas(role, "settings.write")) return next()
+
+    const send = res.json.bind(res)
+    ;(res as any).json = (body: any) => {
+      try {
+        const stores = body?.stores || (body?.store ? [body.store] : [])
+        for (const store of stores) {
+          if (store && typeof store === "object") delete store.metadata
+        }
+      } catch {
+        // Never break the response over redaction.
+      }
+      return send(body)
     }
     return next()
   } catch {
@@ -370,6 +459,9 @@ export default defineMiddlewares({
           allowUnregistered: true,
         }),
         requirePermission,
+        // Reads: most are open to any admin, these few are not.
+        requireReadPermission,
+        redactStoreForLowPrivilege,
       ],
     },
     {
