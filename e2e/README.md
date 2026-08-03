@@ -289,9 +289,11 @@ cancel+refund path. Those only happen in a real run.
 
 1. **Seed the test product**: `npx medusa exec ./src/scripts/seed-live-smoke-product.ts`
    on the live backend. Note the product id and variant id it prints.
-2. **Save a card token**: visit `https://api.delfee.in/app/live-smoke-setup`
-   (admin, "Live Smoke Test Setup" in the nav) and pay ₹1 with a real card —
-   once. It shows you `RAZORPAY_LIVE_SMOKE_CUSTOMER_ID` / `RAZORPAY_LIVE_SMOKE_TOKEN_ID`
+2. **Save a card token**: the admin setup page has been removed from the nav.
+   Drive the two setup endpoints directly (`POST /admin/automation/live-smoke/setup/create-order`
+   then `.../setup/confirm`, both `orders.write`-gated) to pay ₹1 with a real card
+   once. The confirm response returns `RAZORPAY_LIVE_SMOKE_CUSTOMER_ID` /
+   `RAZORPAY_LIVE_SMOKE_TOKEN_ID`
    to paste into `/opt/delfee/backend.env`, plus `LIVE_SMOKE_TEST_ENABLED=true`.
    Set `LIVE_SMOKE_TEST_PRODUCT_ID` there too (from step 1). Restart the backend
    for these to take effect.
