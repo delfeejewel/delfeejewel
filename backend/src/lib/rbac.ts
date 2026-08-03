@@ -72,9 +72,13 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "customers.read",
   ],
   viewer: ["analytics.read", "customers.read"],
-  // Warehouse employee: packing/dispatch only — the Packing page and the
-  // Shiprocket AWB/label actions it drives. Nothing else.
-  employee: ["shipping.write"],
+  // Warehouse employee: packing/dispatch — the Packing page and the Shiprocket
+  // AWB/label actions it drives — plus the catalogue and full order handling.
+  // Both write permissions are coarse: products.write also permits DELETING a
+  // product, and orders.write covers refunds, payment capture and cancellation
+  // (i.e. moving real money), not just viewing orders. Returns/exchanges are
+  // deliberately NOT included — that's returns.write, held by ops.
+  employee: ["shipping.write", "products.write", "orders.write"],
 }
 
 /**

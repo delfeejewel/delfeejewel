@@ -67,6 +67,77 @@ export const ROLE_HIDDEN_NAV_ROUTES: Record<string, string[]> = {
 export const SEARCH_HIDDEN_ROLES = ["admin", "employee"]
 
 /**
+ * Roles that should not see the Medusa-facing entries in the user dropdown
+ * (bottom-left avatar menu): Documentation, Changelog, Shortcuts. Those point
+ * at docs.medusajs.com / medusajs.com and at a keyboard-shortcuts modal for
+ * pages these roles mostly can't reach — noise for a store operator. Profile
+ * settings, Theme and Logout stay.
+ */
+export const USER_MENU_HIDDEN_ROLES = ["admin", "employee"]
+
+/**
+ * Hide Documentation / Changelog / Shortcuts from the user dropdown.
+ *
+ * The dropdown is a radix portal rendered on open and torn down on close, so
+ * this runs from the same MutationObserver as everything else here rather than
+ * once at boot. Documentation and Changelog are matched by their outbound href
+ * (language-independent); Shortcuts is a plain menu item with no href, so it is
+ * matched by label — fine because this admin ships English only (src/admin/i18n).
+ *
+ * Removing three items leaves the dashboard's separators stranded (two in a row,
+ * or a trailing one), so collapse those afterwards. Cosmetic only.
+ */
+const USER_MENU_HIDDEN_HREFS = [
+  "https://docs.medusajs.com",
+  "https://medusajs.com/changelog/",
+]
+
+const hideUserMenuItems = () => {
+  const menus = new Set<HTMLElement>()
+
+  for (const href of USER_MENU_HIDDEN_HREFS) {
+    for (const link of Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(`a[href^="${href}"]`)
+    )) {
+      const menu = link.closest<HTMLElement>('[role="menu"]')
+      if (!menu) continue
+      const item = link.closest<HTMLElement>('[role="menuitem"]') || link
+      item.style.display = "none"
+      menus.add(menu)
+    }
+  }
+
+  for (const menu of menus) {
+    for (const item of Array.from(
+      menu.querySelectorAll<HTMLElement>('[role="menuitem"]')
+    )) {
+      if ((item.textContent || "").trim() === "Shortcuts") {
+        item.style.display = "none"
+      }
+    }
+
+    // Collapse separators that no longer divide anything.
+    let prevVisibleWasSeparator = true // leading separator is also redundant
+    let lastVisible: HTMLElement | null = null
+
+    for (const child of Array.from(menu.children) as HTMLElement[]) {
+      if (child.style.display === "none") continue
+      const isSeparator = child.getAttribute("role") === "separator"
+      if (isSeparator && prevVisibleWasSeparator) {
+        child.style.display = "none"
+        continue
+      }
+      prevVisibleWasSeparator = isSeparator
+      lastVisible = child
+    }
+
+    if (lastVisible?.getAttribute("role") === "separator") {
+      lastVisible.style.display = "none"
+    }
+  }
+}
+
+/**
  * Hide the sidebar search (⌘K) button.
  *
  * Unlike the entries above it is NOT a <NavLink>, so there is no href to match
@@ -123,11 +194,13 @@ export const startEmployeeNavGuard = () => {
         ...(ROLE_HIDDEN_NAV_ROUTES[role] || []),
       ]
       const hideSearch = SEARCH_HIDDEN_ROLES.includes(role)
-      if (!routes.length && !hideSearch) return
+      const hideUserMenu = USER_MENU_HIDDEN_ROLES.includes(role)
+      if (!routes.length && !hideSearch && !hideUserMenu) return
 
       const apply = () => {
         if (routes.length) hideNavLinks(routes)
         if (hideSearch) hideSearchTrigger()
+        if (hideUserMenu) hideUserMenuItems()
       }
 
       apply()

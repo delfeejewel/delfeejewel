@@ -4,16 +4,13 @@ import { useEffect } from "react"
 import { startEmployeeNavGuard } from "../lib/hide-employee-nav"
 
 /**
- * Best-effort cosmetic lockout: an "employee" (packing/dispatch) login only
- * needs the Packing page (plus Products, gated separately by the PIN widget
- * products-pin-gate.tsx). Medusa's admin-sdk has no single "every page" zone,
- * so the REDIRECT below is registered on the handful of top-level list pages
- * an employee could actually land on/navigate to and sends them back to
- * /app/packing. NOT a security boundary — that's the server-side
- * shipping.write permission check (src/lib/rbac.ts), which applies regardless
- * of what's visible here. Products is intentionally excluded from this
- * redirect list — access there is instead gated by the real server-side PIN
- * check in requireProductsPinForEmployee (middlewares.ts).
+ * Best-effort cosmetic lockout. An "employee" (packing/dispatch) login now
+ * holds shipping.write, products.write and orders.write (src/lib/rbac.ts), so
+ * Packing, the catalogue and Orders are all theirs to work in — only Customers
+ * and Promotions are left to bounce back to /app/packing. Medusa's admin-sdk
+ * has no single "every page" zone, so the REDIRECT below is registered per
+ * page. NOT a security boundary — that's the server-side permission check in
+ * src/lib/rbac.ts, which applies regardless of what's visible here.
  *
  * The sidebar NAV HIDING is handled separately by startEmployeeNavGuard(),
  * called once at module scope below (see hide-employee-nav.ts for why it's
@@ -42,12 +39,7 @@ const EmployeeNavRestrictWidget = () => {
 }
 
 export const config = defineWidgetConfig({
-  zone: [
-    "order.list.before",
-    "order.details.side.before",
-    "customer.list.before",
-    "promotion.list.before",
-  ],
+  zone: ["customer.list.before", "promotion.list.before"],
 })
 
 export default EmployeeNavRestrictWidget
